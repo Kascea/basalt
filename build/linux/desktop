@@ -1,0 +1,13 @@
+[Desktop Entry]
+Version=1.0
+Name=Basalt
+Comment=A native database workspace for browsing, querying, and editing rows
+# The Exec line includes %u to pass the URL to the application
+Exec=/usr/local/bin/basalt %u
+Terminal=false
+Type=Application
+Icon=basalt
+Categories=Utility;
+StartupWMClass=basalt
+
+ 

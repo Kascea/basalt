@@ -1,0 +1,15 @@
+{
+	"fixed": {
+		"file_version": "0.0.1"
+	},
+	"info": {
+		"0000": {
+			"ProductVersion": "0.0.1",
+			"CompanyName": "Cole Carlson",
+			"FileDescription": "A native database workspace for browsing, querying, and editing rows",
+			"LegalCopyright": "(c) 2026, Cole Carlson",
+			"ProductName": "Basalt",
+			"Comments": "Native database GUI editor"
+		}
+	}
+}
