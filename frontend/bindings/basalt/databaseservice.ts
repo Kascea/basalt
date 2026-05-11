@@ -9,9 +9,63 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 // @ts-ignore: Unused imports
 import * as $models from "./models.js";
 
-export function ExecuteQuery(connectionID: string, sql: string): $CancellablePromise<$models.QueryResult> {
-    return $Call.ByID(3500987313, connectionID, sql).then(($result: any) => {
+export function AddForeignKey(connectionID: string, req: $models.AddForeignKeyRequest): $CancellablePromise<void> {
+    return $Call.ByID(1278489588, connectionID, req);
+}
+
+/**
+ * CommitEdits applies a set of row edits as UPDATE statements inside a transaction.
+ */
+export function CommitEdits(connectionID: string, edits: $models.RowEdit[]): $CancellablePromise<void> {
+    return $Call.ByID(590769826, connectionID, edits);
+}
+
+export function Connect(request: $models.ConnectRequest): $CancellablePromise<$models.Connection> {
+    return $Call.ByID(1039001882, request).then(($result: any) => {
         return $$createType0($result);
+    });
+}
+
+export function CreateIndex(connectionID: string, req: $models.CreateIndexRequest): $CancellablePromise<void> {
+    return $Call.ByID(2148782604, connectionID, req);
+}
+
+export function CreateSequence(connectionID: string, req: $models.CreateSequenceRequest): $CancellablePromise<void> {
+    return $Call.ByID(3707372205, connectionID, req);
+}
+
+export function CreateTable(connectionID: string, req: $models.CreateTableRequest): $CancellablePromise<void> {
+    return $Call.ByID(3175590580, connectionID, req);
+}
+
+export function DropForeignKey(connectionID: string, schema: string, tableName: string, constraintName: string): $CancellablePromise<void> {
+    return $Call.ByID(583134902, connectionID, schema, tableName, constraintName);
+}
+
+export function DropIndex(connectionID: string, schema: string, name: string): $CancellablePromise<void> {
+    return $Call.ByID(3317776391, connectionID, schema, name);
+}
+
+export function DropSequence(connectionID: string, schema: string, name: string): $CancellablePromise<void> {
+    return $Call.ByID(1673469788, connectionID, schema, name);
+}
+
+export function DropTable(connectionID: string, schema: string, name: string): $CancellablePromise<void> {
+    return $Call.ByID(2700892843, connectionID, schema, name);
+}
+
+export function ExecuteQuery(connectionID: string, statement: string): $CancellablePromise<$models.QueryResult> {
+    return $Call.ByID(3500987313, connectionID, statement).then(($result: any) => {
+        return $$createType1($result);
+    });
+}
+
+/**
+ * FetchTable loads all rows from a table, including ctid for row-level updates.
+ */
+export function FetchTable(connectionID: string, schema: string, table: string): $CancellablePromise<$models.QueryResult> {
+    return $Call.ByID(60991664, connectionID, schema, table).then(($result: any) => {
+        return $$createType1($result);
     });
 }
 
@@ -21,15 +75,39 @@ export function ListConnections(): $CancellablePromise<$models.Connection[]> {
     });
 }
 
-export function ListSchemaObjects(connectionID: string): $CancellablePromise<$models.SchemaObject[]> {
-    return $Call.ByID(1127894517, connectionID).then(($result: any) => {
+export function ListForeignKeys(connectionID: string, schema: string): $CancellablePromise<$models.ForeignKeyInfo[]> {
+    return $Call.ByID(2559671936, connectionID, schema).then(($result: any) => {
         return $$createType4($result);
     });
 }
 
+export function ListIndexes(connectionID: string, schema: string): $CancellablePromise<$models.IndexInfo[]> {
+    return $Call.ByID(3901981548, connectionID, schema).then(($result: any) => {
+        return $$createType6($result);
+    });
+}
+
+export function ListSchemaObjects(connectionID: string): $CancellablePromise<$models.SchemaObject[]> {
+    return $Call.ByID(1127894517, connectionID).then(($result: any) => {
+        return $$createType8($result);
+    });
+}
+
+export function ListSequences(connectionID: string, schema: string): $CancellablePromise<$models.SequenceInfo[]> {
+    return $Call.ByID(2114707686, connectionID, schema).then(($result: any) => {
+        return $$createType10($result);
+    });
+}
+
 // Private type creation functions
-const $$createType0 = $models.QueryResult.createFrom;
-const $$createType1 = $models.Connection.createFrom;
-const $$createType2 = $Create.Array($$createType1);
-const $$createType3 = $models.SchemaObject.createFrom;
+const $$createType0 = $models.Connection.createFrom;
+const $$createType1 = $models.QueryResult.createFrom;
+const $$createType2 = $Create.Array($$createType0);
+const $$createType3 = $models.ForeignKeyInfo.createFrom;
 const $$createType4 = $Create.Array($$createType3);
+const $$createType5 = $models.IndexInfo.createFrom;
+const $$createType6 = $Create.Array($$createType5);
+const $$createType7 = $models.SchemaObject.createFrom;
+const $$createType8 = $Create.Array($$createType7);
+const $$createType9 = $models.SequenceInfo.createFrom;
+const $$createType10 = $Create.Array($$createType9);

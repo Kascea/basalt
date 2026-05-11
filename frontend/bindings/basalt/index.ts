@@ -7,9 +7,19 @@ export {
 };
 
 export {
+    AddForeignKeyRequest,
+    ColumnDef,
+    ConnectRequest,
     Connection,
+    CreateIndexRequest,
+    CreateSequenceRequest,
+    CreateTableRequest,
     ExecutionPlanStep,
+    ForeignKeyInfo,
+    IndexInfo,
     QueryResult,
+    RowEdit,
     SchemaObject,
-    SchemaObjectSummary
+    SchemaObjectSummary,
+    SequenceInfo
 } from "./models.js";

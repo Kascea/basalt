@@ -5,13 +5,128 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+export class AddForeignKeyRequest {
+    "schema": string;
+    "table": string;
+    "name": string;
+    "column": string;
+    "foreignSchema": string;
+    "foreignTable": string;
+    "foreignColumn": string;
+    "onDelete": string;
+    "onUpdate": string;
+
+    /** Creates a new AddForeignKeyRequest instance. */
+    constructor($$source: Partial<AddForeignKeyRequest> = {}) {
+        if (!("schema" in $$source)) {
+            this["schema"] = "";
+        }
+        if (!("table" in $$source)) {
+            this["table"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("column" in $$source)) {
+            this["column"] = "";
+        }
+        if (!("foreignSchema" in $$source)) {
+            this["foreignSchema"] = "";
+        }
+        if (!("foreignTable" in $$source)) {
+            this["foreignTable"] = "";
+        }
+        if (!("foreignColumn" in $$source)) {
+            this["foreignColumn"] = "";
+        }
+        if (!("onDelete" in $$source)) {
+            this["onDelete"] = "";
+        }
+        if (!("onUpdate" in $$source)) {
+            this["onUpdate"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new AddForeignKeyRequest instance from a string or object.
+     */
+    static createFrom($$source: any = {}): AddForeignKeyRequest {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new AddForeignKeyRequest($$parsedSource as Partial<AddForeignKeyRequest>);
+    }
+}
+
+export class ColumnDef {
+    "name": string;
+    "dataType": string;
+    "nullable": boolean;
+    "default": string;
+
+    /** Creates a new ColumnDef instance. */
+    constructor($$source: Partial<ColumnDef> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("dataType" in $$source)) {
+            this["dataType"] = "";
+        }
+        if (!("nullable" in $$source)) {
+            this["nullable"] = false;
+        }
+        if (!("default" in $$source)) {
+            this["default"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ColumnDef instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ColumnDef {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ColumnDef($$parsedSource as Partial<ColumnDef>);
+    }
+}
+
+export class ConnectRequest {
+    "name": string;
+    "driver": string;
+    "connectionString": string;
+
+    /** Creates a new ConnectRequest instance. */
+    constructor($$source: Partial<ConnectRequest> = {}) {
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("driver" in $$source)) {
+            this["driver"] = "";
+        }
+        if (!("connectionString" in $$source)) {
+            this["connectionString"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ConnectRequest instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ConnectRequest {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ConnectRequest($$parsedSource as Partial<ConnectRequest>);
+    }
+}
+
 export class Connection {
     "id": string;
     "name": string;
     "driver": string;
     "user": string;
     "host": string;
-    "service": string;
+    "database": string;
     "status": string;
     "lastUsed": string;
 
@@ -32,8 +147,8 @@ export class Connection {
         if (!("host" in $$source)) {
             this["host"] = "";
         }
-        if (!("service" in $$source)) {
-            this["service"] = "";
+        if (!("database" in $$source)) {
+            this["database"] = "";
         }
         if (!("status" in $$source)) {
             this["status"] = "";
@@ -51,6 +166,133 @@ export class Connection {
     static createFrom($$source: any = {}): Connection {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         return new Connection($$parsedSource as Partial<Connection>);
+    }
+}
+
+export class CreateIndexRequest {
+    "schema": string;
+    "table": string;
+    "name": string;
+
+    /**
+     * comma-separated column names
+     */
+    "columns": string;
+    "isUnique": boolean;
+
+    /**
+     * btree, hash, gin, gist
+     */
+    "method": string;
+
+    /** Creates a new CreateIndexRequest instance. */
+    constructor($$source: Partial<CreateIndexRequest> = {}) {
+        if (!("schema" in $$source)) {
+            this["schema"] = "";
+        }
+        if (!("table" in $$source)) {
+            this["table"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("columns" in $$source)) {
+            this["columns"] = "";
+        }
+        if (!("isUnique" in $$source)) {
+            this["isUnique"] = false;
+        }
+        if (!("method" in $$source)) {
+            this["method"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new CreateIndexRequest instance from a string or object.
+     */
+    static createFrom($$source: any = {}): CreateIndexRequest {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new CreateIndexRequest($$parsedSource as Partial<CreateIndexRequest>);
+    }
+}
+
+export class CreateSequenceRequest {
+    "schema": string;
+    "name": string;
+    "incrementBy": number;
+    "startValue": number;
+    "minValue": number;
+    "maxValue": number;
+    "isCycled": boolean;
+
+    /** Creates a new CreateSequenceRequest instance. */
+    constructor($$source: Partial<CreateSequenceRequest> = {}) {
+        if (!("schema" in $$source)) {
+            this["schema"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("incrementBy" in $$source)) {
+            this["incrementBy"] = 0;
+        }
+        if (!("startValue" in $$source)) {
+            this["startValue"] = 0;
+        }
+        if (!("minValue" in $$source)) {
+            this["minValue"] = 0;
+        }
+        if (!("maxValue" in $$source)) {
+            this["maxValue"] = 0;
+        }
+        if (!("isCycled" in $$source)) {
+            this["isCycled"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new CreateSequenceRequest instance from a string or object.
+     */
+    static createFrom($$source: any = {}): CreateSequenceRequest {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new CreateSequenceRequest($$parsedSource as Partial<CreateSequenceRequest>);
+    }
+}
+
+export class CreateTableRequest {
+    "schema": string;
+    "name": string;
+    "columns": ColumnDef[];
+
+    /** Creates a new CreateTableRequest instance. */
+    constructor($$source: Partial<CreateTableRequest> = {}) {
+        if (!("schema" in $$source)) {
+            this["schema"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("columns" in $$source)) {
+            this["columns"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new CreateTableRequest instance from a string or object.
+     */
+    static createFrom($$source: any = {}): CreateTableRequest {
+        const $$createField2_0 = $$createType1;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("columns" in $$parsedSource) {
+            $$parsedSource["columns"] = $$createField2_0($$parsedSource["columns"]);
+        }
+        return new CreateTableRequest($$parsedSource as Partial<CreateTableRequest>);
     }
 }
 
@@ -91,9 +333,104 @@ export class ExecutionPlanStep {
     }
 }
 
+export class ForeignKeyInfo {
+    "schema": string;
+    "name": string;
+    "tableName": string;
+    "columnName": string;
+    "foreignSchema": string;
+    "foreignTable": string;
+    "foreignColumn": string;
+    "onDelete": string;
+    "onUpdate": string;
+
+    /** Creates a new ForeignKeyInfo instance. */
+    constructor($$source: Partial<ForeignKeyInfo> = {}) {
+        if (!("schema" in $$source)) {
+            this["schema"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("tableName" in $$source)) {
+            this["tableName"] = "";
+        }
+        if (!("columnName" in $$source)) {
+            this["columnName"] = "";
+        }
+        if (!("foreignSchema" in $$source)) {
+            this["foreignSchema"] = "";
+        }
+        if (!("foreignTable" in $$source)) {
+            this["foreignTable"] = "";
+        }
+        if (!("foreignColumn" in $$source)) {
+            this["foreignColumn"] = "";
+        }
+        if (!("onDelete" in $$source)) {
+            this["onDelete"] = "";
+        }
+        if (!("onUpdate" in $$source)) {
+            this["onUpdate"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new ForeignKeyInfo instance from a string or object.
+     */
+    static createFrom($$source: any = {}): ForeignKeyInfo {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new ForeignKeyInfo($$parsedSource as Partial<ForeignKeyInfo>);
+    }
+}
+
+export class IndexInfo {
+    "schema": string;
+    "name": string;
+    "tableName": string;
+    "isUnique": boolean;
+    "isPrimary": boolean;
+    "definition": string;
+
+    /** Creates a new IndexInfo instance. */
+    constructor($$source: Partial<IndexInfo> = {}) {
+        if (!("schema" in $$source)) {
+            this["schema"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("tableName" in $$source)) {
+            this["tableName"] = "";
+        }
+        if (!("isUnique" in $$source)) {
+            this["isUnique"] = false;
+        }
+        if (!("isPrimary" in $$source)) {
+            this["isPrimary"] = false;
+        }
+        if (!("definition" in $$source)) {
+            this["definition"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new IndexInfo instance from a string or object.
+     */
+    static createFrom($$source: any = {}): IndexInfo {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new IndexInfo($$parsedSource as Partial<IndexInfo>);
+    }
+}
+
 export class QueryResult {
     "columns": string[];
     "rows": { [_ in string]?: string }[];
+    "rowIds": string[];
     "durationMs": number;
     "message": string;
     "plan": ExecutionPlanStep[];
@@ -106,6 +443,9 @@ export class QueryResult {
         }
         if (!("rows" in $$source)) {
             this["rows"] = [];
+        }
+        if (!("rowIds" in $$source)) {
+            this["rowIds"] = [];
         }
         if (!("durationMs" in $$source)) {
             this["durationMs"] = 0;
@@ -127,10 +467,11 @@ export class QueryResult {
      * Creates a new QueryResult instance from a string or object.
      */
     static createFrom($$source: any = {}): QueryResult {
-        const $$createField0_0 = $$createType0;
-        const $$createField1_0 = $$createType2;
-        const $$createField4_0 = $$createType4;
+        const $$createField0_0 = $$createType2;
+        const $$createField1_0 = $$createType4;
+        const $$createField2_0 = $$createType2;
         const $$createField5_0 = $$createType6;
+        const $$createField6_0 = $$createType8;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("columns" in $$parsedSource) {
             $$parsedSource["columns"] = $$createField0_0($$parsedSource["columns"]);
@@ -138,13 +479,53 @@ export class QueryResult {
         if ("rows" in $$parsedSource) {
             $$parsedSource["rows"] = $$createField1_0($$parsedSource["rows"]);
         }
+        if ("rowIds" in $$parsedSource) {
+            $$parsedSource["rowIds"] = $$createField2_0($$parsedSource["rowIds"]);
+        }
         if ("plan" in $$parsedSource) {
-            $$parsedSource["plan"] = $$createField4_0($$parsedSource["plan"]);
+            $$parsedSource["plan"] = $$createField5_0($$parsedSource["plan"]);
         }
         if ("objectStats" in $$parsedSource) {
-            $$parsedSource["objectStats"] = $$createField5_0($$parsedSource["objectStats"]);
+            $$parsedSource["objectStats"] = $$createField6_0($$parsedSource["objectStats"]);
         }
         return new QueryResult($$parsedSource as Partial<QueryResult>);
+    }
+}
+
+export class RowEdit {
+    "schema": string;
+    "table": string;
+    "rowId": string;
+    "changes": { [_ in string]?: string };
+
+    /** Creates a new RowEdit instance. */
+    constructor($$source: Partial<RowEdit> = {}) {
+        if (!("schema" in $$source)) {
+            this["schema"] = "";
+        }
+        if (!("table" in $$source)) {
+            this["table"] = "";
+        }
+        if (!("rowId" in $$source)) {
+            this["rowId"] = "";
+        }
+        if (!("changes" in $$source)) {
+            this["changes"] = {};
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RowEdit instance from a string or object.
+     */
+    static createFrom($$source: any = {}): RowEdit {
+        const $$createField3_0 = $$createType3;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("changes" in $$parsedSource) {
+            $$parsedSource["changes"] = $$createField3_0($$parsedSource["changes"]);
+        }
+        return new RowEdit($$parsedSource as Partial<RowEdit>);
     }
 }
 
@@ -210,11 +591,58 @@ export class SchemaObjectSummary {
     }
 }
 
+export class SequenceInfo {
+    "schema": string;
+    "name": string;
+    "lastValue": string;
+    "incrementBy": string;
+    "minValue": string;
+    "maxValue": string;
+    "isCycled": boolean;
+
+    /** Creates a new SequenceInfo instance. */
+    constructor($$source: Partial<SequenceInfo> = {}) {
+        if (!("schema" in $$source)) {
+            this["schema"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("lastValue" in $$source)) {
+            this["lastValue"] = "";
+        }
+        if (!("incrementBy" in $$source)) {
+            this["incrementBy"] = "";
+        }
+        if (!("minValue" in $$source)) {
+            this["minValue"] = "";
+        }
+        if (!("maxValue" in $$source)) {
+            this["maxValue"] = "";
+        }
+        if (!("isCycled" in $$source)) {
+            this["isCycled"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SequenceInfo instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SequenceInfo {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new SequenceInfo($$parsedSource as Partial<SequenceInfo>);
+    }
+}
+
 // Private type creation functions
-const $$createType0 = $Create.Array($Create.Any);
-const $$createType1 = $Create.Map($Create.Any, $Create.Any);
-const $$createType2 = $Create.Array($$createType1);
-const $$createType3 = ExecutionPlanStep.createFrom;
+const $$createType0 = ColumnDef.createFrom;
+const $$createType1 = $Create.Array($$createType0);
+const $$createType2 = $Create.Array($Create.Any);
+const $$createType3 = $Create.Map($Create.Any, $Create.Any);
 const $$createType4 = $Create.Array($$createType3);
-const $$createType5 = SchemaObjectSummary.createFrom;
+const $$createType5 = ExecutionPlanStep.createFrom;
 const $$createType6 = $Create.Array($$createType5);
+const $$createType7 = SchemaObjectSummary.createFrom;
+const $$createType8 = $Create.Array($$createType7);

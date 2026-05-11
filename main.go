@@ -29,7 +29,7 @@ func main() {
 		Name:        "basalt",
 		Description: "A modern database workspace for browsing, querying, and editing rows",
 		Services: []application.Service{
-			application.NewService(&DatabaseService{}),
+			application.NewService(NewDatabaseService()),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
@@ -47,11 +47,11 @@ func main() {
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title: "Basalt",
 		Mac: application.MacWindow{
-			InvisibleTitleBarHeight: 50,
+			InvisibleTitleBarHeight: 40,
 			Backdrop:                application.MacBackdropTranslucent,
 			TitleBar:                application.MacTitleBarHiddenInset,
 		},
-		BackgroundColour: application.NewRGB(244, 246, 248),
+		BackgroundColour: application.NewRGB(13, 17, 23),
 		URL:              "/",
 	})
 
