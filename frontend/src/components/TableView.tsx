@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { type QueryResult } from '../../bindings/basalt'
-import { type TableTarget, type RowRecord, type DirtyCells, type FilterClause, type SortDirection } from '../types'
+import { type TableTarget, type RowRecord, type DirtyCells, type SortDirection } from '../types'
 import { GridToolbar } from './GridToolbar'
 import { FilterBar } from './FilterBar'
-import { DataGrid } from './DataGrid'
+import { DataGrid, buildFilter } from './DataGrid'
 
 interface Props {
   target: TableTarget
@@ -22,25 +22,28 @@ export function TableView({
   target, result, rows, dirtyCells, isLoading, isCommitting,
   onCellChange, onRefresh, onDiscard, onCommit,
 }: Props) {
-  const [filters, setFilters] = useState<FilterClause[]>([])
+  const [filterExpr, setFilterExpr] = useState('')
   const [sortColumn, setSortColumn] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection | null>(null)
 
-  const handleColumnDoubleClick = (col: string) => {
-    if (sortColumn !== col) {
-      setSortColumn(col)
-      setSortDirection('asc')
-    } else if (sortDirection === 'asc') {
-      setSortDirection('desc')
-    } else {
-      setSortColumn(null)
-      setSortDirection(null)
-    }
+  const columns = result?.columns ?? []
+
+  const filterError = filterExpr.trim() !== '' && buildFilter(filterExpr, columns) === null
+
+  const handleSortChange = (col: string, dir: SortDirection | null) => {
+    setSortColumn(dir ? col : null)
+    setSortDirection(dir)
+  }
+
+  const handleAddFilter = (col: string) => {
+    setFilterExpr(prev => {
+      const snippet = `${col} = ''`
+      return prev.trim() ? `${prev.trim()} AND ${snippet}` : snippet
+    })
   }
 
   const label = `${target.schema}.${target.table}`
   const dirtyCount = Object.keys(dirtyCells).length
-  const columns = result?.columns ?? []
 
   return (
     <div className="table-view">
@@ -54,9 +57,9 @@ export function TableView({
         onCommit={onCommit}
       />
       <FilterBar
-        columns={columns}
-        filters={filters}
-        onFiltersChange={setFilters}
+        expr={filterExpr}
+        hasError={filterError}
+        onChange={setFilterExpr}
       />
       {isLoading ? (
         <p className="empty-state centered">Loading {label}…</p>
@@ -65,11 +68,12 @@ export function TableView({
           columns={columns}
           rows={rows}
           dirtyCells={dirtyCells}
-          filters={filters}
+          filterExpr={filterExpr}
           sortColumn={sortColumn}
           sortDirection={sortDirection}
           onCellChange={onCellChange}
-          onColumnDoubleClick={handleColumnDoubleClick}
+          onSortChange={handleSortChange}
+          onAddFilter={handleAddFilter}
           emptyMessage={result ? 'No rows match the filter' : 'Open a table from the sidebar'}
         />
       )}

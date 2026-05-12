@@ -1,16 +1,5 @@
 export type RowRecord = Record<string, string | undefined>
 
-export type FilterOperator =
-  | 'contains' | 'eq' | 'neq' | 'starts' | 'ends'
-  | 'gt' | 'gte' | 'lt' | 'lte' | 'null' | 'notnull'
-
-export interface FilterClause {
-  id: string
-  column: string
-  op: FilterOperator
-  value: string
-}
-
 export type SortDirection = 'asc' | 'desc'
 
 export type ObjectDetailKind = 'table' | 'sequences' | 'indexes' | 'foreignkeys'

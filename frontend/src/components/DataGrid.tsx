@@ -1,59 +1,117 @@
-import { type RowRecord, type DirtyCells, type FilterClause, type SortDirection, cellKey } from '../types'
+import { useState, useEffect } from 'react'
+import { type RowRecord, type DirtyCells, type SortDirection, cellKey } from '../types'
 
-function applyClause(row: RowRecord, clause: FilterClause): boolean {
-  const raw = row[clause.column] ?? ''
-  const cell = raw.toLowerCase()
-  const val = clause.value.toLowerCase()
-  switch (clause.op) {
-    case 'contains': return cell.includes(val)
-    case 'eq':       return cell === val
-    case 'neq':      return cell !== val
-    case 'starts':   return cell.startsWith(val)
-    case 'ends':     return cell.endsWith(val)
-    case 'null':     return raw === '' || raw == null
-    case 'notnull':  return raw !== '' && raw != null
-    default: {
-      const a = parseFloat(raw)
-      const b = parseFloat(clause.value)
-      if (isNaN(a) || isNaN(b)) return false
-      if (clause.op === 'gt')  return a > b
-      if (clause.op === 'gte') return a >= b
-      if (clause.op === 'lt')  return a < b
-      if (clause.op === 'lte') return a <= b
-      return false
+// ── Expression evaluator ──────────────────────────────────────────────────────
+
+const VALID_ID = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/
+const JS_KEYWORDS = new Set([
+  'break','case','catch','class','const','continue','debugger','default',
+  'delete','do','else','export','extends','false','finally','for','function',
+  'if','import','in','instanceof','let','new','null','return','static',
+  'super','switch','this','throw','true','try','typeof','undefined','var',
+  'void','while','with','yield',
+])
+
+const HELPERS = {
+  lower:    (s: unknown) => String(s ?? '').toLowerCase(),
+  upper:    (s: unknown) => String(s ?? '').toUpperCase(),
+  trim:     (s: unknown) => String(s ?? '').trim(),
+  len:      (s: unknown) => String(s ?? '').length,
+  num:      (s: unknown) => parseFloat(String(s ?? '')),
+  contains: (s: unknown, sub: unknown) => String(s ?? '').includes(String(sub ?? '')),
+  starts:   (s: unknown, pre: unknown) => String(s ?? '').startsWith(String(pre ?? '')),
+  ends:     (s: unknown, suf: unknown) => String(s ?? '').endsWith(String(suf ?? '')),
+  regex:    (s: unknown, pat: unknown) => { try { return new RegExp(String(pat ?? '')).test(String(s ?? '')) } catch { return false } },
+}
+const helperNames = Object.keys(HELPERS)
+const helperValues = Object.values(HELPERS)
+
+function toJsExpr(expr: string): string {
+  return expr
+    .replace(/\bAND\b/gi, '&&')
+    .replace(/\bOR\b/gi,  '||')
+    .replace(/\bNOT\b/gi, '!')
+}
+
+type FilterFn = (row: RowRecord) => boolean
+
+export function buildFilter(expr: string, columns: string[]): FilterFn | null {
+  const trimmed = expr.trim()
+  if (!trimmed) return null
+
+  const jsExpr = toJsExpr(trimmed)
+  const safeCols = columns.filter(c => VALID_ID.test(c) && !JS_KEYWORDS.has(c) && !(c in HELPERS))
+
+  type CompiledFn = (...args: unknown[]) => boolean
+  let compiled: CompiledFn | null = null
+  try {
+    compiled = new Function('$row', ...helperNames, ...safeCols, `return !!(${jsExpr})`) as unknown as CompiledFn
+  } catch {
+    return null
+  }
+
+  return (row: RowRecord) => {
+    const colVals = safeCols.map(c => {
+      const v = row[c] ?? ''
+      const n = parseFloat(v)
+      return !isNaN(n) && v.trim() !== '' ? n : v
+    })
+    try {
+      return Boolean(compiled!(row, ...helperValues, ...colVals))
+    } catch {
+      return true
     }
   }
 }
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 interface Props {
   columns: string[]
   rows: RowRecord[]
   dirtyCells: DirtyCells
-  filters?: FilterClause[]
+  filterExpr?: string
   sortColumn?: string | null
   sortDirection?: SortDirection | null
   emptyMessage?: string
   onCellChange: (rowIndex: number, column: string, value: string) => void
-  onColumnDoubleClick?: (column: string) => void
+  onSortChange?: (column: string, direction: SortDirection | null) => void
+  onAddFilter?: (column: string) => void
 }
 
 export function DataGrid({
   columns,
   rows,
   dirtyCells,
-  filters = [],
+  filterExpr = '',
   sortColumn,
   sortDirection,
   emptyMessage = 'No data',
   onCellChange,
-  onColumnDoubleClick,
+  onSortChange,
+  onAddFilter,
 }: Props) {
-  const activeFilters = filters.filter(f => f.op === 'null' || f.op === 'notnull' || f.value !== '')
+  const [menuCol, setMenuCol] = useState<string | null>(null)
+
+  const closeMenu = () => setMenuCol(null)
+
+  useEffect(() => {
+    if (!menuCol) return
+    const onDown = (e: MouseEvent) => {
+      const target = e.target as Element
+      if (target.closest('th') || target.closest('.col-menu')) return
+      setMenuCol(null)
+    }
+    document.addEventListener('mousedown', onDown)
+    return () => document.removeEventListener('mousedown', onDown)
+  }, [menuCol])
+
+  const filterFn = buildFilter(filterExpr, columns)
 
   let indexed = rows.map((row, i) => ({ row, originalIndex: i }))
 
-  if (activeFilters.length > 0) {
-    indexed = indexed.filter(({ row }) => activeFilters.every(c => applyClause(row, c)))
+  if (filterFn) {
+    indexed = indexed.filter(({ row }) => filterFn(row))
   }
 
   if (sortColumn && sortDirection) {
@@ -77,17 +135,52 @@ export function DataGrid({
             <th className="row-index">#</th>
             {columns.map((col) => {
               const isSorted = col === sortColumn
+              const menuOpen = menuCol === col
               return (
                 <th
                   key={col}
                   className={isSorted ? 'col-sorted' : ''}
-                  onDoubleClick={() => onColumnDoubleClick?.(col)}
-                  title="Double-click to sort"
+                  style={menuOpen ? { zIndex: 100 } : undefined}
+                  onClick={() => setMenuCol(menuOpen ? null : col)}
                 >
                   {col}
                   <span className={`sort-indicator${isSorted ? ' sort-active' : ''}`}>
                     {isSorted ? (sortDirection === 'asc' ? '↑' : '↓') : '⇅'}
                   </span>
+                  {menuOpen && (
+                    <div className="col-menu" onClick={e => e.stopPropagation()}>
+                      <button
+                        className={`col-menu-item${isSorted && sortDirection === 'asc' ? ' col-menu-item-active' : ''}`}
+                        onClick={() => { onSortChange?.(col, 'asc'); closeMenu() }}
+                      >
+                        <span className="col-menu-icon">↑</span> Sort Ascending
+                      </button>
+                      <button
+                        className={`col-menu-item${isSorted && sortDirection === 'desc' ? ' col-menu-item-active' : ''}`}
+                        onClick={() => { onSortChange?.(col, 'desc'); closeMenu() }}
+                      >
+                        <span className="col-menu-icon">↓</span> Sort Descending
+                      </button>
+                      {isSorted && (
+                        <>
+                          <div className="col-menu-sep" />
+                          <button
+                            className="col-menu-item col-menu-item-muted"
+                            onClick={() => { onSortChange?.(col, null); closeMenu() }}
+                          >
+                            <span className="col-menu-icon">✕</span> Clear sort
+                          </button>
+                        </>
+                      )}
+                      <div className="col-menu-sep" />
+                      <button
+                        className="col-menu-item"
+                        onClick={() => { onAddFilter?.(col); closeMenu() }}
+                      >
+                        <span className="col-menu-icon">+</span> Add filter
+                      </button>
+                    </div>
+                  )}
                 </th>
               )
             })}
