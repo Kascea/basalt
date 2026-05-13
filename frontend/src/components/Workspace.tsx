@@ -1,4 +1,5 @@
 import { type Connection, type QueryResult, type SchemaObject } from '../../bindings/basalt'
+import { Window } from '@wailsio/runtime'
 import { type Tab, type TableState, type RowRecord, type DirtyCells, type FKError } from '../types'
 import { SqlWorksheet } from './SqlWorksheet'
 import { TableView } from './TableView'
@@ -71,7 +72,7 @@ export function Workspace({
 
   return (
     <section className="workspace">
-      <header className="topbar">
+      <header className="topbar" onDoubleClick={() => Window.ToggleMaximise()}>
         <div className="topbar-tabs">
           {tabs.map(tab => (
             <button

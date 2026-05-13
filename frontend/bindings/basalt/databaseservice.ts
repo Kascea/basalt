@@ -13,9 +13,6 @@ export function AddForeignKey(connectionID: string, req: $models.AddForeignKeyRe
     return $Call.ByID(1278489588, connectionID, req);
 }
 
-/**
- * CommitEdits applies a set of row edits as UPDATE statements inside a transaction.
- */
 export function CommitEdits(connectionID: string, edits: $models.RowEdit[]): $CancellablePromise<void> {
     return $Call.ByID(590769826, connectionID, edits);
 }
@@ -38,9 +35,6 @@ export function CreateTable(connectionID: string, req: $models.CreateTableReques
     return $Call.ByID(3175590580, connectionID, req);
 }
 
-/**
- * DeleteRows deletes rows by ctid inside a transaction.
- */
 export function DeleteRows(connectionID: string, deletes: $models.RowDelete[]): $CancellablePromise<void> {
     return $Call.ByID(1246682378, connectionID, deletes);
 }
@@ -67,9 +61,6 @@ export function ExecuteQuery(connectionID: string, statement: string): $Cancella
     });
 }
 
-/**
- * FetchTable loads all rows from a table, including ctid for row-level updates.
- */
 export function FetchTable(connectionID: string, schema: string, table: string): $CancellablePromise<$models.QueryResult> {
     return $Call.ByID(60991664, connectionID, schema, table).then(($result: any) => {
         return $$createType1($result);
@@ -87,9 +78,6 @@ export function GetNextSequenceValues(connectionID: string, schema: string, tabl
     });
 }
 
-/**
- * InsertRows inserts new rows into a table inside a transaction.
- */
 export function InsertRows(connectionID: string, inserts: $models.RowInsert[]): $CancellablePromise<void> {
     return $Call.ByID(2045419812, connectionID, inserts);
 }

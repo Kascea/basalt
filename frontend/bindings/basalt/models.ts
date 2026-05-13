@@ -173,16 +173,8 @@ export class CreateIndexRequest {
     "schema": string;
     "table": string;
     "name": string;
-
-    /**
-     * comma-separated column names
-     */
     "columns": string;
     "isUnique": boolean;
-
-    /**
-     * btree, hash, gin, gist
-     */
     "method": string;
 
     /** Creates a new CreateIndexRequest instance. */

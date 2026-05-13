@@ -27,7 +27,7 @@ func main() {
 	// 'Mac' options tailor the application when running an macOS.
 	app := application.New(application.Options{
 		Name:        "basalt",
-		Description: "A modern database workspace for browsing, querying, and editing rows",
+		Description: "A modern database workspace for browsing, querying, and editing",
 		Services: []application.Service{
 			application.NewService(NewDatabaseService()),
 		},

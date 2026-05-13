@@ -1,4 +1,5 @@
 import { type Connection, type SchemaObject } from '../../bindings/basalt'
+import { Window } from '@wailsio/runtime'
 import { ConnectionTree } from './ConnectionTree'
 
 interface Props {
@@ -25,7 +26,7 @@ export function Sidebar({
 }: Props) {
   return (
     <aside className="sidebar">
-      <div className="brand-row">
+      <div className="brand-row" onDoubleClick={() => Window.ToggleMaximise()}>
         <div className="brand-mark">B</div>
         <span className="brand-name">Basalt</span>
         <button
