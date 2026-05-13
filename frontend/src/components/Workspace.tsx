@@ -39,6 +39,7 @@ interface Props {
   onOpenFkTab: () => void
   statusMessage: string
   onStatus: (msg: string) => void
+  nullText?: string
 }
 
 function tabLabel(tab: Tab): string {
@@ -62,6 +63,7 @@ export function Workspace({
   onTableRefresh, onTableFilterChange, onTableDiscard, onTableCommit,
   activeFkError, onOpenFkTab,
   statusMessage, onStatus,
+  nullText = 'NULL',
 }: Props) {
   const connContext = activeConnection
     ? `${activeConnection.user || 'user'}@${activeConnection.host || 'host'}/${activeConnection.database || 'db'}`
@@ -116,6 +118,7 @@ export function Workspace({
             dirtyCells={queryDirty}
             objects={objects}
             isRunning={isRunning}
+            nullText={nullText}
             onSqlChange={onSqlChange}
             onCellChange={onQueryCellChange}
             onDiscard={onQueryDiscard}
@@ -133,6 +136,7 @@ export function Workspace({
             isLoading={activeTableState.isLoading}
             isRefreshing={activeTableState.isRefreshing}
             isCommitting={activeTableState.isCommitting}
+            nullText={nullText}
             onCellChange={onTableCellChange}
             onNewCellChange={onTableNewCellChange}
             onAddRow={onTableAddRow}

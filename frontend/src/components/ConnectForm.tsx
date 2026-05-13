@@ -1,18 +1,28 @@
 import { useState } from 'react'
+import type { SavedConnection } from '../../bindings/basalt'
 
 interface Props {
   isConnecting: boolean
+  initialValues?: SavedConnection
   onConnect: (name: string, driver: string, connectionString: string) => void
+  onSaveOnly?: (conn: SavedConnection) => void
 }
 
-export function ConnectForm({ isConnecting, onConnect }: Props) {
-  const [name, setName] = useState('Postgres')
-  const [driver, setDriver] = useState('postgres')
-  const [connectionString, setConnectionString] = useState('')
+export function ConnectForm({ isConnecting, initialValues, onConnect, onSaveOnly }: Props) {
+  const [name, setName] = useState(initialValues?.name ?? 'Postgres')
+  const [driver, setDriver] = useState(initialValues?.driver ?? 'postgres')
+  const [connectionString, setConnectionString] = useState(initialValues?.connectionString ?? '')
+
+  const isEditing = !!initialValues
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onConnect(name, driver, connectionString)
+  }
+
+  const handleSaveOnly = () => {
+    if (!onSaveOnly || !initialValues) return
+    onSaveOnly({ ...initialValues, name, driver, connectionString })
   }
 
   return (
@@ -39,9 +49,16 @@ export function ConnectForm({ isConnecting, onConnect }: Props) {
           spellCheck={false}
         />
       </label>
-      <button type="submit" className="connect-button" disabled={isConnecting}>
-        {isConnecting ? 'Connecting…' : 'Connect'}
-      </button>
+      <div className="connect-form-actions">
+        {isEditing && onSaveOnly && (
+          <button type="button" className="connect-button connect-button--secondary" onClick={handleSaveOnly}>
+            Save
+          </button>
+        )}
+        <button type="submit" className="connect-button" disabled={isConnecting}>
+          {isConnecting ? 'Connecting…' : isEditing ? 'Save & Connect' : 'Connect'}
+        </button>
+      </div>
     </form>
   )
 }

@@ -107,10 +107,11 @@ interface TypedCellProps {
   isNew?: boolean
   isPendingDelete?: boolean
   ariaLabel: string
+  nullText?: string
   onChange: (value: string) => void
 }
 
-function TypedCell({ value, dbType, isDirty, isNew, isPendingDelete, ariaLabel, onChange }: TypedCellProps) {
+function TypedCell({ value, dbType, isDirty, isNew, isPendingDelete, ariaLabel, nullText, onChange }: TypedCellProps) {
   const category = colCategory(dbType)
   const [rejected, setRejected] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -141,6 +142,7 @@ function TypedCell({ value, dbType, isDirty, isNew, isPendingDelete, ariaLabel, 
     <td className={cellClass}>
       <input
         value={value}
+        placeholder={value === '' && nullText ? nullText : undefined}
         onKeyDown={handleKeyDown}
         onChange={(e) => onChange(e.target.value)}
         aria-label={ariaLabel}
@@ -165,6 +167,7 @@ interface Props {
   sortColumn?: string | null
   sortDirection?: SortDirection | null
   emptyMessage?: string
+  nullText?: string
   onCellChange: (rowIndex: number, column: string, value: string) => void
   onNewCellChange: (rowIndex: number, column: string, value: string) => void
   onDeleteRow: (rowIndex: number) => void
@@ -184,6 +187,7 @@ export function DataGrid({
   sortColumn,
   sortDirection,
   emptyMessage = 'No data',
+  nullText = '',
   onCellChange,
   onNewCellChange,
   onDeleteRow,
@@ -322,6 +326,7 @@ export function DataGrid({
                       dbType={dbType}
                       isDirty={isDirty}
                       isPendingDelete={isPendingDelete}
+                      nullText={nullText}
                       ariaLabel={`${col} row ${originalIndex + 1}`}
                       onChange={(v) => onCellChange(originalIndex, col, v)}
                     />
@@ -349,6 +354,7 @@ export function DataGrid({
                     value={row[col] ?? ''}
                     dbType={dbType}
                     isNew
+                    nullText={nullText}
                     ariaLabel={`${col} new row ${newIdx + 1}`}
                     onChange={(v) => onNewCellChange(newIdx, col, v)}
                   />

@@ -1,14 +1,16 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"sync"
-	"database/sql"
 )
 
 type DatabaseService struct {
 	mu          sync.Mutex
 	connections map[string]*openConnection
+	saved       []SavedConnection
+	settings    AppSettings
 }
 
 type openConnection struct {
@@ -18,8 +20,11 @@ type openConnection struct {
 }
 
 func NewDatabaseService() *DatabaseService {
+	saved, _ := loadSavedConnections()
 	return &DatabaseService{
 		connections: make(map[string]*openConnection),
+		saved:       saved,
+		settings:    loadAppSettings(),
 	}
 }
 

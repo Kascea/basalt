@@ -19,7 +19,11 @@ func (d *DatabaseService) ExecuteQuery(connectionID string, statement string) (Q
 		return QueryResult{}, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	d.mu.Lock()
+	timeout := time.Duration(d.settings.QueryTimeoutSec) * time.Second
+	d.mu.Unlock()
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	started := time.Now()
@@ -89,14 +93,21 @@ func (d *DatabaseService) FetchTable(connectionID, schema, table, where string) 
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	d.mu.Lock()
+	rowLimit := d.settings.DefaultRowLimit
+	timeout := time.Duration(d.settings.QueryTimeoutSec) * time.Second
+	d.mu.Unlock()
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
 	query := fmt.Sprintf("SELECT ctid::text AS __rowid, * FROM %s.%s", quoteIdent(schema), quoteIdent(table))
 	if trimmedWhere != "" {
 		query += " WHERE " + trimmedWhere
 	}
-	query += " LIMIT 1000"
+	if rowLimit > 0 {
+		query += fmt.Sprintf(" LIMIT %d", rowLimit)
+	}
 
 	started := time.Now()
 	rows, err := conn.db.QueryContext(ctx, query)
@@ -145,8 +156,8 @@ func (d *DatabaseService) FetchTable(connectionID, schema, table, where string) 
 	}
 
 	msg := fmt.Sprintf("%d rows fetched from %s.%s", len(resultRows), schema, table)
-	if len(resultRows) == 1000 {
-		msg += " (limit 1000)"
+	if rowLimit > 0 && len(resultRows) == rowLimit {
+		msg += fmt.Sprintf(" (limit %d)", rowLimit)
 	}
 
 	return QueryResult{

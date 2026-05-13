@@ -58,6 +58,66 @@ export class AddForeignKeyRequest {
     }
 }
 
+export class AppSettings {
+    /**
+     * "compact" | "normal" | "comfortable"
+     */
+    "rowDensity": string;
+
+    /**
+     * e.g. "NULL"
+     */
+    "nullText": string;
+
+    /**
+     * 12 | 13 | 14
+     */
+    "fontSize": number;
+
+    /**
+     * 0 = unlimited
+     */
+    "defaultRowLimit": number;
+    "queryTimeoutSec": number;
+    "confirmDropTable": boolean;
+    "confirmDeleteRows": boolean;
+
+    /** Creates a new AppSettings instance. */
+    constructor($$source: Partial<AppSettings> = {}) {
+        if (!("rowDensity" in $$source)) {
+            this["rowDensity"] = "";
+        }
+        if (!("nullText" in $$source)) {
+            this["nullText"] = "";
+        }
+        if (!("fontSize" in $$source)) {
+            this["fontSize"] = 0;
+        }
+        if (!("defaultRowLimit" in $$source)) {
+            this["defaultRowLimit"] = 0;
+        }
+        if (!("queryTimeoutSec" in $$source)) {
+            this["queryTimeoutSec"] = 0;
+        }
+        if (!("confirmDropTable" in $$source)) {
+            this["confirmDropTable"] = false;
+        }
+        if (!("confirmDeleteRows" in $$source)) {
+            this["confirmDeleteRows"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new AppSettings instance from a string or object.
+     */
+    static createFrom($$source: any = {}): AppSettings {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new AppSettings($$parsedSource as Partial<AppSettings>);
+    }
+}
+
 export class ColumnDef {
     "name": string;
     "dataType": string;
@@ -120,6 +180,9 @@ export class ConnectRequest {
     }
 }
 
+/**
+ * Connection is a live (or previously live) connection summary shown in the UI.
+ */
 export class Connection {
     "id": string;
     "name": string;
@@ -129,6 +192,7 @@ export class Connection {
     "database": string;
     "status": string;
     "lastUsed": string;
+    "connected": boolean;
 
     /** Creates a new Connection instance. */
     constructor($$source: Partial<Connection> = {}) {
@@ -155,6 +219,9 @@ export class Connection {
         }
         if (!("lastUsed" in $$source)) {
             this["lastUsed"] = "";
+        }
+        if (!("connected" in $$source)) {
+            this["connected"] = false;
         }
 
         Object.assign(this, $$source);
@@ -588,6 +655,42 @@ export class RowInsert {
             $$parsedSource["values"] = $$createField2_0($$parsedSource["values"]);
         }
         return new RowInsert($$parsedSource as Partial<RowInsert>);
+    }
+}
+
+/**
+ * SavedConnection is persisted to disk; it holds credentials.
+ */
+export class SavedConnection {
+    "id": string;
+    "name": string;
+    "driver": string;
+    "connectionString": string;
+
+    /** Creates a new SavedConnection instance. */
+    constructor($$source: Partial<SavedConnection> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("driver" in $$source)) {
+            this["driver"] = "";
+        }
+        if (!("connectionString" in $$source)) {
+            this["connectionString"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SavedConnection instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SavedConnection {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new SavedConnection($$parsedSource as Partial<SavedConnection>);
     }
 }
 

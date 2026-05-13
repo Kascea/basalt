@@ -8,6 +8,7 @@ export {
 
 export {
     AddForeignKeyRequest,
+    AppSettings,
     ColumnDef,
     ConnectRequest,
     Connection,
@@ -21,6 +22,7 @@ export {
     RowDelete,
     RowEdit,
     RowInsert,
+    SavedConnection,
     SchemaObject,
     SchemaObjectSummary,
     SequenceInfo

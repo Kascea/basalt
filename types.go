@@ -21,15 +21,25 @@ type ConnectRequest struct {
 	ConnectionString string `json:"connectionString"`
 }
 
+// SavedConnection is persisted to disk; it holds credentials.
+type SavedConnection struct {
+	ID               string `json:"id"`
+	Name             string `json:"name"`
+	Driver           string `json:"driver"`
+	ConnectionString string `json:"connectionString"`
+}
+
+// Connection is a live (or previously live) connection summary shown in the UI.
 type Connection struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Driver   string `json:"driver"`
-	User     string `json:"user"`
-	Host     string `json:"host"`
-	Database string `json:"database"`
-	Status   string `json:"status"`
-	LastUsed string `json:"lastUsed"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Driver    string `json:"driver"`
+	User      string `json:"user"`
+	Host      string `json:"host"`
+	Database  string `json:"database"`
+	Status    string `json:"status"`
+	LastUsed  string `json:"lastUsed"`
+	Connected bool   `json:"connected"`
 }
 
 // ── Schema types ──────────────────────────────────────────────────────────────
@@ -94,6 +104,18 @@ type RowDelete struct {
 type Introspector interface {
 	ListObjects(ctx context.Context, db *sql.DB) ([]SchemaObject, error)
 	ObjectStats(ctx context.Context, db *sql.DB) ([]SchemaObjectSummary, error)
+}
+
+// ── App settings ─────────────────────────────────────────────────────────────
+
+type AppSettings struct {
+	RowDensity       string `json:"rowDensity"`       // "compact" | "normal" | "comfortable"
+	NullText         string `json:"nullText"`          // e.g. "NULL"
+	FontSize         int    `json:"fontSize"`          // 12 | 13 | 14
+	DefaultRowLimit  int    `json:"defaultRowLimit"`   // 0 = unlimited
+	QueryTimeoutSec  int    `json:"queryTimeoutSec"`
+	ConfirmDropTable  bool   `json:"confirmDropTable"`
+	ConfirmDeleteRows bool   `json:"confirmDeleteRows"`
 }
 
 // ── Object operation types ────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { type Connection, type SchemaObject } from '../../bindings/basalt'
+import { type Connection, type SavedConnection, type SchemaObject } from '../../bindings/basalt'
 
 // ── Type metadata ────────────────────────────────────────────────────────────
 
@@ -24,13 +24,11 @@ const GROUP_ORDER = ['Tables', 'Views', 'Materialized Views', 'Sequences', 'Inde
 
 const OPENABLE_GROUPS = new Set(['Tables', 'Views', 'Materialized Views'])
 
-// Groups that link to a management view (→ action button)
 const MANAGED_KIND: Record<string, 'sequences' | 'indexes' | 'foreignkeys'> = {
   Sequences: 'sequences',
   Indexes: 'indexes',
   'Foreign Keys': 'foreignkeys',
 }
-
 
 function groupOrder(name: string) {
   const i = GROUP_ORDER.indexOf(name)
@@ -62,21 +60,38 @@ function groupByType(objects: SchemaObject[]): Array<{ groupName: string; items:
 
 // ── Component ────────────────────────────────────────────────────────────────
 
-interface ContextMenu {
+interface TableContextMenu {
+  kind: 'table'
   x: number
   y: number
   schema: string
   name: string
 }
 
+interface ConnContextMenu {
+  kind: 'connection'
+  x: number
+  y: number
+  id: string
+  connected: boolean
+}
+
+type ContextMenu = TableContextMenu | ConnContextMenu
+
 interface Props {
+  savedConnections: SavedConnection[]
   connections: Connection[]
   activeConnectionID: string
   objects: SchemaObject[]
   expandedConnections: Set<string>
   expandedSchemas: Set<string>
   filter: string
+  isConnecting: string | null
   onConnectionClick: (id: string) => void
+  onReconnect: (id: string) => void
+  onDisconnect: (id: string) => void
+  onDeleteSaved: (id: string) => void
+  onEditSaved: (conn: SavedConnection) => void
   onSchemaToggle: (schema: string) => void
   onFilterChange: (value: string) => void
   onRefresh: () => void
@@ -86,9 +101,9 @@ interface Props {
 }
 
 export function ConnectionTree({
-  connections, activeConnectionID, objects, expandedConnections, expandedSchemas,
-  filter, onConnectionClick, onSchemaToggle, onFilterChange, onRefresh,
-  onTableOpen, onTableOpenNewTab, onGroupOpen,
+  savedConnections, connections, activeConnectionID, objects, expandedConnections, expandedSchemas,
+  filter, isConnecting, onConnectionClick, onReconnect, onDisconnect, onDeleteSaved, onEditSaved,
+  onSchemaToggle, onFilterChange, onRefresh, onTableOpen, onTableOpenNewTab, onGroupOpen,
 }: Props) {
   const [activeSchema, setActiveSchema] = useState<string | null>(null)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
@@ -124,29 +139,46 @@ export function ConnectionTree({
     onSchemaToggle(schema)
   }
 
-  if (connections.length === 0) {
+  if (savedConnections.length === 0) {
     return <p className="tree-empty">No connections — click + to add one</p>
   }
 
   return (
     <>
-      {connections.map((conn) => {
-        const connExpanded = expandedConnections.has(conn.id)
-        const isActiveConn = conn.id === activeConnectionID
+      {savedConnections.map((saved) => {
+        const liveConn = connections.find((c) => c.id === saved.id)
+        const isConnected = !!liveConn
+        const isActive = saved.id === activeConnectionID
+        const connExpanded = expandedConnections.has(saved.id)
+        const connecting = isConnecting === saved.id
+
+        const handleConnClick = () => {
+          if (isConnected) {
+            onConnectionClick(saved.id)
+          } else {
+            onReconnect(saved.id)
+          }
+        }
 
         return (
-          <div key={conn.id} className="tree-section">
+          <div key={saved.id} className="tree-section">
             <button
-              className={`tree-node conn-node${isActiveConn ? ' is-active' : ''}`}
-              onClick={() => onConnectionClick(conn.id)}
+              className={`tree-node conn-node${isActive ? ' is-active' : ''}${!isConnected ? ' is-disconnected' : ''}`}
+              onClick={handleConnClick}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                setContextMenu({ kind: 'connection', x: e.clientX, y: e.clientY, id: saved.id, connected: isConnected })
+              }}
             >
-              <span className={`chevron expandable${connExpanded ? ' open' : ''}`} />
-              <span className="node-icon conn-icon">⬡</span>
-              <span className="node-label">{conn.name}</span>
-              <span className="driver-badge">{conn.driver}</span>
+              <span className={`chevron${isConnected ? ' expandable' : ''}${connExpanded ? ' open' : ''}`} />
+              <span className={`node-icon conn-icon${!isConnected ? ' conn-icon--off' : ''}`}>⬡</span>
+              <span className="node-label">{liveConn?.name ?? saved.name}</span>
+              <span className="driver-badge">{saved.driver}</span>
+              {connecting && <span className="conn-spinner" />}
+              {!isConnected && !connecting && <span className="conn-status-dot conn-status-dot--off" title="Disconnected" />}
             </button>
 
-            {connExpanded && (
+            {isConnected && connExpanded && (
               <div className="tree-children">
                 <div className="tree-filter-row">
                   <input
@@ -181,7 +213,6 @@ export function ConnectionTree({
 
                       {schemaExpanded && (
                         <div className="tree-children">
-                          {/* Foreign Keys — click opens view directly */}
                           {onGroupOpen && (
                             <button
                               className="tree-node type-group-node nav-group"
@@ -226,7 +257,7 @@ export function ConnectionTree({
                                         onContextMenu={(e) => {
                                           if (!isOpenable) return
                                           e.preventDefault()
-                                          setContextMenu({ x: e.clientX, y: e.clientY, schema: obj.schema, name: obj.name })
+                                          setContextMenu({ kind: 'table', x: e.clientX, y: e.clientY, schema: obj.schema, name: obj.name })
                                         }}
                                         title={obj.name}
                                       >
@@ -249,7 +280,7 @@ export function ConnectionTree({
         )
       })}
 
-      {contextMenu && (
+      {contextMenu?.kind === 'table' && (
         <div
           className="context-menu"
           style={{ left: contextMenu.x, top: contextMenu.y }}
@@ -260,6 +291,35 @@ export function ConnectionTree({
           </button>
           <button onClick={() => { onTableOpenNewTab(contextMenu.schema, contextMenu.name); setContextMenu(null) }}>
             Open in New Tab
+          </button>
+        </div>
+      )}
+
+      {contextMenu?.kind === 'connection' && (
+        <div
+          className="context-menu"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {contextMenu.connected ? (
+            <button onClick={() => { onDisconnect(contextMenu.id); setContextMenu(null) }}>
+              Disconnect
+            </button>
+          ) : (
+            <button onClick={() => { onReconnect(contextMenu.id); setContextMenu(null) }}>
+              Connect
+            </button>
+          )}
+          <button onClick={() => {
+            const saved = savedConnections.find((s) => s.id === contextMenu.id)
+            if (saved) onEditSaved(saved)
+            setContextMenu(null)
+          }}>
+            Edit
+          </button>
+          <div className="context-menu-separator" />
+          <button className="context-menu-danger" onClick={() => { onDeleteSaved(contextMenu.id); setContextMenu(null) }}>
+            Delete
           </button>
         </div>
       )}

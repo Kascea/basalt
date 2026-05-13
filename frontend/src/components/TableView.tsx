@@ -25,6 +25,7 @@ interface Props {
   onFilterChange: (expr: string) => void
   onDiscard: () => void
   onCommit: () => void
+  nullText?: string
 }
 
 export function TableView({
@@ -33,6 +34,7 @@ export function TableView({
   isLoading, isRefreshing, isCommitting,
   onCellChange, onNewCellChange, onAddRow, onRemoveNewRow, onDeleteRow,
   onRefresh, onFilterChange, onDiscard, onCommit,
+  nullText = 'NULL',
 }: Props) {
   const [sortColumn, setSortColumn] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection | null>(null)
@@ -91,6 +93,7 @@ export function TableView({
           onNewCellChange={onNewCellChange}
           onDeleteRow={onDeleteRow}
           onRemoveNewRow={onRemoveNewRow}
+          nullText={nullText}
           onSortChange={handleSortChange}
           onAddFilter={handleAddFilter}
           emptyMessage={result ? 'No rows returned' : 'Open a table from the sidebar'}
