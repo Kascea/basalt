@@ -90,7 +90,6 @@ func (d *DatabaseService) ListSavedConnections() []SavedConnection {
 // DeleteSavedConnection removes a saved connection from disk (does not disconnect if active).
 func (d *DatabaseService) DeleteSavedConnection(id string) error {
 	d.mu.Lock()
-	defer d.mu.Unlock()
 
 	filtered := d.saved[:0]
 	for _, s := range d.saved {
@@ -99,7 +98,13 @@ func (d *DatabaseService) DeleteSavedConnection(id string) error {
 		}
 	}
 	d.saved = filtered
-	return writeSavedConnections(d.saved)
+	err := writeSavedConnections(d.saved)
+	cb := d.onConnectionsChanged
+	d.mu.Unlock()
+	if cb != nil {
+		go cb()
+	}
+	return err
 }
 
 // UpdateSavedConnection updates the name and/or connection string of a saved connection.
@@ -145,14 +150,18 @@ func (d *DatabaseService) ListConnections() []Connection {
 // or creates a new one. Returns the stable ID. Must be called without the lock held.
 func (d *DatabaseService) upsertSaved(name string, driver Driver, connectionString string) string {
 	d.mu.Lock()
-	defer d.mu.Unlock()
 
 	for i, s := range d.saved {
 		if s.ConnectionString == connectionString {
-			// Update name in case it changed.
 			d.saved[i].Name = name
 			_ = writeSavedConnections(d.saved)
-			return s.ID
+			id := s.ID
+			cb := d.onConnectionsChanged
+			d.mu.Unlock()
+			if cb != nil {
+				go cb()
+			}
+			return id
 		}
 	}
 
@@ -164,6 +173,11 @@ func (d *DatabaseService) upsertSaved(name string, driver Driver, connectionStri
 		ConnectionString: connectionString,
 	})
 	_ = writeSavedConnections(d.saved)
+	cb := d.onConnectionsChanged
+	d.mu.Unlock()
+	if cb != nil {
+		go cb()
+	}
 	return id
 }
 

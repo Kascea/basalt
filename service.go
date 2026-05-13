@@ -7,10 +7,11 @@ import (
 )
 
 type DatabaseService struct {
-	mu          sync.Mutex
-	connections map[string]*openConnection
-	saved       []SavedConnection
-	settings    AppSettings
+	mu                   sync.Mutex
+	connections          map[string]*openConnection
+	saved                []SavedConnection
+	settings             AppSettings
+	onConnectionsChanged func()
 }
 
 type openConnection struct {

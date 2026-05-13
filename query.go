@@ -60,14 +60,11 @@ func (d *DatabaseService) ExecuteQuery(connectionID string, statement string) (Q
 		return QueryResult{}, err
 	}
 
-	stats, _ := introspectorFor(conn.driver).ObjectStats(ctx, conn.db)
-
 	return QueryResult{
-		Columns:     columns,
-		Rows:        resultRows,
-		DurationMS:  int(time.Since(started).Milliseconds()),
-		Message:     fmt.Sprintf("%d rows fetched", len(resultRows)),
-		ObjectStats: stats,
+		Columns:    columns,
+		Rows:       resultRows,
+		DurationMS: int(time.Since(started).Milliseconds()),
+		Message:    fmt.Sprintf("%d rows fetched", len(resultRows)),
 	}, nil
 }
 

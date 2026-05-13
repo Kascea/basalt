@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { Events } from '@wailsio/runtime'
 import { Sidebar } from './components/Sidebar'
 import { Workspace } from './components/Workspace'
 import { SettingsView } from './components/SettingsView'
@@ -55,6 +56,37 @@ function App() {
   const handleSettingsSave = (s: AppSettings) => {
     saveSettings(s).then(() => setSettingsDraft(null))
   }
+
+  // Keep a ref to the latest callbacks so the menu event listeners (registered
+  // once) always call the current versions without needing re-registration.
+  const menuRef = useRef({
+    openNewConnection: () => setShowConnectForm(true),
+    openSettings: () => setShowSettings(true),
+    refreshSchema: () => db.refreshObjects(),
+    runQuery: () => worksheet.runQuery(),
+    connectSaved: (id: string) => db.reconnect(id),
+    closeConnection: () => { if (db.activeConnectionID) db.disconnect(db.activeConnectionID) },
+  })
+  menuRef.current = {
+    openNewConnection: () => setShowConnectForm(true),
+    openSettings: () => setShowSettings(true),
+    refreshSchema: () => db.refreshObjects(),
+    runQuery: () => worksheet.runQuery(),
+    connectSaved: (id: string) => db.reconnect(id),
+    closeConnection: () => { if (db.activeConnectionID) db.disconnect(db.activeConnectionID) },
+  }
+
+  useEffect(() => {
+    const offs = [
+      Events.On('menu:new-connection', () => menuRef.current.openNewConnection()),
+      Events.On('menu:settings', () => menuRef.current.openSettings()),
+      Events.On('menu:refresh-schema', () => menuRef.current.refreshSchema()),
+      Events.On('menu:run-query', () => menuRef.current.runQuery()),
+      Events.On('menu:connect-saved', (e) => menuRef.current.connectSaved(e.data as string)),
+      Events.On('menu:close-connection', () => menuRef.current.closeConnection()),
+    ]
+    return () => offs.forEach((off) => off())
+  }, [])
 
   return (
     <main
