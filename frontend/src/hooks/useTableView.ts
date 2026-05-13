@@ -45,7 +45,7 @@ export function useTableView(connectionID: string, setStatus: (msg: string) => v
     setIsLoading(true)
     setStatus(`Loading ${schema}.${table}…`)
 
-    DatabaseService.FetchTable(connectionID, schema, table)
+    DatabaseService.FetchTable(connectionID, schema, table, '')
       .then((res) => {
         setResult(res)
         setRows(res.rows as RowRecord[])
@@ -149,7 +149,7 @@ export function useTableView(connectionID: string, setStatus: (msg: string) => v
         setDirtyCells({})
         setNewRows([])
         setPendingDeletes(new Set())
-        return DatabaseService.FetchTable(connectionID, activeTable.schema, activeTable.table)
+        return DatabaseService.FetchTable(connectionID, activeTable.schema, activeTable.table, '')
       })
       .then((res) => {
         setResult(res)

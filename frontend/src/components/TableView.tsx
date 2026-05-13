@@ -3,7 +3,7 @@ import { type QueryResult } from '../../bindings/basalt'
 import { type TableTarget, type RowRecord, type DirtyCells, type SortDirection } from '../types'
 import { GridToolbar } from './GridToolbar'
 import { FilterBar } from './FilterBar'
-import { DataGrid, buildFilter } from './DataGrid'
+import { DataGrid } from './DataGrid'
 
 interface Props {
   target: TableTarget
@@ -12,7 +12,9 @@ interface Props {
   newRows: RowRecord[]
   dirtyCells: DirtyCells
   pendingDeletes: Set<number>
+  filterExpr: string
   isLoading: boolean
+  isRefreshing: boolean
   isCommitting: boolean
   onCellChange: (rowIndex: number, column: string, value: string) => void
   onNewCellChange: (rowIndex: number, column: string, value: string) => void
@@ -20,24 +22,23 @@ interface Props {
   onRemoveNewRow: (newRowIndex: number) => void
   onDeleteRow: (rowIndex: number) => void
   onRefresh: () => void
+  onFilterChange: (expr: string) => void
   onDiscard: () => void
   onCommit: () => void
 }
 
 export function TableView({
   target, result, rows, newRows, dirtyCells, pendingDeletes,
-  isLoading, isCommitting,
+  filterExpr,
+  isLoading, isRefreshing, isCommitting,
   onCellChange, onNewCellChange, onAddRow, onRemoveNewRow, onDeleteRow,
-  onRefresh, onDiscard, onCommit,
+  onRefresh, onFilterChange, onDiscard, onCommit,
 }: Props) {
-  const [filterExpr, setFilterExpr] = useState('')
   const [sortColumn, setSortColumn] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection | null>(null)
 
   const columns = result?.columns ?? []
   const columnTypes = result?.columnTypes ?? []
-
-  const filterError = filterExpr.trim() !== '' && buildFilter(filterExpr, columns) === null
 
   const handleSortChange = (col: string, dir: SortDirection | null) => {
     setSortColumn(dir ? col : null)
@@ -45,10 +46,9 @@ export function TableView({
   }
 
   const handleAddFilter = (col: string) => {
-    setFilterExpr(prev => {
-      const snippet = `${col} = ''`
-      return prev.trim() ? `${prev.trim()} AND ${snippet}` : snippet
-    })
+    const snippet = `${col} = ''`
+    const next = filterExpr.trim() ? `${filterExpr.trim()} AND ${snippet}` : snippet
+    onFilterChange(next)
   }
 
   const label = `${target.schema}.${target.table}`
@@ -63,15 +63,17 @@ export function TableView({
         dirtyCount={dirtyCount}
         deleteCount={pendingDeletes.size}
         isCommitting={isCommitting}
+        isRefreshing={isRefreshing}
         onRefresh={onRefresh}
         onDiscard={onDiscard}
         onCommit={onCommit}
         onAddRow={onAddRow}
       />
+      <div className={`table-refresh-bar${isRefreshing ? ' active' : ''}`} />
       <FilterBar
         expr={filterExpr}
-        hasError={filterError}
-        onChange={setFilterExpr}
+        hasError={false}
+        onChange={onFilterChange}
       />
       {isLoading ? (
         <p className="empty-state centered">Loading {label}…</p>
@@ -83,7 +85,6 @@ export function TableView({
           newRows={newRows}
           dirtyCells={dirtyCells}
           pendingDeletes={pendingDeletes}
-          filterExpr={filterExpr}
           sortColumn={sortColumn}
           sortDirection={sortDirection}
           onCellChange={onCellChange}
@@ -92,7 +93,7 @@ export function TableView({
           onRemoveNewRow={onRemoveNewRow}
           onSortChange={handleSortChange}
           onAddFilter={handleAddFilter}
-          emptyMessage={result ? 'No rows match the filter' : 'Open a table from the sidebar'}
+          emptyMessage={result ? 'No rows returned' : 'Open a table from the sidebar'}
         />
       )}
     </div>

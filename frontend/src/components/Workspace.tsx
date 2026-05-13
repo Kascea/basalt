@@ -32,6 +32,7 @@ interface Props {
   onTableRemoveNewRow: (newRowIndex: number) => void
   onTableDeleteRow: (rowIndex: number) => void
   onTableRefresh: () => void
+  onTableFilterChange: (expr: string) => void
   onTableDiscard: () => void
   onTableCommit: () => void
   activeFkError: FKError | null
@@ -58,7 +59,7 @@ export function Workspace({
   activeTab, activeTableState,
   onTableCellChange, onTableNewCellChange, onTableAddRow,
   onTableRemoveNewRow, onTableDeleteRow,
-  onTableRefresh, onTableDiscard, onTableCommit,
+  onTableRefresh, onTableFilterChange, onTableDiscard, onTableCommit,
   activeFkError, onOpenFkTab,
   statusMessage, onStatus,
 }: Props) {
@@ -130,6 +131,7 @@ export function Workspace({
             dirtyCells={activeTableState.dirtyCells}
             pendingDeletes={activeTableState.pendingDeletes}
             isLoading={activeTableState.isLoading}
+            isRefreshing={activeTableState.isRefreshing}
             isCommitting={activeTableState.isCommitting}
             onCellChange={onTableCellChange}
             onNewCellChange={onTableNewCellChange}
@@ -137,6 +139,8 @@ export function Workspace({
             onRemoveNewRow={onTableRemoveNewRow}
             onDeleteRow={onTableDeleteRow}
             onRefresh={onTableRefresh}
+            filterExpr={activeTableState.filterExpr}
+            onFilterChange={onTableFilterChange}
             onDiscard={onTableDiscard}
             onCommit={onTableCommit}
           />

@@ -528,7 +528,7 @@ td input:focus {
 
 .table-view {
     display: grid;
-    grid-template-rows: 44px 34px 1fr;
+    grid-template-rows: 44px 2px 34px 1fr;
     height: 100%;
     min-height: 0;
 }
@@ -761,6 +761,15 @@ td input:focus {
     color: #e06060;
 }
 
+.filter-enter-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    opacity: 0.6;
+    flex-shrink: 0;
+    pointer-events: none;
+    user-select: none;
+}
+
 /* ── Sorted column header ── */
 
 th.col-sorted {
@@ -985,9 +994,13 @@ th.col-sorted .sort-indicator {
     gap: 5px;
 }
 
-.toolbar-btn-icon {
-    font-size: 13px;
-    line-height: 1;
+.toolbar-btn svg {
+    flex-shrink: 0;
+}
+
+/* Commit button: db + check overlap slightly */
+.toolbar-btn svg + svg {
+    margin-left: -3px;
 }
 
 .toolbar-sep {
@@ -995,6 +1008,34 @@ th.col-sorted .sort-indicator {
     height: 16px;
     background: var(--border);
     flex-shrink: 0;
+}
+
+.table-refresh-bar {
+    height: 2px;
+    flex-shrink: 0;
+    opacity: 0;
+}
+
+.table-refresh-bar.active {
+    opacity: 1;
+    background: linear-gradient(90deg, transparent 0%, var(--accent) 40%, var(--accent) 60%, transparent 100%);
+    background-size: 300% 100%;
+    animation: refresh-sweep 1.2s ease-in-out infinite;
+}
+
+@keyframes refresh-sweep {
+    0%   { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}
+
+@keyframes icon-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+.icon-spin {
+    animation: icon-spin 0.7s linear infinite;
+    display: inline-block;
 }
 
 /* ── Data grid ── */

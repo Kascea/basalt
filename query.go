@@ -67,19 +67,36 @@ func (d *DatabaseService) ExecuteQuery(connectionID string, statement string) (Q
 	}, nil
 }
 
-func (d *DatabaseService) FetchTable(connectionID, schema, table string) (QueryResult, error) {
+func validateWhereClause(where string) error {
+	for _, ch := range where {
+		if ch == ';' || ch == '\x00' {
+			return fmt.Errorf("filter may not contain semicolons or null bytes")
+		}
+	}
+	return nil
+}
+
+func (d *DatabaseService) FetchTable(connectionID, schema, table, where string) (QueryResult, error) {
 	conn, err := d.connection(connectionID)
 	if err != nil {
 		return QueryResult{}, err
 	}
 
+	trimmedWhere := strings.TrimSpace(where)
+	if trimmedWhere != "" {
+		if err := validateWhereClause(trimmedWhere); err != nil {
+			return QueryResult{}, err
+		}
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	query := fmt.Sprintf(
-		"SELECT ctid::text AS __rowid, * FROM %s.%s LIMIT 5000",
-		quoteIdent(schema), quoteIdent(table),
-	)
+	query := fmt.Sprintf("SELECT ctid::text AS __rowid, * FROM %s.%s", quoteIdent(schema), quoteIdent(table))
+	if trimmedWhere != "" {
+		query += " WHERE " + trimmedWhere
+	}
+	query += " LIMIT 1000"
 
 	started := time.Now()
 	rows, err := conn.db.QueryContext(ctx, query)
@@ -127,12 +144,17 @@ func (d *DatabaseService) FetchTable(connectionID, schema, table string) (QueryR
 		return QueryResult{}, err
 	}
 
+	msg := fmt.Sprintf("%d rows fetched from %s.%s", len(resultRows), schema, table)
+	if len(resultRows) == 1000 {
+		msg += " (limit 1000)"
+	}
+
 	return QueryResult{
 		Columns:     columns,
 		ColumnTypes: columnTypes,
 		Rows:        resultRows,
 		RowIDs:      rowIDs,
 		DurationMS:  int(time.Since(started).Milliseconds()),
-		Message:     fmt.Sprintf("%d rows fetched from %s.%s", len(resultRows), schema, table),
+		Message:     msg,
 	}, nil
 }

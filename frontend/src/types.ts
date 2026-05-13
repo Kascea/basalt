@@ -26,7 +26,9 @@ export interface TableState {
   newRows: RowRecord[]
   dirtyCells: DirtyCells
   pendingDeletes: Set<number>
+  filterExpr: string
   isLoading: boolean
+  isRefreshing: boolean
   isCommitting: boolean
   commitError: FKError | null
 }

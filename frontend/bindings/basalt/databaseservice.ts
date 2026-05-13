@@ -61,8 +61,8 @@ export function ExecuteQuery(connectionID: string, statement: string): $Cancella
     });
 }
 
-export function FetchTable(connectionID: string, schema: string, table: string): $CancellablePromise<$models.QueryResult> {
-    return $Call.ByID(60991664, connectionID, schema, table).then(($result: any) => {
+export function FetchTable(connectionID: string, schema: string, table: string, where: string): $CancellablePromise<$models.QueryResult> {
+    return $Call.ByID(60991664, connectionID, schema, table, where).then(($result: any) => {
         return $$createType1($result);
     });
 }

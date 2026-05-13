@@ -69,6 +69,7 @@ function App() {
         onTableRemoveNewRow={tableTabs.removeNewRow}
         onTableDeleteRow={tableTabs.markForDelete}
         onTableRefresh={tableTabs.refreshActiveTable}
+        onTableFilterChange={tableTabs.setFilterExpr}
         onTableDiscard={tableTabs.discardEdits}
         onTableCommit={tableTabs.commitEdits}
         activeFkError={activeFkError}

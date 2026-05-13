@@ -14,7 +14,9 @@ function emptyTableState(): TableState {
     newRows: [],
     dirtyCells: {},
     pendingDeletes: new Set(),
+    filterExpr: '',
     isLoading: true,
+    isRefreshing: false,
     isCommitting: false,
     commitError: null,
   }
@@ -57,13 +59,14 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
       [id]: { ...(prev[id] ?? emptyTableState()), ...patch },
     }))
 
-  const loadTable = (id: string, schema: string, table: string, prefill?: Record<string, string>) => {
+  const loadTable = (id: string, schema: string, table: string, prefill?: Record<string, string>, where?: string) => {
+    const filterExpr = where ?? tableStates[id]?.filterExpr ?? ''
     patchState(id, {
       isLoading: true, result: null, rows: [], newRows: [],
       dirtyCells: {}, pendingDeletes: new Set(), commitError: null,
     })
     setStatus(`Loading ${schema}.${table}…`)
-    DatabaseService.FetchTable(connectionID, schema, table)
+    DatabaseService.FetchTable(connectionID, schema, table, filterExpr)
       .then(res => {
         const newRows: RowRecord[] = prefill
           ? [Object.fromEntries(res.columns.map(col => [col, prefill[col] ?? '']))]
@@ -132,8 +135,36 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
   }
 
   const refreshActiveTable = () => {
-    if (activeTab.kind === 'table' && activeTab.table)
-      loadTable(activeTabId, activeTab.schema, activeTab.table)
+    if (activeTab.kind !== 'table' || !activeTab.table) return
+    const { schema, table } = activeTab
+    const id = activeTabId
+    const where = tableStates[id]?.filterExpr ?? ''
+    patchState(id, { isRefreshing: true })
+    DatabaseService.FetchTable(connectionID, schema, table, where)
+      .then(res => {
+        patchState(id, { result: res, rows: res.rows as RowRecord[], isRefreshing: false })
+        setStatus(res.message)
+      })
+      .catch(err => {
+        patchState(id, { isRefreshing: false })
+        setStatus(String(err))
+      })
+  }
+
+  const setFilterExpr = (expr: string) => {
+    if (activeTab.kind !== 'table' || !activeTab.table) return
+    const id = activeTabId
+    const { schema, table } = activeTab
+    patchState(id, { filterExpr: expr, isRefreshing: true })
+    DatabaseService.FetchTable(connectionID, schema, table, expr)
+      .then(res => {
+        patchState(id, { result: res, rows: res.rows as RowRecord[], isRefreshing: false })
+        setStatus(res.message)
+      })
+      .catch(err => {
+        patchState(id, { isRefreshing: false })
+        setStatus(String(err))
+      })
   }
 
   const updateCell = (rowIndex: number, column: string, value: string) =>
@@ -252,7 +283,7 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
         if (deletes.length > 0) parts.push(`${deletes.length} deleted`)
         setStatus(`Committed: ${parts.join(', ')}`)
         patchState(id, { dirtyCells: {}, newRows: [], pendingDeletes: new Set() })
-        return DatabaseService.FetchTable(connectionID, schema, table)
+        return DatabaseService.FetchTable(connectionID, schema, table, s.filterExpr)
       })
       .then((res: QueryResult) => {
         patchState(id, { result: res, rows: res.rows as RowRecord[] })
@@ -279,6 +310,7 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
     openGroupTab,
     closeTab,
     refreshActiveTable,
+    setFilterExpr,
     updateCell,
     updateNewCell,
     addNewRow,
