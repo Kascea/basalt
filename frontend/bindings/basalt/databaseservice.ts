@@ -38,6 +38,13 @@ export function CreateTable(connectionID: string, req: $models.CreateTableReques
     return $Call.ByID(3175590580, connectionID, req);
 }
 
+/**
+ * DeleteRows deletes rows by ctid inside a transaction.
+ */
+export function DeleteRows(connectionID: string, deletes: $models.RowDelete[]): $CancellablePromise<void> {
+    return $Call.ByID(1246682378, connectionID, deletes);
+}
+
 export function DropForeignKey(connectionID: string, schema: string, tableName: string, constraintName: string): $CancellablePromise<void> {
     return $Call.ByID(583134902, connectionID, schema, tableName, constraintName);
 }
@@ -69,45 +76,64 @@ export function FetchTable(connectionID: string, schema: string, table: string):
     });
 }
 
+/**
+ * GetNextSequenceValues finds columns with nextval() defaults and advances each
+ * sequence, returning a map of column name → next value. Callers should treat
+ * sequence gaps from discarded rows as acceptable (standard PostgreSQL behaviour).
+ */
+export function GetNextSequenceValues(connectionID: string, schema: string, table: string): $CancellablePromise<{ [_ in string]?: string }> {
+    return $Call.ByID(3281405202, connectionID, schema, table).then(($result: any) => {
+        return $$createType2($result);
+    });
+}
+
+/**
+ * InsertRows inserts new rows into a table inside a transaction.
+ */
+export function InsertRows(connectionID: string, inserts: $models.RowInsert[]): $CancellablePromise<void> {
+    return $Call.ByID(2045419812, connectionID, inserts);
+}
+
 export function ListConnections(): $CancellablePromise<$models.Connection[]> {
     return $Call.ByID(2064096669).then(($result: any) => {
-        return $$createType2($result);
+        return $$createType3($result);
     });
 }
 
 export function ListForeignKeys(connectionID: string, schema: string): $CancellablePromise<$models.ForeignKeyInfo[]> {
     return $Call.ByID(2559671936, connectionID, schema).then(($result: any) => {
-        return $$createType4($result);
+        return $$createType5($result);
     });
 }
 
 export function ListIndexes(connectionID: string, schema: string): $CancellablePromise<$models.IndexInfo[]> {
     return $Call.ByID(3901981548, connectionID, schema).then(($result: any) => {
-        return $$createType6($result);
+        return $$createType7($result);
     });
 }
 
 export function ListSchemaObjects(connectionID: string): $CancellablePromise<$models.SchemaObject[]> {
     return $Call.ByID(1127894517, connectionID).then(($result: any) => {
-        return $$createType8($result);
+        return $$createType9($result);
     });
 }
 
 export function ListSequences(connectionID: string, schema: string): $CancellablePromise<$models.SequenceInfo[]> {
     return $Call.ByID(2114707686, connectionID, schema).then(($result: any) => {
-        return $$createType10($result);
+        return $$createType11($result);
     });
 }
 
 // Private type creation functions
 const $$createType0 = $models.Connection.createFrom;
 const $$createType1 = $models.QueryResult.createFrom;
-const $$createType2 = $Create.Array($$createType0);
-const $$createType3 = $models.ForeignKeyInfo.createFrom;
-const $$createType4 = $Create.Array($$createType3);
-const $$createType5 = $models.IndexInfo.createFrom;
-const $$createType6 = $Create.Array($$createType5);
-const $$createType7 = $models.SchemaObject.createFrom;
-const $$createType8 = $Create.Array($$createType7);
-const $$createType9 = $models.SequenceInfo.createFrom;
-const $$createType10 = $Create.Array($$createType9);
+const $$createType2 = $Create.Map($Create.Any, $Create.Any);
+const $$createType3 = $Create.Array($$createType0);
+const $$createType4 = $models.ForeignKeyInfo.createFrom;
+const $$createType5 = $Create.Array($$createType4);
+const $$createType6 = $models.IndexInfo.createFrom;
+const $$createType7 = $Create.Array($$createType6);
+const $$createType8 = $models.SchemaObject.createFrom;
+const $$createType9 = $Create.Array($$createType8);
+const $$createType10 = $models.SequenceInfo.createFrom;
+const $$createType11 = $Create.Array($$createType10);

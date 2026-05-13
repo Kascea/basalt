@@ -123,11 +123,25 @@ input, textarea, select {
 }
 
 .brand-add {
+    display: flex;
+    align-items: center;
+    gap: 4px;
     margin-left: auto;
-    width: 26px;
-    height: 26px;
-    font-size: 16px;
-    line-height: 1;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 5px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+
+.brand-add:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border-color: var(--border-light);
 }
 
 /* ── Icon button ── */
@@ -525,7 +539,8 @@ td input:focus {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 0 16px 0 0;
+    min-height: 46px;
+    padding: 0 24px 0 0;
     border-bottom: 1px solid var(--border);
     background: var(--bg-panel);
     overflow: hidden;
@@ -963,6 +978,24 @@ th.col-sorted .sort-indicator {
     color: #fff;
 }
 
+.toolbar-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.toolbar-btn-icon {
+    font-size: 13px;
+    line-height: 1;
+}
+
+.toolbar-sep {
+    width: 1px;
+    height: 16px;
+    background: var(--border);
+    flex-shrink: 0;
+}
+
 /* ── Data grid ── */
 
 .data-grid {
@@ -1052,6 +1085,104 @@ tr:hover td.row-index {
     background: var(--bg-panel);
 }
 
+/* ── Row delete button ── */
+
+.row-delete-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin: 0 auto;
+    border-radius: 3px;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: transparent;
+    transition: background 0.1s, color 0.1s;
+}
+
+.row-delete-btn:hover {
+    background: rgba(210, 60, 60, 0.15);
+    color: #e06060;
+}
+
+.row-delete-btn-active {
+    color: #e06060;
+    background: rgba(210, 60, 60, 0.12);
+}
+
+.row-delete-btn-active:hover {
+    background: rgba(210, 60, 60, 0.25);
+    color: #e06060;
+}
+
+.row-delete-btn-new {
+    color: rgba(80, 180, 100, 0.6);
+}
+
+.row-delete-btn-new:hover {
+    background: rgba(210, 60, 60, 0.15);
+    color: #e06060;
+}
+
+/* ── Pending-delete row ── */
+
+tr.delete-row td {
+    background: rgba(210, 60, 60, 0.07);
+}
+
+tr.delete-row:hover td {
+    background: rgba(210, 60, 60, 0.11);
+}
+
+tr.delete-row td.row-index,
+tr.delete-row:hover td.row-index {
+    background: var(--bg-panel);
+}
+
+.delete-cell input {
+    color: var(--text-muted);
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+
+/* ── New row ── */
+
+tr.new-row td {
+    background: rgba(80, 180, 100, 0.07);
+}
+
+tr.new-row:hover td {
+    background: rgba(80, 180, 100, 0.12);
+}
+
+tr.new-row td.row-index,
+tr.new-row:hover td.row-index {
+    background: var(--bg-panel);
+    color: #50b464;
+    font-size: 14px;
+}
+
+.new-cell {
+    background: rgba(80, 180, 100, 0.07);
+}
+
+.new-cell input {
+    color: #50b464;
+}
+
+/* ── Type rejection flash ── */
+
+@keyframes cell-reject {
+    0%   { border-color: transparent; background: rgba(220, 60, 60, 0.0); }
+    20%  { border-color: rgba(220, 60, 60, 0.7); background: rgba(220, 60, 60, 0.15); }
+    100% { border-color: transparent; background: rgba(220, 60, 60, 0.0); }
+}
+
+.cell-rejected input {
+    animation: cell-reject 0.4s ease-out forwards;
+}
+
 /* ── Structure / Plan views ── */
 
 .structure-view,
@@ -1103,6 +1234,8 @@ tr:hover td.row-index {
     align-items: center;
     justify-content: space-between;
     padding: 0 14px;
+    height: 26px;
+    flex-shrink: 0;
     border-top: 1px solid var(--border);
     background: var(--bg-panel);
     color: var(--text-muted);
@@ -1120,6 +1253,32 @@ tr:hover td.row-index {
 .status-right {
     flex-shrink: 0;
     color: var(--teal);
+}
+
+.statusbar-error {
+    height: auto;
+    min-height: 40px;
+    padding: 10px 14px;
+    align-items: flex-start;
+    justify-content: flex-start;
+    background: rgba(200, 50, 50, 0.12);
+    border-top-color: rgba(200, 50, 50, 0.5);
+    color: #e07070;
+    font-size: 12px;
+    gap: 10px;
+}
+
+.status-error-icon {
+    flex-shrink: 0;
+    font-size: 11px;
+    margin-top: 1px;
+    opacity: 0.8;
+}
+
+.status-error-msg {
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 /* ── Modal ── */

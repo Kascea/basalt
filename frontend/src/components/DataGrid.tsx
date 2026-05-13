@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { type RowRecord, type DirtyCells, type SortDirection, cellKey } from '../types'
 
 // ── Expression evaluator ──────────────────────────────────────────────────────
@@ -64,34 +64,135 @@ export function buildFilter(expr: string, columns: string[]): FilterFn | null {
   }
 }
 
+// ── Column type helpers ───────────────────────────────────────────────────────
+
+const NUMERIC_TYPES = new Set([
+  'INT2', 'INT4', 'INT8', 'INT', 'INTEGER', 'SMALLINT', 'BIGINT',
+  'FLOAT4', 'FLOAT8', 'REAL', 'DOUBLE PRECISION',
+  'NUMERIC', 'DECIMAL', 'MONEY',
+  'OID', 'XID', 'CID',
+])
+
+const BOOL_TYPES = new Set(['BOOL', 'BOOLEAN'])
+
+function colCategory(dbType: string): 'numeric' | 'boolean' | 'text' {
+  const upper = dbType.toUpperCase()
+  if (NUMERIC_TYPES.has(upper)) return 'numeric'
+  if (BOOL_TYPES.has(upper)) return 'boolean'
+  return 'text'
+}
+
+function isKeyAllowed(key: string, category: 'numeric' | 'boolean' | 'text', currentValue: string): boolean {
+  if (category === 'text') return true
+  if (key.length > 1) return true
+  if (category === 'boolean') {
+    return ['t', 'f', 'T', 'F', '1', '0'].includes(key)
+  }
+  if (category === 'numeric') {
+    if (/[0-9]/.test(key)) return true
+    if (key === '-' && currentValue === '') return true
+    if (key === '.' && !currentValue.includes('.')) return true
+    if (key === 'e' && !currentValue.includes('e') && !currentValue.includes('E')) return true
+    return false
+  }
+  return true
+}
+
+// ── TypedCell ─────────────────────────────────────────────────────────────────
+
+interface TypedCellProps {
+  value: string
+  dbType: string
+  isDirty?: boolean
+  isNew?: boolean
+  isPendingDelete?: boolean
+  ariaLabel: string
+  onChange: (value: string) => void
+}
+
+function TypedCell({ value, dbType, isDirty, isNew, isPendingDelete, ariaLabel, onChange }: TypedCellProps) {
+  const category = colCategory(dbType)
+  const [rejected, setRejected] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const flashReject = useCallback(() => {
+    setRejected(true)
+    if (timerRef.current) clearTimeout(timerRef.current)
+    timerRef.current = setTimeout(() => setRejected(false), 400)
+  }, [])
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isKeyAllowed(e.key, category, e.currentTarget.value)) {
+      e.preventDefault()
+      flashReject()
+    }
+  }
+
+  const cellClass = [
+    isDirty ? 'dirty-cell' : '',
+    isNew ? 'new-cell' : '',
+    isPendingDelete ? 'delete-cell' : '',
+    rejected ? 'cell-rejected' : '',
+  ].filter(Boolean).join(' ') || undefined
+
+  return (
+    <td className={cellClass}>
+      <input
+        value={value}
+        onKeyDown={handleKeyDown}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label={ariaLabel}
+        inputMode={category === 'numeric' ? 'decimal' : undefined}
+        readOnly={isPendingDelete}
+        tabIndex={isPendingDelete ? -1 : undefined}
+      />
+    </td>
+  )
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 interface Props {
   columns: string[]
+  columnTypes: string[]
   rows: RowRecord[]
+  newRows: RowRecord[]
   dirtyCells: DirtyCells
+  pendingDeletes: Set<number>
   filterExpr?: string
   sortColumn?: string | null
   sortDirection?: SortDirection | null
   emptyMessage?: string
   onCellChange: (rowIndex: number, column: string, value: string) => void
+  onNewCellChange: (rowIndex: number, column: string, value: string) => void
+  onDeleteRow: (rowIndex: number) => void
+  onRemoveNewRow: (newRowIndex: number) => void
   onSortChange?: (column: string, direction: SortDirection | null) => void
   onAddFilter?: (column: string) => void
 }
 
 export function DataGrid({
   columns,
+  columnTypes,
   rows,
+  newRows,
   dirtyCells,
+  pendingDeletes,
   filterExpr = '',
   sortColumn,
   sortDirection,
   emptyMessage = 'No data',
   onCellChange,
+  onNewCellChange,
+  onDeleteRow,
+  onRemoveNewRow,
   onSortChange,
   onAddFilter,
 }: Props) {
   const [menuCol, setMenuCol] = useState<string | null>(null)
+  const [hoveredRow, setHoveredRow] = useState<number | null>(null)
 
   const closeMenu = () => setMenuCol(null)
 
@@ -187,26 +288,77 @@ export function DataGrid({
           </tr>
         </thead>
         <tbody>
-          {indexed.map(({ row, originalIndex }) => (
-            <tr key={originalIndex}>
-              <td className="row-index">{originalIndex + 1}</td>
-              {columns.map((col) => {
-                const isDirty = !!dirtyCells[cellKey(originalIndex, col)]
-                return (
-                  <td className={isDirty ? 'dirty-cell' : ''} key={col}>
-                    <input
+          {indexed.map(({ row, originalIndex }) => {
+            const isPendingDelete = pendingDeletes.has(originalIndex)
+            const isHovered = hoveredRow === originalIndex
+            const showDeleteBtn = isHovered || isPendingDelete
+            return (
+              <tr
+                key={originalIndex}
+                className={isPendingDelete ? 'delete-row' : ''}
+                onMouseEnter={() => setHoveredRow(originalIndex)}
+                onMouseLeave={() => setHoveredRow(null)}
+              >
+                <td className="row-index">
+                  {showDeleteBtn ? (
+                    <button
+                      className={`row-delete-btn${isPendingDelete ? ' row-delete-btn-active' : ''}`}
+                      title={isPendingDelete ? 'Undo delete' : 'Delete row'}
+                      onClick={() => onDeleteRow(originalIndex)}
+                    >
+                      ✕
+                    </button>
+                  ) : (
+                    originalIndex + 1
+                  )}
+                </td>
+                {columns.map((col, colIdx) => {
+                  const isDirty = !!dirtyCells[cellKey(originalIndex, col)]
+                  const dbType = columnTypes[colIdx] ?? 'TEXT'
+                  return (
+                    <TypedCell
+                      key={col}
                       value={row[col] ?? ''}
-                      onChange={(e) => onCellChange(originalIndex, col, e.target.value)}
-                      aria-label={`${col} row ${originalIndex + 1}`}
+                      dbType={dbType}
+                      isDirty={isDirty}
+                      isPendingDelete={isPendingDelete}
+                      ariaLabel={`${col} row ${originalIndex + 1}`}
+                      onChange={(v) => onCellChange(originalIndex, col, v)}
                     />
-                  </td>
+                  )
+                })}
+              </tr>
+            )
+          })}
+          {newRows.map((row, newIdx) => (
+            <tr key={`new-${newIdx}`} className="new-row">
+              <td className="row-index">
+                <button
+                  className="row-delete-btn row-delete-btn-new"
+                  title="Remove new row"
+                  onClick={() => onRemoveNewRow(newIdx)}
+                >
+                  ✕
+                </button>
+              </td>
+              {columns.map((col, colIdx) => {
+                const dbType = columnTypes[colIdx] ?? 'TEXT'
+                return (
+                  <TypedCell
+                    key={col}
+                    value={row[col] ?? ''}
+                    dbType={dbType}
+                    isNew
+                    ariaLabel={`${col} new row ${newIdx + 1}`}
+                    onChange={(v) => onNewCellChange(newIdx, col, v)}
+                  />
                 )
               })}
             </tr>
           ))}
         </tbody>
       </table>
-      {indexed.length === 0 && (
+      {indexed.length === 0 && newRows.length === 0 && (
         <p className="empty-state centered">{emptyMessage}</p>
       )}
     </div>

@@ -429,6 +429,7 @@ export class IndexInfo {
 
 export class QueryResult {
     "columns": string[];
+    "columnTypes": string[];
     "rows": { [_ in string]?: string }[];
     "rowIds": string[];
     "durationMs": number;
@@ -440,6 +441,9 @@ export class QueryResult {
     constructor($$source: Partial<QueryResult> = {}) {
         if (!("columns" in $$source)) {
             this["columns"] = [];
+        }
+        if (!("columnTypes" in $$source)) {
+            this["columnTypes"] = [];
         }
         if (!("rows" in $$source)) {
             this["rows"] = [];
@@ -468,27 +472,60 @@ export class QueryResult {
      */
     static createFrom($$source: any = {}): QueryResult {
         const $$createField0_0 = $$createType2;
-        const $$createField1_0 = $$createType4;
-        const $$createField2_0 = $$createType2;
-        const $$createField5_0 = $$createType6;
-        const $$createField6_0 = $$createType8;
+        const $$createField1_0 = $$createType2;
+        const $$createField2_0 = $$createType4;
+        const $$createField3_0 = $$createType2;
+        const $$createField6_0 = $$createType6;
+        const $$createField7_0 = $$createType8;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("columns" in $$parsedSource) {
             $$parsedSource["columns"] = $$createField0_0($$parsedSource["columns"]);
         }
+        if ("columnTypes" in $$parsedSource) {
+            $$parsedSource["columnTypes"] = $$createField1_0($$parsedSource["columnTypes"]);
+        }
         if ("rows" in $$parsedSource) {
-            $$parsedSource["rows"] = $$createField1_0($$parsedSource["rows"]);
+            $$parsedSource["rows"] = $$createField2_0($$parsedSource["rows"]);
         }
         if ("rowIds" in $$parsedSource) {
-            $$parsedSource["rowIds"] = $$createField2_0($$parsedSource["rowIds"]);
+            $$parsedSource["rowIds"] = $$createField3_0($$parsedSource["rowIds"]);
         }
         if ("plan" in $$parsedSource) {
-            $$parsedSource["plan"] = $$createField5_0($$parsedSource["plan"]);
+            $$parsedSource["plan"] = $$createField6_0($$parsedSource["plan"]);
         }
         if ("objectStats" in $$parsedSource) {
-            $$parsedSource["objectStats"] = $$createField6_0($$parsedSource["objectStats"]);
+            $$parsedSource["objectStats"] = $$createField7_0($$parsedSource["objectStats"]);
         }
         return new QueryResult($$parsedSource as Partial<QueryResult>);
+    }
+}
+
+export class RowDelete {
+    "schema": string;
+    "table": string;
+    "rowId": string;
+
+    /** Creates a new RowDelete instance. */
+    constructor($$source: Partial<RowDelete> = {}) {
+        if (!("schema" in $$source)) {
+            this["schema"] = "";
+        }
+        if (!("table" in $$source)) {
+            this["table"] = "";
+        }
+        if (!("rowId" in $$source)) {
+            this["rowId"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RowDelete instance from a string or object.
+     */
+    static createFrom($$source: any = {}): RowDelete {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new RowDelete($$parsedSource as Partial<RowDelete>);
     }
 }
 
@@ -526,6 +563,39 @@ export class RowEdit {
             $$parsedSource["changes"] = $$createField3_0($$parsedSource["changes"]);
         }
         return new RowEdit($$parsedSource as Partial<RowEdit>);
+    }
+}
+
+export class RowInsert {
+    "schema": string;
+    "table": string;
+    "values": { [_ in string]?: string };
+
+    /** Creates a new RowInsert instance. */
+    constructor($$source: Partial<RowInsert> = {}) {
+        if (!("schema" in $$source)) {
+            this["schema"] = "";
+        }
+        if (!("table" in $$source)) {
+            this["table"] = "";
+        }
+        if (!("values" in $$source)) {
+            this["values"] = {};
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RowInsert instance from a string or object.
+     */
+    static createFrom($$source: any = {}): RowInsert {
+        const $$createField2_0 = $$createType3;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("values" in $$parsedSource) {
+            $$parsedSource["values"] = $$createField2_0($$parsedSource["values"]);
+        }
+        return new RowInsert($$parsedSource as Partial<RowInsert>);
     }
 }
 

@@ -18,7 +18,9 @@ export {
     ForeignKeyInfo,
     IndexInfo,
     QueryResult,
+    RowDelete,
     RowEdit,
+    RowInsert,
     SchemaObject,
     SchemaObjectSummary,
     SequenceInfo

@@ -50,12 +50,25 @@ type SchemaObject struct {
 
 type QueryResult struct {
 	Columns     []string              `json:"columns"`
+	ColumnTypes []string              `json:"columnTypes"`
 	Rows        []map[string]string   `json:"rows"`
 	RowIDs      []string              `json:"rowIds"`
 	DurationMS  int                   `json:"durationMs"`
 	Message     string                `json:"message"`
 	Plan        []ExecutionPlanStep   `json:"plan"`
 	ObjectStats []SchemaObjectSummary `json:"objectStats"`
+}
+
+type RowInsert struct {
+	Schema string            `json:"schema"`
+	Table  string            `json:"table"`
+	Values map[string]string `json:"values"`
+}
+
+type RowDelete struct {
+	Schema string `json:"schema"`
+	Table  string `json:"table"`
+	RowID  string `json:"rowId"`
 }
 
 type RowEdit struct {
@@ -260,9 +273,17 @@ func (d *DatabaseService) FetchTable(connectionID, schema, table string) (QueryR
 	if err != nil {
 		return QueryResult{}, err
 	}
+	allColTypes, err := rows.ColumnTypes()
+	if err != nil {
+		return QueryResult{}, err
+	}
 
 	// allColumns[0] is __rowid; the rest are real columns.
 	columns := allColumns[1:]
+	columnTypes := make([]string, len(columns))
+	for i, ct := range allColTypes[1:] {
+		columnTypes[i] = ct.DatabaseTypeName()
+	}
 	resultRows := make([]map[string]string, 0)
 	rowIDs := make([]string, 0)
 
@@ -288,12 +309,60 @@ func (d *DatabaseService) FetchTable(connectionID, schema, table string) (QueryR
 	}
 
 	return QueryResult{
-		Columns:    columns,
-		Rows:       resultRows,
-		RowIDs:     rowIDs,
-		DurationMS: int(time.Since(started).Milliseconds()),
-		Message:    fmt.Sprintf("%d rows fetched from %s.%s", len(resultRows), schema, table),
+		Columns:     columns,
+		ColumnTypes: columnTypes,
+		Rows:        resultRows,
+		RowIDs:      rowIDs,
+		DurationMS:  int(time.Since(started).Milliseconds()),
+		Message:     fmt.Sprintf("%d rows fetched from %s.%s", len(resultRows), schema, table),
 	}, nil
+}
+
+// InsertRows inserts new rows into a table inside a transaction.
+func (d *DatabaseService) InsertRows(connectionID string, inserts []RowInsert) error {
+	conn, err := d.connection(connectionID)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	tx, err := conn.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback() //nolint:errcheck
+
+	for _, ins := range inserts {
+		if len(ins.Values) == 0 {
+			continue
+		}
+
+		cols := make([]string, 0, len(ins.Values))
+		placeholders := make([]string, 0, len(ins.Values))
+		args := make([]any, 0, len(ins.Values))
+		i := 1
+		for col, val := range ins.Values {
+			cols = append(cols, quoteIdent(col))
+			placeholders = append(placeholders, fmt.Sprintf("$%d", i))
+			args = append(args, val)
+			i++
+		}
+
+		query := fmt.Sprintf(
+			"INSERT INTO %s.%s (%s) VALUES (%s)",
+			quoteIdent(ins.Schema), quoteIdent(ins.Table),
+			strings.Join(cols, ", "),
+			strings.Join(placeholders, ", "),
+		)
+
+		if _, err := tx.ExecContext(ctx, query, args...); err != nil {
+			return fmt.Errorf("inserting row: %w", err)
+		}
+	}
+
+	return tx.Commit()
 }
 
 // CommitEdits applies a set of row edits as UPDATE statements inside a transaction.
@@ -339,6 +408,75 @@ func (d *DatabaseService) CommitEdits(connectionID string, edits []RowEdit) erro
 	}
 
 	return tx.Commit()
+}
+
+// DeleteRows deletes rows by ctid inside a transaction.
+func (d *DatabaseService) DeleteRows(connectionID string, deletes []RowDelete) error {
+	conn, err := d.connection(connectionID)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	tx, err := conn.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback() //nolint:errcheck
+
+	for _, del := range deletes {
+		query := fmt.Sprintf(
+			"DELETE FROM %s.%s WHERE ctid = $1::tid",
+			quoteIdent(del.Schema), quoteIdent(del.Table),
+		)
+		if _, err := tx.ExecContext(ctx, query, del.RowID); err != nil {
+			return fmt.Errorf("deleting row %s: %w", del.RowID, err)
+		}
+	}
+
+	return tx.Commit()
+}
+
+// GetNextSequenceValues finds columns with nextval() defaults and advances each
+// sequence, returning a map of column name → next value. Callers should treat
+// sequence gaps from discarded rows as acceptable (standard PostgreSQL behaviour).
+func (d *DatabaseService) GetNextSequenceValues(connectionID, schema, table string) (map[string]string, error) {
+	conn, err := d.connection(connectionID)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// Extract the sequence name from column_default (e.g. nextval('t_id_seq'::regclass))
+	// and immediately advance it. The POSIX regex [^']+ matches non-quote chars.
+	query := `
+		SELECT column_name,
+		       nextval(substring(column_default FROM '''([^'']+)''')::regclass)::text
+		FROM information_schema.columns
+		WHERE table_schema = $1
+		  AND table_name  = $2
+		  AND column_default LIKE 'nextval(%'
+		ORDER BY ordinal_position`
+
+	rows, err := conn.db.QueryContext(ctx, query, schema, table)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make(map[string]string)
+	for rows.Next() {
+		var col, val string
+		if err := rows.Scan(&col, &val); err != nil {
+			return nil, err
+		}
+		result[col] = val
+	}
+	return result, rows.Err()
 }
 
 // quoteIdent safely double-quotes a SQL identifier to prevent injection.

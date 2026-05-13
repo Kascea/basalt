@@ -56,9 +56,15 @@ export function SqlWorksheet({
         {activeTab === 'data' && (
           <DataGrid
             columns={result?.columns ?? []}
+            columnTypes={result?.columnTypes ?? []}
             rows={rows}
+            newRows={[]}
             dirtyCells={dirtyCells}
+            pendingDeletes={new Set()}
             onCellChange={onCellChange}
+            onNewCellChange={() => {}}
+            onDeleteRow={() => {}}
+            onRemoveNewRow={() => {}}
             emptyMessage={isRunning ? 'Running…' : 'Run a query to see results'}
           />
         )}

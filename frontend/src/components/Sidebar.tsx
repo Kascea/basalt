@@ -28,11 +28,10 @@ export function Sidebar({
         <div className="brand-mark">B</div>
         <span className="brand-name">Basalt</span>
         <button
-          className="icon-button brand-add"
-          title="New connection"
+          className="brand-add"
           onClick={onNewConnection}
         >
-          +
+          + Connect
         </button>
       </div>
 

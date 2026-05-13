@@ -23,13 +23,19 @@ interface Props {
   objects: SchemaObject[]
   tableResult: QueryResult | null
   tableRows: RowRecord[]
+  tableNewRows: RowRecord[]
   tableDirty: DirtyCells
+  tablePendingDeletes: Set<number>
   statusMessage: string
   onSqlChange: (sql: string) => void
   onRunQuery: () => void
   onQueryCellChange: (rowIndex: number, col: string, value: string) => void
   onQueryDiscard: () => void
   onTableCellChange: (rowIndex: number, col: string, value: string) => void
+  onTableNewCellChange: (rowIndex: number, col: string, value: string) => void
+  onTableAddRow: () => void
+  onTableRemoveNewRow: (newRowIndex: number) => void
+  onTableDeleteRow: (rowIndex: number) => void
   onTableRefresh: () => void
   onTableDiscard: () => void
   onTableCommit: () => void
@@ -50,10 +56,12 @@ function detailTabLabel(detail: ObjectDetail): string {
 export function Workspace({
   activeView, activeDetail, activeConnection, isRunning, isLoadingTable, isCommitting,
   sql, queryResult, queryRows, queryDirty, objects,
-  tableResult, tableRows, tableDirty,
+  tableResult, tableRows, tableNewRows, tableDirty, tablePendingDeletes,
   statusMessage,
   onSqlChange, onRunQuery, onQueryCellChange, onQueryDiscard,
-  onTableCellChange, onTableRefresh, onTableDiscard, onTableCommit,
+  onTableCellChange, onTableNewCellChange, onTableAddRow,
+  onTableRemoveNewRow, onTableDeleteRow,
+  onTableRefresh, onTableDiscard, onTableCommit,
   onViewChange, onDetailClose, onStatus,
 }: Props) {
   const connContext = activeConnection
@@ -123,10 +131,16 @@ export function Workspace({
             target={{ connectionID: activeDetail.connectionID, schema: activeDetail.schema, table: activeDetail.table! }}
             result={tableResult}
             rows={tableRows}
+            newRows={tableNewRows}
             dirtyCells={tableDirty}
+            pendingDeletes={tablePendingDeletes}
             isLoading={isLoadingTable}
             isCommitting={isCommitting}
             onCellChange={onTableCellChange}
+            onNewCellChange={onTableNewCellChange}
+            onAddRow={onTableAddRow}
+            onRemoveNewRow={onTableRemoveNewRow}
+            onDeleteRow={onTableDeleteRow}
             onRefresh={onTableRefresh}
             onDiscard={onTableDiscard}
             onCommit={onTableCommit}
