@@ -12,6 +12,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
@@ -358,6 +359,10 @@ func (d *DatabaseService) InsertRows(connectionID string, inserts []RowInsert) e
 		)
 
 		if _, err := tx.ExecContext(ctx, query, args...); err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Detail != "" {
+				return fmt.Errorf("inserting row: ERROR: %s\nDETAIL: %s", pgErr.Message, pgErr.Detail)
+			}
 			return fmt.Errorf("inserting row: %w", err)
 		}
 	}

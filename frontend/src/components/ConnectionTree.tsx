@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { type Connection, type SchemaObject } from '../../bindings/basalt'
 
 // ── Type metadata ────────────────────────────────────────────────────────────
@@ -62,6 +62,13 @@ function groupByType(objects: SchemaObject[]): Array<{ groupName: string; items:
 
 // ── Component ────────────────────────────────────────────────────────────────
 
+interface ContextMenu {
+  x: number
+  y: number
+  schema: string
+  name: string
+}
+
 interface Props {
   connections: Connection[]
   activeConnectionID: string
@@ -74,16 +81,25 @@ interface Props {
   onFilterChange: (value: string) => void
   onRefresh: () => void
   onTableOpen: (schema: string, table: string) => void
+  onTableOpenNewTab: (schema: string, table: string) => void
   onGroupOpen?: (schema: string, kind: 'sequences' | 'indexes' | 'foreignkeys') => void
 }
 
 export function ConnectionTree({
   connections, activeConnectionID, objects, expandedConnections, expandedSchemas,
   filter, onConnectionClick, onSchemaToggle, onFilterChange, onRefresh,
-  onTableOpen, onGroupOpen,
+  onTableOpen, onTableOpenNewTab, onGroupOpen,
 }: Props) {
   const [activeSchema, setActiveSchema] = useState<string | null>(null)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null)
+
+  useEffect(() => {
+    if (!contextMenu) return
+    const close = () => setContextMenu(null)
+    document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [contextMenu])
 
   const filteredObjects = useMemo(() => {
     const q = filter.trim().toLowerCase()
@@ -207,6 +223,11 @@ export function ConnectionTree({
                                         onClick={() => {
                                           if (isOpenable) onTableOpen(obj.schema, obj.name)
                                         }}
+                                        onContextMenu={(e) => {
+                                          if (!isOpenable) return
+                                          e.preventDefault()
+                                          setContextMenu({ x: e.clientX, y: e.clientY, schema: obj.schema, name: obj.name })
+                                        }}
                                         title={obj.name}
                                       >
                                         <span className="node-label">{obj.name}</span>
@@ -227,6 +248,21 @@ export function ConnectionTree({
           </div>
         )
       })}
+
+      {contextMenu && (
+        <div
+          className="context-menu"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button onClick={() => { onTableOpen(contextMenu.schema, contextMenu.name); setContextMenu(null) }}>
+            Open
+          </button>
+          <button onClick={() => { onTableOpenNewTab(contextMenu.schema, contextMenu.name); setContextMenu(null) }}>
+            Open in New Tab
+          </button>
+        </div>
+      )}
     </>
   )
 }

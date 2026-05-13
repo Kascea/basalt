@@ -1,14 +1,34 @@
+import type { QueryResult } from '../bindings/basalt'
+
 export type RowRecord = Record<string, string | undefined>
 
 export type SortDirection = 'asc' | 'desc'
 
-export type ObjectDetailKind = 'table' | 'sequences' | 'indexes' | 'foreignkeys'
+export type TabKind = 'worksheet' | 'table' | 'sequences' | 'indexes' | 'foreignkeys'
 
-export interface ObjectDetail {
-  kind: ObjectDetailKind
+export interface Tab {
+  id: string
+  kind: TabKind
   connectionID: string
   schema: string
   table?: string
+}
+
+export interface FKError {
+  column: string
+  value: string
+  referencedTable: string
+}
+
+export interface TableState {
+  result: QueryResult | null
+  rows: RowRecord[]
+  newRows: RowRecord[]
+  dirtyCells: DirtyCells
+  pendingDeletes: Set<number>
+  isLoading: boolean
+  isCommitting: boolean
+  commitError: FKError | null
 }
 export type DirtyCells = Record<string, boolean>
 

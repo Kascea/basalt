@@ -1,5 +1,5 @@
 import { type Connection, type QueryResult, type SchemaObject } from '../../bindings/basalt'
-import { type ObjectDetail, type RowRecord, type DirtyCells } from '../types'
+import { type Tab, type TableState, type RowRecord, type DirtyCells, type FKError } from '../types'
 import { SqlWorksheet } from './SqlWorksheet'
 import { TableView } from './TableView'
 import { SequenceView } from './SequenceView'
@@ -7,30 +7,24 @@ import { IndexView } from './IndexView'
 import { ForeignKeyView } from './ForeignKeyView'
 import { StatusBar } from './StatusBar'
 
-type ActiveView = 'worksheet' | 'detail'
-
 interface Props {
-  activeView: ActiveView
-  activeDetail: ObjectDetail | null
+  tabs: Tab[]
+  activeTabId: string
+  onTabClick: (id: string) => void
+  onTabClose: (id: string) => void
   activeConnection: Connection | undefined
   isRunning: boolean
-  isLoadingTable: boolean
-  isCommitting: boolean
   sql: string
   queryResult: QueryResult | null
   queryRows: RowRecord[]
   queryDirty: DirtyCells
   objects: SchemaObject[]
-  tableResult: QueryResult | null
-  tableRows: RowRecord[]
-  tableNewRows: RowRecord[]
-  tableDirty: DirtyCells
-  tablePendingDeletes: Set<number>
-  statusMessage: string
   onSqlChange: (sql: string) => void
   onRunQuery: () => void
   onQueryCellChange: (rowIndex: number, col: string, value: string) => void
   onQueryDiscard: () => void
+  activeTab: Tab
+  activeTableState: TableState | null
   onTableCellChange: (rowIndex: number, col: string, value: string) => void
   onTableNewCellChange: (rowIndex: number, col: string, value: string) => void
   onTableAddRow: () => void
@@ -39,71 +33,71 @@ interface Props {
   onTableRefresh: () => void
   onTableDiscard: () => void
   onTableCommit: () => void
-  onViewChange: (view: ActiveView) => void
-  onDetailClose: () => void
+  activeFkError: FKError | null
+  onOpenFkTab: () => void
+  statusMessage: string
   onStatus: (msg: string) => void
 }
 
-function detailTabLabel(detail: ObjectDetail): string {
-  switch (detail.kind) {
-    case 'table': return detail.table ?? detail.schema
-    case 'sequences': return `${detail.schema} · Sequences`
-    case 'indexes': return `${detail.schema} · Indexes`
-    case 'foreignkeys': return `${detail.schema} · Foreign Keys`
+function tabLabel(tab: Tab): string {
+  switch (tab.kind) {
+    case 'worksheet': return 'Worksheet'
+    case 'table': return `${tab.schema}.${tab.table}`
+    case 'sequences': return `${tab.schema} · Sequences`
+    case 'indexes': return `${tab.schema} · Indexes`
+    case 'foreignkeys': return `${tab.schema} · Foreign Keys`
   }
 }
 
 export function Workspace({
-  activeView, activeDetail, activeConnection, isRunning, isLoadingTable, isCommitting,
+  tabs, activeTabId, onTabClick, onTabClose,
+  activeConnection, isRunning,
   sql, queryResult, queryRows, queryDirty, objects,
-  tableResult, tableRows, tableNewRows, tableDirty, tablePendingDeletes,
-  statusMessage,
   onSqlChange, onRunQuery, onQueryCellChange, onQueryDiscard,
+  activeTab, activeTableState,
   onTableCellChange, onTableNewCellChange, onTableAddRow,
   onTableRemoveNewRow, onTableDeleteRow,
   onTableRefresh, onTableDiscard, onTableCommit,
-  onViewChange, onDetailClose, onStatus,
+  activeFkError, onOpenFkTab,
+  statusMessage, onStatus,
 }: Props) {
   const connContext = activeConnection
     ? `${activeConnection.user || 'user'}@${activeConnection.host || 'host'}/${activeConnection.database || 'db'}`
     : 'Not connected'
 
-  const activeDurationMs = activeView === 'worksheet'
+  const activeDurationMs = activeTab.kind === 'worksheet'
     ? queryResult?.durationMs
-    : tableResult?.durationMs
+    : activeTableState?.result?.durationMs
 
   return (
     <section className="workspace">
       <header className="topbar">
         <div className="topbar-tabs">
-          <button
-            className={`ws-tab${activeView === 'worksheet' ? ' active' : ''}`}
-            onClick={() => onViewChange('worksheet')}
-          >
-            Worksheet
-          </button>
-          {activeDetail && (
+          {tabs.map(tab => (
             <button
-              className={`ws-tab${activeView === 'detail' ? ' active' : ''}`}
-              onClick={() => onViewChange('detail')}
+              key={tab.id}
+              className={`ws-tab${tab.id === activeTabId ? ' active' : ''}`}
+              onClick={() => onTabClick(tab.id)}
             >
-              {detailTabLabel(activeDetail)}
-              <span
-                className="tab-close"
-                role="button"
-                aria-label="Close tab"
-                onClick={(e) => { e.stopPropagation(); onDetailClose() }}
-              >
-                ✕
-              </span>
+              {tabLabel(tab)}
+              {tab.kind !== 'worksheet' && (
+                <span
+                  className="tab-close"
+                  role="button"
+                  aria-label="Close tab"
+                  onClick={(e) => { e.stopPropagation(); onTabClose(tab.id) }}
+                >
+                  ✕
+                </span>
+              )}
             </button>
-          )}
+          ))}
         </div>
 
         <div className="topbar-context">{connContext}</div>
 
         <div className="topbar-actions">
-          {activeView === 'worksheet' && (
+          {activeTab.kind === 'worksheet' && (
             <button className="run-btn" onClick={onRunQuery} disabled={isRunning}>
               ▶ {isRunning ? 'Running…' : 'Run'}
             </button>
@@ -112,7 +106,7 @@ export function Workspace({
       </header>
 
       <div className="workspace-body">
-        {activeView === 'worksheet' && (
+        {activeTab.kind === 'worksheet' && (
           <SqlWorksheet
             sql={sql}
             result={queryResult}
@@ -126,16 +120,16 @@ export function Workspace({
           />
         )}
 
-        {activeView === 'detail' && activeDetail?.kind === 'table' && (
+        {activeTab.kind === 'table' && activeTableState && (
           <TableView
-            target={{ connectionID: activeDetail.connectionID, schema: activeDetail.schema, table: activeDetail.table! }}
-            result={tableResult}
-            rows={tableRows}
-            newRows={tableNewRows}
-            dirtyCells={tableDirty}
-            pendingDeletes={tablePendingDeletes}
-            isLoading={isLoadingTable}
-            isCommitting={isCommitting}
+            target={{ connectionID: activeTab.connectionID, schema: activeTab.schema, table: activeTab.table! }}
+            result={activeTableState.result}
+            rows={activeTableState.rows}
+            newRows={activeTableState.newRows}
+            dirtyCells={activeTableState.dirtyCells}
+            pendingDeletes={activeTableState.pendingDeletes}
+            isLoading={activeTableState.isLoading}
+            isCommitting={activeTableState.isCommitting}
             onCellChange={onTableCellChange}
             onNewCellChange={onTableNewCellChange}
             onAddRow={onTableAddRow}
@@ -147,32 +141,37 @@ export function Workspace({
           />
         )}
 
-        {activeView === 'detail' && activeDetail?.kind === 'sequences' && (
+        {activeTab.kind === 'sequences' && (
           <SequenceView
-            connectionID={activeDetail.connectionID}
-            schema={activeDetail.schema}
+            connectionID={activeTab.connectionID}
+            schema={activeTab.schema}
             onStatus={onStatus}
           />
         )}
 
-        {activeView === 'detail' && activeDetail?.kind === 'indexes' && (
+        {activeTab.kind === 'indexes' && (
           <IndexView
-            connectionID={activeDetail.connectionID}
-            schema={activeDetail.schema}
+            connectionID={activeTab.connectionID}
+            schema={activeTab.schema}
             onStatus={onStatus}
           />
         )}
 
-        {activeView === 'detail' && activeDetail?.kind === 'foreignkeys' && (
+        {activeTab.kind === 'foreignkeys' && (
           <ForeignKeyView
-            connectionID={activeDetail.connectionID}
-            schema={activeDetail.schema}
+            connectionID={activeTab.connectionID}
+            schema={activeTab.schema}
             onStatus={onStatus}
           />
         )}
       </div>
 
-      <StatusBar message={statusMessage} durationMs={activeDurationMs} />
+      <StatusBar
+        message={statusMessage}
+        durationMs={activeDurationMs}
+        fkError={activeFkError}
+        onOpenFkTab={onOpenFkTab}
+      />
     </section>
   )
 }

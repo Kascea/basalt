@@ -14,13 +14,14 @@ interface Props {
   onFilterChange: (value: string) => void
   onRefresh: () => void
   onTableOpen: (schema: string, table: string) => void
+  onTableOpenNewTab: (schema: string, table: string) => void
   onGroupOpen?: (schema: string, kind: 'sequences' | 'indexes' | 'foreignkeys') => void
 }
 
 export function Sidebar({
   connections, activeConnectionID, objects, expandedConnections, expandedSchemas,
   filter, onNewConnection, onConnectionClick, onSchemaToggle, onFilterChange, onRefresh,
-  onTableOpen, onGroupOpen,
+  onTableOpen, onTableOpenNewTab, onGroupOpen,
 }: Props) {
   return (
     <aside className="sidebar">
@@ -48,6 +49,7 @@ export function Sidebar({
           onFilterChange={onFilterChange}
           onRefresh={onRefresh}
           onTableOpen={onTableOpen}
+          onTableOpenNewTab={onTableOpenNewTab}
           onGroupOpen={onGroupOpen}
         />
       </div>

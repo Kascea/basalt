@@ -5,36 +5,25 @@ import { Modal } from './components/Modal'
 import { ConnectForm } from './components/ConnectForm'
 import { useDatabase } from './hooks/useDatabase'
 import { useWorksheet } from './hooks/useWorksheet'
-import { useTableView } from './hooks/useTableView'
-import { type ObjectDetail } from './types'
-
-type ActiveView = 'worksheet' | 'detail'
+import { useTableTabs } from './hooks/useTableTabs'
 
 function App() {
   const [statusMessage, setStatusMessage] = useState('Not connected')
   const [showConnectForm, setShowConnectForm] = useState(false)
-  const [activeView, setActiveView] = useState<ActiveView>('worksheet')
-  const [activeDetail, setActiveDetail] = useState<ObjectDetail | null>(null)
 
   const db = useDatabase(setStatusMessage)
   const worksheet = useWorksheet(db.activeConnectionID, setStatusMessage)
-  const tableView = useTableView(db.activeConnectionID, setStatusMessage)
+  const tableTabs = useTableTabs(db.activeConnectionID, setStatusMessage)
 
-  const handleTableOpen = (schema: string, table: string) => {
-    tableView.openTable(schema, table)
-    setActiveDetail({ kind: 'table', connectionID: db.activeConnectionID, schema, table })
-    setActiveView('detail')
-  }
+  const activeFkError = tableTabs.activeTableState?.commitError ?? null
 
-  const handleGroupOpen = (schema: string, kind: 'sequences' | 'indexes' | 'foreignkeys') => {
-    setActiveDetail({ kind, connectionID: db.activeConnectionID, schema })
-    setActiveView('detail')
-  }
-
-  const handleDetailClose = () => {
-    tableView.closeTable()
-    setActiveDetail(null)
-    setActiveView('worksheet')
+  const handleOpenFkTab = () => {
+    if (!activeFkError) return
+    tableTabs.openTableTabWithPrefill(
+      tableTabs.activeTab.schema,
+      activeFkError.referencedTable,
+      { [activeFkError.column]: activeFkError.value },
+    )
   }
 
   return (
@@ -51,42 +40,40 @@ function App() {
         onSchemaToggle={db.toggleSchema}
         onFilterChange={db.setFilter}
         onRefresh={db.refreshObjects}
-        onTableOpen={handleTableOpen}
-        onGroupOpen={handleGroupOpen}
+        onTableOpen={(schema, table) => tableTabs.openTableTab(schema, table, false)}
+        onTableOpenNewTab={(schema, table) => tableTabs.openTableTab(schema, table, true)}
+        onGroupOpen={tableTabs.openGroupTab}
       />
 
       <Workspace
-        activeView={activeView}
-        activeDetail={activeDetail}
+        tabs={tableTabs.tabs}
+        activeTabId={tableTabs.activeTabId}
+        onTabClick={tableTabs.setActiveTab}
+        onTabClose={tableTabs.closeTab}
         activeConnection={db.activeConnection}
         isRunning={worksheet.isRunning}
-        isLoadingTable={tableView.isLoading}
-        isCommitting={tableView.isCommitting}
         sql={worksheet.sql}
         queryResult={worksheet.result}
         queryRows={worksheet.rows}
         queryDirty={worksheet.dirtyCells}
         objects={db.objects}
-        tableResult={tableView.result}
-        tableRows={tableView.rows}
-        tableNewRows={tableView.newRows}
-        tableDirty={tableView.dirtyCells}
-        tablePendingDeletes={tableView.pendingDeletes}
-        statusMessage={statusMessage}
         onSqlChange={worksheet.setSql}
         onRunQuery={worksheet.runQuery}
         onQueryCellChange={worksheet.updateCell}
         onQueryDiscard={worksheet.discardEdits}
-        onTableCellChange={tableView.updateCell}
-        onTableNewCellChange={tableView.updateNewCell}
-        onTableAddRow={tableView.addNewRow}
-        onTableRemoveNewRow={tableView.removeNewRow}
-        onTableDeleteRow={tableView.markForDelete}
-        onTableRefresh={tableView.refreshTable}
-        onTableDiscard={tableView.discardEdits}
-        onTableCommit={tableView.commitEdits}
-        onViewChange={setActiveView}
-        onDetailClose={handleDetailClose}
+        activeTableState={tableTabs.activeTableState}
+        activeTab={tableTabs.activeTab}
+        onTableCellChange={tableTabs.updateCell}
+        onTableNewCellChange={tableTabs.updateNewCell}
+        onTableAddRow={tableTabs.addNewRow}
+        onTableRemoveNewRow={tableTabs.removeNewRow}
+        onTableDeleteRow={tableTabs.markForDelete}
+        onTableRefresh={tableTabs.refreshActiveTable}
+        onTableDiscard={tableTabs.discardEdits}
+        onTableCommit={tableTabs.commitEdits}
+        activeFkError={activeFkError}
+        onOpenFkTab={handleOpenFkTab}
+        statusMessage={statusMessage}
         onStatus={setStatusMessage}
       />
 
@@ -100,8 +87,6 @@ function App() {
           />
         </Modal>
       )}
-
-
     </main>
   )
 }
