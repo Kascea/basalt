@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useResizeDrag } from '../hooks/useResizeDrag'
 import { type QueryResult, type SchemaObject } from '../../bindings/basalt/db'
 import { type RowRecord, type DirtyCells } from '../types'
 import { DataGrid } from './DataGrid'
@@ -27,13 +28,16 @@ export function SqlWorksheet({
   onSqlChange, onCellChange, onDiscard,
 }: Props) {
   const [activeTab, setActiveTab] = useState<ResultTab>('data')
+  const [editorHeight, startEditorDrag] = useResizeDrag(280, 80, 800)
   const dirtyCount = Object.keys(dirtyCells).length
 
   return (
     <div className="sql-worksheet">
-      <div className="editor-area">
+      <div className="editor-area" style={{ height: editorHeight }}>
         <SqlEditor value={sql} connectionId={connectionId} driver={driver} objects={objects} onChange={onSqlChange} />
       </div>
+
+      <div className="resize-handle resize-handle--v" onMouseDown={e => startEditorDrag(e, 'y')} />
 
       <div className="results">
         <div className="results-toolbar">

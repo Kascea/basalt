@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 import type { Connection, QueryResult, SchemaObject } from '../../bindings/basalt/db'
-import type { Tab, TableState, WorksheetTabState, RowRecord, DirtyCells, FKError } from '../types'
+import type { Tab, TableState, WorksheetTabState, RowRecord, DirtyCells, FKError, LogEntry } from '../types'
 
 export interface WorkspaceSession {
   connection: {
@@ -50,7 +50,7 @@ export interface WorkspaceSession {
   }
 
   status: {
-    message: string
+    log: LogEntry[]
     set: (msg: string) => void
     activeFkError: FKError | null
     openFkTab: () => void

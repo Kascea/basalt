@@ -50,5 +50,12 @@ export interface TableTarget {
   table: string
 }
 
+export interface LogEntry {
+  id: number
+  ts: string
+  text: string
+  isError: boolean
+}
+
 // cellKey lives in rowEdits.ts; re-exported here so existing imports keep working.
 export { cellKey } from './rowEdits'

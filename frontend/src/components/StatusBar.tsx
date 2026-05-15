@@ -1,57 +1,81 @@
-import { type FKError } from '../types'
+import { useEffect, useRef } from 'react'
+import type { LogEntry, FKError } from '../types'
 
 interface Props {
-  message: string
+  entries: LogEntry[]
   durationMs?: number
   fkError?: FKError | null
   onOpenFkTab?: () => void
 }
 
-function parseMessage(raw: string): { isError: boolean; text: string } {
-  if (!raw.startsWith('Error:')) return { isError: false, text: raw }
-
-  const rest = raw.slice('Error:'.length).trim()
+function extractErrorText(raw: string): string {
+  const rest = raw.startsWith('Error:') ? raw.slice('Error:'.length).trim() : raw
+  let msg = rest
   try {
     const parsed = JSON.parse(rest)
-    const msg: string = parsed.message ?? rest
-    const dbIdx = msg.indexOf('ERROR:')
-    return { isError: true, text: dbIdx !== -1 ? msg.slice(dbIdx) : msg }
-  } catch {
-    return { isError: true, text: rest }
-  }
+    if (parsed.message) msg = parsed.message
+  } catch { /* use rest as-is */ }
+
+  // Locate the db error portion if wrapped in extra context
+  const dbIdx = msg.indexOf('ERROR:')
+  if (dbIdx !== -1) msg = msg.slice(dbIdx)
+
+  // Strip redundant leading "ERROR: " — the red styling already signals an error
+  msg = msg.replace(/^ERROR:\s*/i, '')
+
+  // Reformat SQLSTATE code from "(SQLSTATE 42703)" → " [42703]"
+  msg = msg.replace(/\s*\(SQLSTATE\s+([^)]+)\)/, ' [$1]')
+
+  return msg.trim()
 }
 
-export function StatusBar({ message, durationMs, fkError, onOpenFkTab }: Props) {
-  const { isError, text } = parseMessage(message)
+function parseEntry(entry: LogEntry): { isError: boolean; text: string } {
+  if (!entry.isError) return { isError: false, text: entry.text }
+  return { isError: true, text: extractErrorText(entry.text) }
+}
 
-  if (isError && fkError) {
-    return (
-      <div className="statusbar statusbar-error">
-        <span className="status-error-icon">✕</span>
-        <span className="status-error-msg">
-          Foreign key violation: <strong>{fkError.column}</strong> = <strong>{fkError.value}</strong> not found in{' '}
-          <button className="statusbar-fk-link" onClick={onOpenFkTab}>
-            {fkError.referencedTable} ↗
-          </button>
-          {' '}— click to open and create the missing row.
-        </span>
-      </div>
-    )
-  }
+export function StatusBar({ entries, durationMs, fkError, onOpenFkTab }: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null)
 
-  if (isError) {
-    return (
-      <div className="statusbar statusbar-error">
-        <span className="status-error-icon">✕</span>
-        <span className="status-error-msg">{text}</span>
-      </div>
-    )
-  }
+  useEffect(() => {
+    const el = scrollRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [entries])
+
+  const last = entries[entries.length - 1]
+  const lastIsError = last?.isError ?? false
 
   return (
-    <div className="statusbar">
-      <span className="status-msg">{message}</span>
-      {durationMs !== undefined && <span className="status-right">{durationMs}ms</span>}
+    <div className={`statusbar-log${lastIsError ? ' statusbar-log--error' : ''}`} ref={scrollRef}>
+      {entries.map((entry, i) => {
+        const { isError, text } = parseEntry(entry)
+        const isLast = i === entries.length - 1
+
+        if (isError && isLast && fkError) {
+          return (
+            <div key={entry.id} className="statusbar-log-entry statusbar-log-entry--error">
+              <span className="statusbar-log-ts">{entry.ts}</span>
+              <span>
+                Foreign key violation: <strong>{fkError.column}</strong> = <strong>{fkError.value}</strong> not found in{' '}
+                <button className="statusbar-fk-link" onClick={onOpenFkTab}>
+                  {fkError.referencedTable} ↗
+                </button>
+                {' '}— click to open and create the missing row.
+              </span>
+            </div>
+          )
+        }
+
+        return (
+          <div key={entry.id} className={`statusbar-log-entry${isError ? ' statusbar-log-entry--error' : ''}`}>
+            <span className="statusbar-log-ts">{entry.ts}</span>
+            <span className="statusbar-log-text">{text}</span>
+            {isLast && durationMs !== undefined && (
+              <span className="statusbar-log-duration">{durationMs}ms</span>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }

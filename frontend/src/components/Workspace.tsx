@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { useResizeDrag } from '../hooks/useResizeDrag'
 import { Window, Dialogs } from '@wailsio/runtime'
 import { Pin, X, Save } from 'lucide-react'
 import { SqlWorksheet } from './SqlWorksheet'
@@ -45,7 +46,9 @@ export function Workspace({ onCommit }: Props) {
     isRunning, result: queryResult, rows: queryRows, dirtyCells: queryDirty,
     sql, setSql, run: runQuery, updateCell: updateQueryCell, discard: discardQueryEdits,
   } = worksheet
-  const { message: statusMessage, set: setStatus, activeFkError, openFkTab } = status
+  const { log: statusLog, set: setStatus, activeFkError, openFkTab } = status
+
+  const [logHeight, startLogDrag] = useResizeDrag(90, 40, 400)
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null)
@@ -70,7 +73,7 @@ export function Workspace({ onCommit }: Props) {
   const startRename = (tab: Tab) => {
     if (tab.kind !== 'worksheet') return
     setRenamingTabId(tab.id)
-    setRenameValue(tab.name || 'Worksheet')
+    setRenameValue(tab.name || tabLabel(tab))
   }
 
   const commitRename = () => {
@@ -168,6 +171,7 @@ export function Workspace({ onCommit }: Props) {
   return (
     <section className="workspace">
       <header className="topbar" onDoubleClick={() => Window.ToggleMaximise()}>
+        <div className="topbar-tab-area">
         <div className="topbar-tabs">
           {tabs.map(tab => {
             const isActive = tab.id === activeTabId
@@ -210,6 +214,8 @@ export function Workspace({ onCommit }: Props) {
               </button>
             )
           })}
+
+        </div>
 
           <button
             className="tab-new-worksheet"
@@ -301,12 +307,15 @@ export function Workspace({ onCommit }: Props) {
         )}
       </div>
 
-      <StatusBar
-        message={statusMessage}
-        durationMs={activeDurationMs}
-        fkError={activeFkError}
-        onOpenFkTab={openFkTab}
-      />
+      <div className="statusbar-container" style={{ height: logHeight }}>
+        <div className="resize-handle resize-handle--v" onMouseDown={e => startLogDrag(e, 'y', true)} />
+        <StatusBar
+          entries={statusLog}
+          durationMs={activeDurationMs}
+          fkError={activeFkError}
+          onOpenFkTab={openFkTab}
+        />
+      </div>
 
       {contextMenu && (
         <TabContextMenu

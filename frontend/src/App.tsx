@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react'
 import { Events } from '@wailsio/runtime'
 import { Sidebar } from './components/Sidebar'
 import { Workspace } from './components/Workspace'
@@ -11,17 +11,37 @@ import { useTableTabs } from './hooks/useTableTabs'
 import { useSettings } from './hooks/useSettings'
 import { WorkspaceProvider } from './context/WorkspaceContext'
 import type { AppSettings, SavedConnection } from '../bindings/basalt/config'
+import type { LogEntry } from './types'
+import { useResizeDrag } from './hooks/useResizeDrag'
 
 function App() {
-  const [statusMessage, setStatusMessage] = useState('Not connected')
+  const [sidebarWidth, startSidebarDrag] = useResizeDrag(260, 160, 520)
+
+  const [statusLog, setStatusLog] = useState<LogEntry[]>(() => [{
+    id: 0,
+    ts: new Date().toLocaleTimeString('en-US', { hour12: false }),
+    text: 'Ready — no active connection',
+    isError: false,
+  }])
+
+  const logIdRef = useRef(1)
+  const addStatus = useCallback((msg: string) => {
+    const id = logIdRef.current++
+    setStatusLog(prev => [...prev, {
+      id,
+      ts: new Date().toLocaleTimeString('en-US', { hour12: false }),
+      text: msg,
+      isError: msg.startsWith('Error:'),
+    }])
+  }, [])
   const [showConnectForm, setShowConnectForm] = useState(false)
   const [editingConnection, setEditingConnection] = useState<SavedConnection | null>(null)
   const [showSettings, setShowSettings] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<{ count: number } | null>(null)
 
-  const db = useDatabase(setStatusMessage)
+  const db = useDatabase(addStatus)
   const { settings, saveSettings } = useSettings()
-  const tableTabs = useTableTabs(db.activeConnectionID, setStatusMessage)
+  const tableTabs = useTableTabs(db.activeConnectionID, addStatus)
 
   const [settingsDraft, setSettingsDraft] = useState<AppSettings | null>(null)
   const effectiveSettings = settingsDraft ?? settings
@@ -137,8 +157,8 @@ function App() {
     },
 
     status: {
-      message: statusMessage,
-      set: setStatusMessage,
+      log: statusLog,
+      set: addStatus,
       activeFkError,
       openFkTab: handleOpenFkTab,
     },
@@ -153,33 +173,37 @@ function App() {
         '--cell-height': effectiveSettings?.rowDensity === 'compact' ? '26px'
           : effectiveSettings?.rowDensity === 'comfortable' ? '42px' : '34px',
         '--cell-font-size': effectiveSettings?.fontSize ? `${effectiveSettings.fontSize}px` : '13px',
-      } as React.CSSProperties}
+        '--sidebar-width': `${sidebarWidth}px`,
+      } as CSSProperties}
     >
-      <Sidebar
-        savedConnections={db.savedConnections}
-        connections={db.connections}
-        activeConnectionID={db.activeConnectionID}
-        objects={db.objects}
-        expandedConnections={db.expandedConnections}
-        expandedSchemas={db.expandedSchemas}
-        filter={db.filter}
-        isConnecting={db.isConnecting}
-        showSettings={showSettings}
-        onNewConnection={() => setShowConnectForm(true)}
-        onConnectionClick={db.toggleConnection}
-        onReconnect={db.reconnect}
-        onDisconnect={db.disconnect}
-        onDeleteSaved={db.deleteSaved}
-        onEditSaved={handleEditSaved}
-        onSchemaToggle={db.toggleSchema}
-        onFilterChange={db.setFilter}
-        onRefresh={db.refreshObjects}
-        onTableOpen={(schema, table) => { tableTabs.openTableTab(schema, table); setShowSettings(false) }}
-        onTableOpenNewTab={(schema, table) => { tableTabs.openTableTab(schema, table); setShowSettings(false) }}
-        onTableOpenSchema={(schema, table) => { tableTabs.openSchemaTab(schema, table); setShowSettings(false) }}
-        onGroupOpen={(schema, kind) => { tableTabs.openGroupTab(schema, kind); setShowSettings(false) }}
-        onSettingsToggle={() => setShowSettings((v) => !v)}
-      />
+      <div className="sidebar-wrapper">
+        <Sidebar
+          savedConnections={db.savedConnections}
+          connections={db.connections}
+          activeConnectionID={db.activeConnectionID}
+          objects={db.objects}
+          expandedConnections={db.expandedConnections}
+          expandedSchemas={db.expandedSchemas}
+          filter={db.filter}
+          isConnecting={db.isConnecting}
+          showSettings={showSettings}
+          onNewConnection={() => setShowConnectForm(true)}
+          onConnectionClick={db.toggleConnection}
+          onReconnect={db.reconnect}
+          onDisconnect={db.disconnect}
+          onDeleteSaved={db.deleteSaved}
+          onEditSaved={handleEditSaved}
+          onSchemaToggle={db.toggleSchema}
+          onFilterChange={db.setFilter}
+          onRefresh={db.refreshObjects}
+          onTableOpen={(schema, table) => { tableTabs.openTableTab(schema, table); setShowSettings(false) }}
+          onTableOpenNewTab={(schema, table) => { tableTabs.openTableTab(schema, table); setShowSettings(false) }}
+          onTableOpenSchema={(schema, table) => { tableTabs.openSchemaTab(schema, table); setShowSettings(false) }}
+          onGroupOpen={(schema, kind) => { tableTabs.openGroupTab(schema, kind); setShowSettings(false) }}
+          onSettingsToggle={() => setShowSettings((v) => !v)}
+        />
+        <div className="resize-handle resize-handle--h" onMouseDown={e => startSidebarDrag(e, 'x')} />
+      </div>
 
       {showSettings && effectiveSettings ? (
         <SettingsView

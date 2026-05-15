@@ -47,7 +47,7 @@ function parseFKError(raw: string): FKError | null {
 }
 
 export function useTableTabs(connectionID: string, setStatus: (msg: string) => void) {
-  const worksheetTab: Tab = { id: WORKSHEET_ID, kind: 'worksheet', connectionID, schema: '' }
+  const worksheetTab: Tab = { id: WORKSHEET_ID, kind: 'worksheet', connectionID, schema: '', name: 'Worksheet 1' }
 
   const [tabs, setTabs] = useState<Tab[]>([worksheetTab])
   const [activeTabId, setActiveTabId] = useState(WORKSHEET_ID)
@@ -133,7 +133,9 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
 
   const openWorksheetTab = () => {
     const id = `worksheet:${Date.now()}`
-    const tab: Tab = { id, kind: 'worksheet', connectionID, schema: '' }
+    const worksheetCount = tabs.filter(t => t.kind === 'worksheet').length
+    const name = `Worksheet ${worksheetCount + 1}`
+    const tab: Tab = { id, kind: 'worksheet', connectionID, schema: '', name }
     setTabs(prev => [...prev, tab])
     setWorksheetStates(prev => ({ ...prev, [id]: emptyWorksheetState() }))
     setActiveTabId(id)
@@ -281,7 +283,7 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
         if (inserts.length > 0) parts.push(`${inserts.length} inserted`)
         if (edits.length > 0) parts.push(`${edits.length} updated`)
         if (deletes.length > 0) parts.push(`${deletes.length} deleted`)
-        setStatus(`Committed: ${parts.join(', ')}`)
+        setStatus(`${schema}.${table} — ${parts.join(', ')} committed`)
         patchState(id, { dirtyCells: {}, newRows: [], pendingDeletes: new Set() })
         return DatabaseService.FetchTable(connectionID, schema, table, s.filterExpr)
       })
@@ -315,7 +317,11 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
     DatabaseService.ExecuteQuery(connectionID, sql)
       .then(res => {
         patchWorksheetState(id, { result: res, rows: res.rows as RowRecord[], dirtyCells: {}, isRunning: false })
-        setStatus(res.message)
+        const rows = res.rows.length
+        const cols = res.columns.length
+        setStatus(cols > 0
+          ? `${rows} ${rows === 1 ? 'row' : 'rows'}, ${cols} ${cols === 1 ? 'column' : 'columns'} returned`
+          : 'Query executed — no rows returned')
       })
       .catch(err => {
         patchWorksheetState(id, { isRunning: false })

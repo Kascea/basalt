@@ -46,7 +46,9 @@ export function useDatabase(setStatus: (msg: string) => void): DatabaseState {
     setConnections((prev) => prev.find((c) => c.id === conn.id) ? prev.map((c) => c.id === conn.id ? conn : c) : [...prev, conn])
     setActiveConnectionID(conn.id)
     setExpandedConnections((prev) => new Set([...prev, conn.id]))
-    setStatus(`Connected to ${conn.host || conn.name}`)
+    const who = [conn.user, conn.host || conn.name].filter(Boolean).join('@')
+    const db = conn.database ? `/${conn.database}` : ''
+    setStatus(`Connected — ${who}${db} (${conn.driver})`)
     onSuccess?.()
     DatabaseService.ListSavedConnections().then(setSavedConnections).catch(() => {})
     return DatabaseService.ListSchemaObjects(conn.id)
@@ -62,7 +64,7 @@ export function useDatabase(setStatus: (msg: string) => void): DatabaseState {
 
   const connect = (name: string, driver: string, connectionString: string, onSuccess?: () => void) => {
     setIsConnecting('new')
-    setStatus('Connecting…')
+    setStatus(`Connecting to ${name}…`)
     DatabaseService.Connect({ name, driver, connectionString })
       .then((conn) => afterConnect(conn, onSuccess))
       .catch((err) => setStatus(String(err)))
@@ -70,8 +72,9 @@ export function useDatabase(setStatus: (msg: string) => void): DatabaseState {
   }
 
   const reconnect = (id: string, onSuccess?: () => void) => {
+    const saved = savedConnections.find(s => s.id === id)
     setIsConnecting(id)
-    setStatus('Connecting…')
+    setStatus(`Reconnecting to ${saved?.name || id}…`)
     DatabaseService.ConnectSaved(id)
       .then((conn) => afterConnect(conn, onSuccess))
       .catch((err) => setStatus(String(err)))
@@ -79,6 +82,8 @@ export function useDatabase(setStatus: (msg: string) => void): DatabaseState {
   }
 
   const disconnect = (id: string) => {
+    const conn = connections.find(c => c.id === id)
+    const label = conn?.host || conn?.name || 'database'
     DatabaseService.DisconnectConnection(id)
       .then(() => {
         setConnections((prev) => prev.filter((c) => c.id !== id))
@@ -86,7 +91,7 @@ export function useDatabase(setStatus: (msg: string) => void): DatabaseState {
           setActiveConnectionID('')
           setObjects([])
         }
-        setStatus('Disconnected')
+        setStatus(`Disconnected from ${label}`)
       })
       .catch((err) => setStatus(String(err)))
   }
