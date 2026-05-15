@@ -1,6 +1,4 @@
-import { type Connection, type QueryResult, type SchemaObject } from '../../bindings/basalt/db'
 import { Window } from '@wailsio/runtime'
-import { type Tab, type TableState, type RowRecord, type DirtyCells, type FKError } from '../types'
 import { SqlWorksheet } from './SqlWorksheet'
 import { TableView } from './TableView'
 import { SequenceView } from './SequenceView'
@@ -8,41 +6,8 @@ import { IndexView } from './IndexView'
 import { ForeignKeyView } from './ForeignKeyView'
 import { SchemaView } from './SchemaView'
 import { StatusBar } from './StatusBar'
-
-interface Props {
-  tabs: Tab[]
-  activeTabId: string
-  onTabClick: (id: string) => void
-  onTabClose: (id: string) => void
-  activeConnection: Connection | undefined
-  isRunning: boolean
-  sql: string
-  queryResult: QueryResult | null
-  queryRows: RowRecord[]
-  queryDirty: DirtyCells
-  objects: SchemaObject[]
-  onSqlChange: (sql: string) => void
-  onRunQuery: () => void
-  onQueryCellChange: (rowIndex: number, col: string, value: string) => void
-  onQueryDiscard: () => void
-  activeTab: Tab
-  activeTableState: TableState | null
-  onTableCellChange: (rowIndex: number, col: string, value: string) => void
-  onTableNewCellChange: (rowIndex: number, col: string, value: string) => void
-  onTableAddRow: () => void
-  onTableRemoveNewRow: (newRowIndex: number) => void
-  onTableDeleteRow: (rowIndex: number) => void
-  onTableRefresh: () => void
-  onTableFilterChange: (expr: string) => void
-  onTableDiscard: () => void
-  onTableCommit: () => void
-  onTableEditSchema: (schema: string, table: string) => void
-  activeFkError: FKError | null
-  onOpenFkTab: () => void
-  statusMessage: string
-  onStatus: (msg: string) => void
-  nullText?: string
-}
+import { useWorkspaceSession } from '../context/WorkspaceContext'
+import type { Tab } from '../types'
 
 function tabLabel(tab: Tab): string {
   switch (tab.kind) {
@@ -55,20 +20,25 @@ function tabLabel(tab: Tab): string {
   }
 }
 
-export function Workspace({
-  tabs, activeTabId, onTabClick, onTabClose,
-  activeConnection, isRunning,
-  sql, queryResult, queryRows, queryDirty, objects,
-  onSqlChange, onRunQuery, onQueryCellChange, onQueryDiscard,
-  activeTab, activeTableState,
-  onTableCellChange, onTableNewCellChange, onTableAddRow,
-  onTableRemoveNewRow, onTableDeleteRow,
-  onTableRefresh, onTableFilterChange, onTableDiscard, onTableCommit,
-  activeFkError, onOpenFkTab,
-  statusMessage, onStatus,
-  onTableEditSchema,
-  nullText = 'NULL',
-}: Props) {
+interface Props {
+  onCommit: () => void
+}
+
+export function Workspace({ onCommit }: Props) {
+  const session = useWorkspaceSession()
+  const {
+    tabs, activeTabId, activeTab, activeTableState,
+    setActiveTab, closeTab,
+    activeConnection, objects,
+    isRunning, sql, queryResult, queryRows, queryDirty,
+    updateCell, updateNewCell, addNewRow, removeNewRow, markForDelete,
+    discardEdits, refreshActiveTable, setFilterExpr,
+    setSql, runQuery, updateQueryCell, discardQueryEdits,
+    openSchemaTab,
+    statusMessage, activeFkError, openFkTab, setStatus,
+    nullText,
+  } = session
+
   const connContext = activeConnection
     ? `${activeConnection.user || 'user'}@${activeConnection.host || 'host'}/${activeConnection.database || 'db'}`
     : 'Not connected'
@@ -85,7 +55,7 @@ export function Workspace({
             <button
               key={tab.id}
               className={`ws-tab${tab.id === activeTabId ? ' active' : ''}`}
-              onClick={() => onTabClick(tab.id)}
+              onClick={() => setActiveTab(tab.id)}
             >
               {tabLabel(tab)}
               {tab.kind !== 'worksheet' && (
@@ -93,7 +63,7 @@ export function Workspace({
                   className="tab-close"
                   role="button"
                   aria-label="Close tab"
-                  onClick={(e) => { e.stopPropagation(); onTabClose(tab.id) }}
+                  onClick={(e) => { e.stopPropagation(); closeTab(tab.id) }}
                 >
                   ✕
                 </span>
@@ -106,7 +76,7 @@ export function Workspace({
 
         <div className="topbar-actions">
           {activeTab.kind === 'worksheet' && (
-            <button className="run-btn" onClick={onRunQuery} disabled={isRunning}>
+            <button className="run-btn" onClick={runQuery} disabled={isRunning}>
               ▶ {isRunning ? 'Running…' : 'Run'}
             </button>
           )}
@@ -123,16 +93,15 @@ export function Workspace({
             objects={objects}
             isRunning={isRunning}
             nullText={nullText}
-            onSqlChange={onSqlChange}
-            onCellChange={onQueryCellChange}
-            onDiscard={onQueryDiscard}
+            onSqlChange={setSql}
+            onCellChange={updateQueryCell}
+            onDiscard={discardQueryEdits}
           />
         )}
 
         {activeTab.kind === 'table' && activeTableState && (
           <TableView
             target={{ connectionID: activeTab.connectionID, schema: activeTab.schema, table: activeTab.table! }}
-
             result={activeTableState.result}
             rows={activeTableState.rows}
             newRows={activeTableState.newRows}
@@ -142,17 +111,17 @@ export function Workspace({
             isRefreshing={activeTableState.isRefreshing}
             isCommitting={activeTableState.isCommitting}
             nullText={nullText}
-            onCellChange={onTableCellChange}
-            onNewCellChange={onTableNewCellChange}
-            onAddRow={onTableAddRow}
-            onRemoveNewRow={onTableRemoveNewRow}
-            onDeleteRow={onTableDeleteRow}
-            onRefresh={onTableRefresh}
+            onCellChange={updateCell}
+            onNewCellChange={updateNewCell}
+            onAddRow={addNewRow}
+            onRemoveNewRow={removeNewRow}
+            onDeleteRow={markForDelete}
+            onRefresh={refreshActiveTable}
             filterExpr={activeTableState.filterExpr}
-            onFilterChange={onTableFilterChange}
-            onDiscard={onTableDiscard}
-            onCommit={onTableCommit}
-            onEditSchema={() => onTableEditSchema(activeTab.schema, activeTab.table!)}
+            onFilterChange={setFilterExpr}
+            onDiscard={discardEdits}
+            onCommit={onCommit}
+            onEditSchema={() => openSchemaTab(activeTab.schema, activeTab.table!)}
           />
         )}
 
@@ -160,7 +129,7 @@ export function Workspace({
           <SequenceView
             connectionID={activeTab.connectionID}
             schema={activeTab.schema}
-            onStatus={onStatus}
+            onStatus={setStatus}
           />
         )}
 
@@ -168,7 +137,7 @@ export function Workspace({
           <IndexView
             connectionID={activeTab.connectionID}
             schema={activeTab.schema}
-            onStatus={onStatus}
+            onStatus={setStatus}
           />
         )}
 
@@ -176,7 +145,7 @@ export function Workspace({
           <ForeignKeyView
             connectionID={activeTab.connectionID}
             schema={activeTab.schema}
-            onStatus={onStatus}
+            onStatus={setStatus}
           />
         )}
 
@@ -185,7 +154,7 @@ export function Workspace({
             connectionID={activeTab.connectionID}
             schema={activeTab.schema}
             table={activeTab.table}
-            onTableRefresh={onTableRefresh}
+            onTableRefresh={refreshActiveTable}
           />
         )}
       </div>
@@ -194,7 +163,7 @@ export function Workspace({
         message={statusMessage}
         durationMs={activeDurationMs}
         fkError={activeFkError}
-        onOpenFkTab={onOpenFkTab}
+        onOpenFkTab={openFkTab}
       />
     </section>
   )

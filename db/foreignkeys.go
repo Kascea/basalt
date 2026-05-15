@@ -62,10 +62,6 @@ func (d *DatabaseService) ListForeignKeys(connectionID, schema string) ([]Foreig
 }
 
 func (d *DatabaseService) AddForeignKey(connectionID string, req AddForeignKeyRequest) error {
-	conn, err := d.connection(connectionID)
-	if err != nil {
-		return err
-	}
 	if req.Name == "" || req.Table == "" || req.Column == "" || req.ForeignTable == "" || req.ForeignColumn == "" {
 		return fmt.Errorf("name, table, column, foreign table, and foreign column are required")
 	}
@@ -93,27 +89,13 @@ func (d *DatabaseService) AddForeignKey(connectionID string, req AddForeignKeyRe
 		quoteIdent(req.ForeignColumn),
 		onDelete, onUpdate,
 	)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	_, err = conn.db.ExecContext(ctx, query)
-	return err
+	return d.execDDL(connectionID, 10*time.Second, query)
 }
 
 func (d *DatabaseService) DropForeignKey(connectionID, schema, tableName, constraintName string) error {
-	conn, err := d.connection(connectionID)
-	if err != nil {
-		return err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	query := fmt.Sprintf(
 		"ALTER TABLE %s.%s DROP CONSTRAINT %s",
 		quoteIdent(schema), quoteIdent(tableName), quoteIdent(constraintName),
 	)
-	_, err = conn.db.ExecContext(ctx, query)
-	return err
+	return d.execDDL(connectionID, 10*time.Second, query)
 }

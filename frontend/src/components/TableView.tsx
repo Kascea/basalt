@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { RefreshCw, Plus, Settings2 } from 'lucide-react'
 import { type QueryResult } from '../../bindings/basalt/db'
 import { type TableTarget, type RowRecord, type DirtyCells, type SortDirection } from '../types'
 import { GridToolbar } from './GridToolbar'
@@ -62,21 +63,34 @@ export function TableView({
   const label = `${target.schema}.${target.table}`
   const dirtyCount = Object.keys(dirtyCells).length
 
+  const pendingLabel = (() => {
+    const parts: string[] = []
+    if (newRows.length > 0) parts.push(`${newRows.length} new`)
+    if (dirtyCount > 0) parts.push(`${dirtyCount} edited`)
+    if (pendingDeletes.size > 0) parts.push(`${pendingDeletes.size} deleted`)
+    return parts.length > 0 ? `${parts.join(', ')} unsaved` : undefined
+  })()
+
   return (
     <div className="table-view">
       <GridToolbar
         label={label}
-        rowCount={rows.length}
-        newRowCount={newRows.length}
-        dirtyCount={dirtyCount}
-        deleteCount={pendingDeletes.size}
+        count={`${rows.length.toLocaleString()} rows`}
+        pendingLabel={pendingLabel}
         isCommitting={isCommitting}
-        isRefreshing={isRefreshing}
-        onRefresh={onRefresh}
         onDiscard={onDiscard}
         onCommit={onCommit}
-        onAddRow={onAddRow}
-        onEditSchema={onEditSchema}
+        actions={<>
+          <button className="compact-btn toolbar-btn" onClick={onEditSchema} title="Edit schema">
+            <Settings2 size={12} strokeWidth={2} /> Schema
+          </button>
+          <button className="compact-btn toolbar-btn" onClick={onAddRow}>
+            <Plus size={12} strokeWidth={2.5} /> Add Row
+          </button>
+          <button className="compact-btn toolbar-btn" onClick={onRefresh} disabled={isRefreshing}>
+            <RefreshCw size={12} className={isRefreshing ? 'icon-spin' : ''} /> Refresh
+          </button>
+        </>}
       />
       <div className={`table-refresh-bar${isRefreshing ? ' active' : ''}`} />
       <FilterBar

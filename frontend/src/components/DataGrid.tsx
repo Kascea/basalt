@@ -1,69 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { type RowRecord, type DirtyCells, type SortDirection, cellKey } from '../types'
 
-// ── Expression evaluator ──────────────────────────────────────────────────────
-
-const VALID_ID = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/
-const JS_KEYWORDS = new Set([
-  'break','case','catch','class','const','continue','debugger','default',
-  'delete','do','else','export','extends','false','finally','for','function',
-  'if','import','in','instanceof','let','new','null','return','static',
-  'super','switch','this','throw','true','try','typeof','undefined','var',
-  'void','while','with','yield',
-])
-
-const HELPERS = {
-  lower:    (s: unknown) => String(s ?? '').toLowerCase(),
-  upper:    (s: unknown) => String(s ?? '').toUpperCase(),
-  trim:     (s: unknown) => String(s ?? '').trim(),
-  len:      (s: unknown) => String(s ?? '').length,
-  num:      (s: unknown) => parseFloat(String(s ?? '')),
-  contains: (s: unknown, sub: unknown) => String(s ?? '').includes(String(sub ?? '')),
-  starts:   (s: unknown, pre: unknown) => String(s ?? '').startsWith(String(pre ?? '')),
-  ends:     (s: unknown, suf: unknown) => String(s ?? '').endsWith(String(suf ?? '')),
-  regex:    (s: unknown, pat: unknown) => { try { return new RegExp(String(pat ?? '')).test(String(s ?? '')) } catch { return false } },
-}
-const helperNames = Object.keys(HELPERS)
-const helperValues = Object.values(HELPERS)
-
-function toJsExpr(expr: string): string {
-  return expr
-    .replace(/\bAND\b/gi, '&&')
-    .replace(/\bOR\b/gi,  '||')
-    .replace(/\bNOT\b/gi, '!')
-}
-
-type FilterFn = (row: RowRecord) => boolean
-
-export function buildFilter(expr: string, columns: string[]): FilterFn | null {
-  const trimmed = expr.trim()
-  if (!trimmed) return null
-
-  const jsExpr = toJsExpr(trimmed)
-  const safeCols = columns.filter(c => VALID_ID.test(c) && !JS_KEYWORDS.has(c) && !(c in HELPERS))
-
-  type CompiledFn = (...args: unknown[]) => boolean
-  let compiled: CompiledFn | null = null
-  try {
-    compiled = new Function('$row', ...helperNames, ...safeCols, `return !!(${jsExpr})`) as unknown as CompiledFn
-  } catch {
-    return null
-  }
-
-  return (row: RowRecord) => {
-    const colVals = safeCols.map(c => {
-      const v = row[c] ?? ''
-      const n = parseFloat(v)
-      return !isNaN(n) && v.trim() !== '' ? n : v
-    })
-    try {
-      return Boolean(compiled!(row, ...helperValues, ...colVals))
-    } catch {
-      return true
-    }
-  }
-}
-
 // ── Column type helpers ───────────────────────────────────────────────────────
 
 const NUMERIC_TYPES = new Set([
@@ -163,7 +100,6 @@ interface Props {
   newRows: RowRecord[]
   dirtyCells: DirtyCells
   pendingDeletes: Set<number>
-  filterExpr?: string
   sortColumn?: string | null
   sortDirection?: SortDirection | null
   emptyMessage?: string
@@ -183,7 +119,6 @@ export function DataGrid({
   newRows,
   dirtyCells,
   pendingDeletes,
-  filterExpr = '',
   sortColumn,
   sortDirection,
   emptyMessage = 'No data',
@@ -211,13 +146,7 @@ export function DataGrid({
     return () => document.removeEventListener('mousedown', onDown)
   }, [menuCol])
 
-  const filterFn = buildFilter(filterExpr, columns)
-
   let indexed = rows.map((row, i) => ({ row, originalIndex: i }))
-
-  if (filterFn) {
-    indexed = indexed.filter(({ row }) => filterFn(row))
-  }
 
   if (sortColumn && sortDirection) {
     indexed = [...indexed].sort((a, b) => {

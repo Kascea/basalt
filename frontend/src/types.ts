@@ -40,31 +40,5 @@ export interface TableTarget {
   table: string
 }
 
-export function cellKey(rowIndex: number, column: string): string {
-  return `${rowIndex}:${column}`
-}
-
-export function buildRowEdits(
-  target: Pick<TableTarget, 'schema' | 'table'>,
-  dirtyCells: DirtyCells,
-  rows: RowRecord[],
-  rowIds: string[],
-): Array<{ schema: string; table: string; rowId: string; changes: Record<string, string> }> {
-  const byRow = new Map<number, Record<string, string>>()
-
-  for (const key of Object.keys(dirtyCells)) {
-    const colonIdx = key.indexOf(':')
-    const rowIndex = parseInt(key.slice(0, colonIdx), 10)
-    const column = key.slice(colonIdx + 1)
-    const value = rows[rowIndex]?.[column] ?? ''
-    if (!byRow.has(rowIndex)) byRow.set(rowIndex, {})
-    byRow.get(rowIndex)![column] = value
-  }
-
-  return Array.from(byRow.entries()).map(([rowIndex, changes]) => ({
-    schema: target.schema,
-    table: target.table,
-    rowId: rowIds[rowIndex] ?? '',
-    changes,
-  }))
-}
+// cellKey lives in rowEdits.ts; re-exported here so existing imports keep working.
+export { cellKey } from './rowEdits'

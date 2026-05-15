@@ -44,10 +44,6 @@ func (d *DatabaseService) ListSequences(connectionID, schema string) ([]Sequence
 }
 
 func (d *DatabaseService) CreateSequence(connectionID string, req CreateSequenceRequest) error {
-	conn, err := d.connection(connectionID)
-	if err != nil {
-		return err
-	}
 	if strings.TrimSpace(req.Name) == "" {
 		return fmt.Errorf("sequence name is required")
 	}
@@ -79,24 +75,10 @@ func (d *DatabaseService) CreateSequence(connectionID string, req CreateSequence
 		quoteIdent(req.Schema), quoteIdent(req.Name),
 		incr, minVal, maxVal, start, cycleClause,
 	)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	_, err = conn.db.ExecContext(ctx, query)
-	return err
+	return d.execDDL(connectionID, 10*time.Second, query)
 }
 
 func (d *DatabaseService) DropSequence(connectionID, schema, name string) error {
-	conn, err := d.connection(connectionID)
-	if err != nil {
-		return err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	query := fmt.Sprintf("DROP SEQUENCE %s.%s", quoteIdent(schema), quoteIdent(name))
-	_, err = conn.db.ExecContext(ctx, query)
-	return err
+	return d.execDDL(connectionID, 10*time.Second, query)
 }

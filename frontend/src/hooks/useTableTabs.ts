@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { DatabaseService, type QueryResult } from '../../bindings/basalt/db'
+import { type Tab, type TabKind, type TableState, type RowRecord, type FKError } from '../types'
 import {
-  type Tab, type TabKind, type TableState, type RowRecord, type FKError,
-  cellKey, buildRowEdits,
-} from '../types'
+  applyUpdateCell, applyUpdateNewCell, applyAddNewRow, applyRemoveNewRow,
+  applyMarkForDelete, applyDiscard, buildCommitPayload,
+} from '../rowEdits'
 
 const WORKSHEET_ID = 'worksheet'
 
@@ -27,7 +28,6 @@ function baseTabId(kind: TabKind, schema: string, table?: string): string {
 }
 
 function parseFKError(raw: string): FKError | null {
-  // Wails serializes binding errors as: Error: {"message":"..."}
   let msg = raw
   try {
     const jsonStart = raw.indexOf('{')
@@ -89,19 +89,16 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
   }
 
   const openTableTab = (schema: string, table: string, newTab = false) => {
-    // If this table is already open anywhere, just switch to it
     const existing = tabs.find(t => t.schema === schema && t.table === table)
     if (existing) { setActiveTabId(existing.id); return }
 
     if (newTab || activeTabId === WORKSHEET_ID) {
-      // Open fresh tab: explicit new-tab request, or worksheet is active (never replace it)
       const id = `${baseTabId('table', schema, table)}:${Date.now()}`
       const tab: Tab = { id, kind: 'table', connectionID, schema, table }
       setTabs(prev => [...prev, tab])
       setActiveTabId(id)
       loadTable(id, schema, table)
     } else {
-      // Replace the current tab in-place (reuse its ID and slot)
       setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, kind: 'table' as const, schema, table } : t))
       loadTable(activeTabId, schema, table)
     }
@@ -180,27 +177,14 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
     setTableStates(prev => {
       const s = prev[activeTabId]
       if (!s) return prev
-      return {
-        ...prev,
-        [activeTabId]: {
-          ...s,
-          rows: s.rows.map((row, i) => i === rowIndex ? { ...row, [column]: value } : row),
-          dirtyCells: { ...s.dirtyCells, [cellKey(rowIndex, column)]: true },
-        },
-      }
+      return { ...prev, [activeTabId]: { ...s, ...applyUpdateCell(s, rowIndex, column, value) } }
     })
 
   const updateNewCell = (rowIndex: number, column: string, value: string) =>
     setTableStates(prev => {
       const s = prev[activeTabId]
       if (!s) return prev
-      return {
-        ...prev,
-        [activeTabId]: {
-          ...s,
-          newRows: s.newRows.map((row, i) => i === rowIndex ? { ...row, [column]: value } : row),
-        },
-      }
+      return { ...prev, [activeTabId]: { ...s, ...applyUpdateNewCell(s, rowIndex, column, value) } }
     })
 
   const addNewRow = () => {
@@ -214,12 +198,12 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
       .then(seqValues => {
         const row: RowRecord = {}
         for (const col of columns) row[col] = seqValues[col] ?? ''
-        setTableStates(prev => ({ ...prev, [id]: { ...prev[id], newRows: [...prev[id].newRows, row] } }))
+        setTableStates(prev => ({ ...prev, [id]: { ...prev[id], ...applyAddNewRow(prev[id], row) } }))
       })
       .catch(() => {
         const row: RowRecord = {}
         for (const col of columns) row[col] = ''
-        setTableStates(prev => ({ ...prev, [id]: { ...prev[id], newRows: [...prev[id].newRows, row] } }))
+        setTableStates(prev => ({ ...prev, [id]: { ...prev[id], ...applyAddNewRow(prev[id], row) } }))
       })
   }
 
@@ -227,33 +211,21 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
     setTableStates(prev => {
       const s = prev[activeTabId]
       if (!s) return prev
-      return { ...prev, [activeTabId]: { ...s, newRows: s.newRows.filter((_, i) => i !== newRowIndex) } }
+      return { ...prev, [activeTabId]: { ...s, ...applyRemoveNewRow(s, newRowIndex) } }
     })
 
   const markForDelete = (rowIndex: number) =>
     setTableStates(prev => {
       const s = prev[activeTabId]
       if (!s) return prev
-      const next = new Set(s.pendingDeletes)
-      next.has(rowIndex) ? next.delete(rowIndex) : next.add(rowIndex)
-      return { ...prev, [activeTabId]: { ...s, pendingDeletes: next } }
+      return { ...prev, [activeTabId]: { ...s, ...applyMarkForDelete(s, rowIndex) } }
     })
 
   const discardEdits = () =>
     setTableStates(prev => {
       const s = prev[activeTabId]
       if (!s) return prev
-      return {
-        ...prev,
-        [activeTabId]: {
-          ...s,
-          rows: s.result?.rows as RowRecord[] ?? [],
-          newRows: [],
-          dirtyCells: {},
-          pendingDeletes: new Set(),
-          commitError: null,
-        },
-      }
+      return { ...prev, [activeTabId]: { ...s, ...applyDiscard(s) } }
     })
 
   const commitEdits = () => {
@@ -262,22 +234,10 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
     const { schema, table } = activeTab
     const id = activeTabId
 
-    const edits = buildRowEdits({ schema, table }, s.dirtyCells, s.rows, s.result.rowIds ?? [])
-    const inserts = s.newRows
-      .filter(row => Object.values(row).some(v => v !== ''))
-      .map(row => ({
-        schema,
-        table,
-        values: Object.fromEntries(Object.entries(row).filter(([, v]) => v !== '')) as Record<string, string>,
-      }))
-    const deletes = Array.from(s.pendingDeletes).map(rowIndex => ({
-      schema,
-      table,
-      rowId: s.result!.rowIds[rowIndex] ?? '',
-    }))
+    const payload = buildCommitPayload(s, schema, table)
+    if (!payload) return
 
-    if (edits.length === 0 && inserts.length === 0 && deletes.length === 0) return
-
+    const { edits, inserts, deletes } = payload
     patchState(id, { isCommitting: true, commitError: null })
 
     Promise.all([

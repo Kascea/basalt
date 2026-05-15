@@ -10,6 +10,7 @@ import { useDatabase } from './hooks/useDatabase'
 import { useWorksheet } from './hooks/useWorksheet'
 import { useTableTabs } from './hooks/useTableTabs'
 import { useSettings } from './hooks/useSettings'
+import { WorkspaceProvider } from './context/WorkspaceContext'
 import type { AppSettings, SavedConnection } from '../bindings/basalt/config'
 
 function App() {
@@ -24,7 +25,6 @@ function App() {
   const worksheet = useWorksheet(db.activeConnectionID, setStatusMessage)
   const tableTabs = useTableTabs(db.activeConnectionID, setStatusMessage)
 
-  // Local draft of settings (applied immediately, saved on "Save Changes")
   const [settingsDraft, setSettingsDraft] = useState<AppSettings | null>(null)
   const effectiveSettings = settingsDraft ?? settings
 
@@ -39,14 +39,17 @@ function App() {
     )
   }
 
-  const handleEditSaved = (conn: SavedConnection) => {
-    setEditingConnection(conn)
+  const handleTableCommit = () => {
+    const state = tableTabs.activeTableState
+    if (effectiveSettings?.confirmDeleteRows && state && state.pendingDeletes.size > 0) {
+      setConfirmDelete({ count: state.pendingDeletes.size })
+      return
+    }
+    tableTabs.commitEdits()
   }
 
-  const handleCloseModal = () => {
-    setShowConnectForm(false)
-    setEditingConnection(null)
-  }
+  const handleEditSaved = (conn: SavedConnection) => setEditingConnection(conn)
+  const handleCloseModal = () => { setShowConnectForm(false); setEditingConnection(null) }
 
   const handleSettingsChange = (patch: Partial<AppSettings>) => {
     const base = settingsDraft ?? settings
@@ -57,8 +60,6 @@ function App() {
     saveSettings(s).then(() => setSettingsDraft(null))
   }
 
-  // Keep a ref to the latest callbacks so the menu event listeners (registered
-  // once) always call the current versions without needing re-registration.
   const menuRef = useRef({
     openNewConnection: () => setShowConnectForm(true),
     openSettings: () => setShowSettings(true),
@@ -87,6 +88,49 @@ function App() {
     ]
     return () => offs.forEach((off) => off())
   }, [])
+
+  const session = {
+    activeConnection: db.activeConnection,
+    objects: db.objects,
+
+    tabs: tableTabs.tabs,
+    activeTabId: tableTabs.activeTabId,
+    activeTab: tableTabs.activeTab,
+    activeTableState: tableTabs.activeTableState,
+    setActiveTab: tableTabs.setActiveTab,
+    closeTab: tableTabs.closeTab,
+    openTableTab: tableTabs.openTableTab,
+    openTableTabWithPrefill: tableTabs.openTableTabWithPrefill,
+    openSchemaTab: tableTabs.openSchemaTab,
+    openGroupTab: tableTabs.openGroupTab,
+
+    updateCell: tableTabs.updateCell,
+    updateNewCell: tableTabs.updateNewCell,
+    addNewRow: tableTabs.addNewRow,
+    removeNewRow: tableTabs.removeNewRow,
+    markForDelete: tableTabs.markForDelete,
+    discardEdits: tableTabs.discardEdits,
+    commitEdits: tableTabs.commitEdits,
+    refreshActiveTable: tableTabs.refreshActiveTable,
+    setFilterExpr: tableTabs.setFilterExpr,
+
+    sql: worksheet.sql,
+    isRunning: worksheet.isRunning,
+    queryResult: worksheet.result,
+    queryRows: worksheet.rows,
+    queryDirty: worksheet.dirtyCells,
+    setSql: worksheet.setSql,
+    runQuery: worksheet.runQuery,
+    updateQueryCell: worksheet.updateCell,
+    discardQueryEdits: worksheet.discardEdits,
+
+    statusMessage,
+    setStatus: setStatusMessage,
+    activeFkError,
+    openFkTab: handleOpenFkTab,
+
+    nullText: effectiveSettings?.nullText ?? 'NULL',
+  }
 
   return (
     <main
@@ -131,47 +175,9 @@ function App() {
           onSettingsSave={handleSettingsSave}
         />
       ) : (
-        <Workspace
-          tabs={tableTabs.tabs}
-          activeTabId={tableTabs.activeTabId}
-          onTabClick={tableTabs.setActiveTab}
-          onTabClose={tableTabs.closeTab}
-          activeConnection={db.activeConnection}
-          isRunning={worksheet.isRunning}
-          sql={worksheet.sql}
-          queryResult={worksheet.result}
-          queryRows={worksheet.rows}
-          queryDirty={worksheet.dirtyCells}
-          objects={db.objects}
-          onSqlChange={worksheet.setSql}
-          onRunQuery={worksheet.runQuery}
-          onQueryCellChange={worksheet.updateCell}
-          onQueryDiscard={worksheet.discardEdits}
-          activeTableState={tableTabs.activeTableState}
-          activeTab={tableTabs.activeTab}
-          onTableCellChange={tableTabs.updateCell}
-          onTableNewCellChange={tableTabs.updateNewCell}
-          onTableAddRow={tableTabs.addNewRow}
-          onTableRemoveNewRow={tableTabs.removeNewRow}
-          onTableDeleteRow={tableTabs.markForDelete}
-          onTableRefresh={tableTabs.refreshActiveTable}
-          onTableFilterChange={tableTabs.setFilterExpr}
-          onTableDiscard={tableTabs.discardEdits}
-          onTableCommit={() => {
-            const state = tableTabs.activeTableState
-            if (effectiveSettings?.confirmDeleteRows && state && state.pendingDeletes.size > 0) {
-              setConfirmDelete({ count: state.pendingDeletes.size })
-              return
-            }
-            tableTabs.commitEdits()
-          }}
-          onTableEditSchema={tableTabs.openSchemaTab}
-          activeFkError={activeFkError}
-          onOpenFkTab={handleOpenFkTab}
-          statusMessage={statusMessage}
-          onStatus={setStatusMessage}
-          nullText={effectiveSettings?.nullText ?? 'NULL'}
-        />
+        <WorkspaceProvider value={session}>
+          <Workspace onCommit={handleTableCommit} />
+        </WorkspaceProvider>
       )}
 
       {showConnectForm && (
@@ -193,10 +199,7 @@ function App() {
             onConnect={(name, driver, connectionString) =>
               db.connect(name, driver, connectionString, handleCloseModal)
             }
-            onSaveOnly={(conn) => {
-              db.updateSaved(conn)
-              handleCloseModal()
-            }}
+            onSaveOnly={(conn) => { db.updateSaved(conn); handleCloseModal() }}
           />
         </Modal>
       )}

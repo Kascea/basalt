@@ -1,17 +1,12 @@
 package db
 
 import (
-	"context"
 	"fmt"
 	"strings"
 	"time"
 )
 
 func (d *DatabaseService) CreateTable(connectionID string, req CreateTableRequest) error {
-	conn, err := d.connection(connectionID)
-	if err != nil {
-		return err
-	}
 	if strings.TrimSpace(req.Name) == "" {
 		return fmt.Errorf("table name is required")
 	}
@@ -42,24 +37,10 @@ func (d *DatabaseService) CreateTable(connectionID string, req CreateTableReques
 		quoteIdent(req.Schema), quoteIdent(req.Name),
 		strings.Join(colDefs, ",\n  "),
 	)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	_, err = conn.db.ExecContext(ctx, query)
-	return err
+	return d.execDDL(connectionID, 10*time.Second, query)
 }
 
 func (d *DatabaseService) DropTable(connectionID, schema, name string) error {
-	conn, err := d.connection(connectionID)
-	if err != nil {
-		return err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	query := fmt.Sprintf("DROP TABLE %s.%s", quoteIdent(schema), quoteIdent(name))
-	_, err = conn.db.ExecContext(ctx, query)
-	return err
+	return d.execDDL(connectionID, 10*time.Second, query)
 }

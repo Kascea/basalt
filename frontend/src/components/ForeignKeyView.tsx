@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
 import { DatabaseService, type ForeignKeyInfo, type AddForeignKeyRequest } from '../../bindings/basalt/db'
 import { Modal } from './Modal'
+import { useSchemaObjects } from '../hooks/useSchemaObjects'
 
 interface Props {
   connectionID: string
@@ -8,7 +8,7 @@ interface Props {
   onStatus: (msg: string) => void
 }
 
-const defaultReq = (schema: string): AddForeignKeyRequest => ({
+const defaultForm = (schema: string): AddForeignKeyRequest => ({
   schema,
   table: '',
   name: '',
@@ -23,52 +23,20 @@ const defaultReq = (schema: string): AddForeignKeyRequest => ({
 const RULE_OPTIONS = ['NO ACTION', 'CASCADE', 'SET NULL', 'SET DEFAULT', 'RESTRICT']
 
 export function ForeignKeyView({ connectionID, schema, onStatus }: Props) {
-  const [fks, setFks] = useState<ForeignKeyInfo[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm] = useState<AddForeignKeyRequest>(defaultReq(schema))
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const load = () => {
-    setIsLoading(true)
-    DatabaseService.ListForeignKeys(connectionID, schema)
-      .then(setFks)
-      .catch((err) => onStatus(String(err)))
-      .finally(() => setIsLoading(false))
-  }
-
-  useEffect(() => {
-    load()
-  }, [connectionID, schema])
-
-  const handleDrop = (fk: ForeignKeyInfo) => {
-    if (!confirm(`Drop foreign key ${fk.name} on ${fk.tableName}? This cannot be undone.`)) return
-    DatabaseService.DropForeignKey(connectionID, schema, fk.tableName, fk.name)
-      .then(() => {
-        onStatus(`Dropped foreign key ${fk.name}`)
-        load()
-      })
-      .catch((err) => onStatus(String(err)))
-  }
-
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    DatabaseService.AddForeignKey(connectionID, form)
-      .then(() => {
-        onStatus(`Added foreign key ${form.name}`)
-        setShowCreate(false)
-        setForm(defaultReq(schema))
-        load()
-      })
-      .catch((err) => onStatus(String(err)))
-      .finally(() => setIsSubmitting(false))
-  }
-
-  const openCreate = () => {
-    setForm(defaultReq(schema))
-    setShowCreate(true)
-  }
+  const { items: fks, isLoading, showCreate, form, isSubmitting,
+          load, setForm, openCreate, closeCreate, handleDrop, handleCreate } =
+    useSchemaObjects<ForeignKeyInfo, AddForeignKeyRequest>({
+      connectionID,
+      schema,
+      onStatus,
+      onLoad: () => DatabaseService.ListForeignKeys(connectionID, schema),
+      onDrop: (fk) => DatabaseService.DropForeignKey(connectionID, schema, fk.tableName, fk.name),
+      onCreate: (f) => DatabaseService.AddForeignKey(connectionID, f),
+      defaultForm: () => defaultForm(schema),
+      dropConfirmMessage: (fk) => `Drop foreign key ${fk.name} on ${fk.tableName}? This cannot be undone.`,
+      dropStatusMessage: (fk) => `Dropped foreign key ${fk.name}`,
+      createStatusMessage: (f) => `Added foreign key ${f.name}`,
+    })
 
   return (
     <div className="mgmt-view">
@@ -117,13 +85,13 @@ export function ForeignKeyView({ connectionID, schema, onStatus }: Props) {
       )}
 
       {showCreate && (
-        <Modal title="Add Foreign Key" onClose={() => setShowCreate(false)}>
+        <Modal title="Add Foreign Key" onClose={closeCreate}>
           <form className="mgmt-form" onSubmit={handleCreate}>
             <label>
               <span>Constraint name</span>
               <input
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                onChange={(e) => setForm({ name: e.target.value })}
                 placeholder="fk_table_column"
                 required
               />
@@ -133,7 +101,7 @@ export function ForeignKeyView({ connectionID, schema, onStatus }: Props) {
                 <span>Table</span>
                 <input
                   value={form.table}
-                  onChange={(e) => setForm({ ...form, table: e.target.value })}
+                  onChange={(e) => setForm({ table: e.target.value })}
                   placeholder="table_name"
                   required
                 />
@@ -142,7 +110,7 @@ export function ForeignKeyView({ connectionID, schema, onStatus }: Props) {
                 <span>Column</span>
                 <input
                   value={form.column}
-                  onChange={(e) => setForm({ ...form, column: e.target.value })}
+                  onChange={(e) => setForm({ column: e.target.value })}
                   placeholder="column_name"
                   required
                 />
@@ -153,7 +121,7 @@ export function ForeignKeyView({ connectionID, schema, onStatus }: Props) {
                 <span>Foreign schema</span>
                 <input
                   value={form.foreignSchema}
-                  onChange={(e) => setForm({ ...form, foreignSchema: e.target.value })}
+                  onChange={(e) => setForm({ foreignSchema: e.target.value })}
                   placeholder={schema}
                 />
               </label>
@@ -161,7 +129,7 @@ export function ForeignKeyView({ connectionID, schema, onStatus }: Props) {
                 <span>Foreign table</span>
                 <input
                   value={form.foreignTable}
-                  onChange={(e) => setForm({ ...form, foreignTable: e.target.value })}
+                  onChange={(e) => setForm({ foreignTable: e.target.value })}
                   placeholder="ref_table"
                   required
                 />
@@ -171,7 +139,7 @@ export function ForeignKeyView({ connectionID, schema, onStatus }: Props) {
               <span>Foreign column</span>
               <input
                 value={form.foreignColumn}
-                onChange={(e) => setForm({ ...form, foreignColumn: e.target.value })}
+                onChange={(e) => setForm({ foreignColumn: e.target.value })}
                 placeholder="ref_column"
                 required
               />
@@ -179,19 +147,19 @@ export function ForeignKeyView({ connectionID, schema, onStatus }: Props) {
             <div className="form-row">
               <label>
                 <span>On delete</span>
-                <select value={form.onDelete} onChange={(e) => setForm({ ...form, onDelete: e.target.value })}>
+                <select value={form.onDelete} onChange={(e) => setForm({ onDelete: e.target.value })}>
                   {RULE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
               </label>
               <label>
                 <span>On update</span>
-                <select value={form.onUpdate} onChange={(e) => setForm({ ...form, onUpdate: e.target.value })}>
+                <select value={form.onUpdate} onChange={(e) => setForm({ onUpdate: e.target.value })}>
                   {RULE_OPTIONS.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
               </label>
             </div>
             <div className="form-footer">
-              <button type="button" className="compact-btn" onClick={() => setShowCreate(false)}>Cancel</button>
+              <button type="button" className="compact-btn" onClick={closeCreate}>Cancel</button>
               <button type="submit" className="compact-btn primary" disabled={isSubmitting}>
                 {isSubmitting ? 'Adding…' : 'Add Constraint'}
               </button>

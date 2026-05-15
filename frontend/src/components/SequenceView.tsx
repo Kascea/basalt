@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
 import { DatabaseService, type SequenceInfo, type CreateSequenceRequest } from '../../bindings/basalt/db'
 import { Modal } from './Modal'
+import { useSchemaObjects } from '../hooks/useSchemaObjects'
 
 interface Props {
   connectionID: string
@@ -8,8 +8,8 @@ interface Props {
   onStatus: (msg: string) => void
 }
 
-const defaultReq = (): CreateSequenceRequest => ({
-  schema: '',
+const defaultForm = (schema: string): CreateSequenceRequest => ({
+  schema,
   name: '',
   incrementBy: 1,
   startValue: 1,
@@ -19,52 +19,20 @@ const defaultReq = (): CreateSequenceRequest => ({
 })
 
 export function SequenceView({ connectionID, schema, onStatus }: Props) {
-  const [sequences, setSequences] = useState<SequenceInfo[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm] = useState<CreateSequenceRequest>({ ...defaultReq(), schema })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const load = () => {
-    setIsLoading(true)
-    DatabaseService.ListSequences(connectionID, schema)
-      .then(setSequences)
-      .catch((err) => onStatus(String(err)))
-      .finally(() => setIsLoading(false))
-  }
-
-  useEffect(() => {
-    load()
-  }, [connectionID, schema])
-
-  const handleDrop = (name: string) => {
-    if (!confirm(`Drop sequence ${schema}.${name}? This cannot be undone.`)) return
-    DatabaseService.DropSequence(connectionID, schema, name)
-      .then(() => {
-        onStatus(`Dropped sequence ${schema}.${name}`)
-        load()
-      })
-      .catch((err) => onStatus(String(err)))
-  }
-
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    DatabaseService.CreateSequence(connectionID, form)
-      .then(() => {
-        onStatus(`Created sequence ${schema}.${form.name}`)
-        setShowCreate(false)
-        setForm({ ...defaultReq(), schema })
-        load()
-      })
-      .catch((err) => onStatus(String(err)))
-      .finally(() => setIsSubmitting(false))
-  }
-
-  const openCreate = () => {
-    setForm({ ...defaultReq(), schema })
-    setShowCreate(true)
-  }
+  const { items: sequences, isLoading, showCreate, form, isSubmitting,
+          load, setForm, openCreate, closeCreate, handleDrop, handleCreate } =
+    useSchemaObjects<SequenceInfo, CreateSequenceRequest>({
+      connectionID,
+      schema,
+      onStatus,
+      onLoad: () => DatabaseService.ListSequences(connectionID, schema),
+      onDrop: (seq) => DatabaseService.DropSequence(connectionID, schema, seq.name),
+      onCreate: (f) => DatabaseService.CreateSequence(connectionID, f),
+      defaultForm: () => defaultForm(schema),
+      dropConfirmMessage: (seq) => `Drop sequence ${schema}.${seq.name}? This cannot be undone.`,
+      dropStatusMessage: (seq) => `Dropped sequence ${schema}.${seq.name}`,
+      createStatusMessage: (f) => `Created sequence ${schema}.${f.name}`,
+    })
 
   return (
     <div className="mgmt-view">
@@ -105,7 +73,7 @@ export function SequenceView({ connectionID, schema, onStatus }: Props) {
                   <td className="mono-cell">{seq.maxValue}</td>
                   <td>{seq.isCycled ? 'Yes' : 'No'}</td>
                   <td className="action-cell">
-                    <button className="danger-btn" onClick={() => handleDrop(seq.name)}>Drop</button>
+                    <button className="danger-btn" onClick={() => handleDrop(seq)}>Drop</button>
                   </td>
                 </tr>
               ))}
@@ -115,13 +83,13 @@ export function SequenceView({ connectionID, schema, onStatus }: Props) {
       )}
 
       {showCreate && (
-        <Modal title="Create Sequence" onClose={() => setShowCreate(false)}>
+        <Modal title="Create Sequence" onClose={closeCreate}>
           <form className="mgmt-form" onSubmit={handleCreate}>
             <label>
               <span>Name</span>
               <input
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                onChange={(e) => setForm({ name: e.target.value })}
                 placeholder="sequence_name"
                 required
               />
@@ -129,29 +97,29 @@ export function SequenceView({ connectionID, schema, onStatus }: Props) {
             <div className="form-row">
               <label>
                 <span>Increment by</span>
-                <input type="number" value={form.incrementBy} onChange={(e) => setForm({ ...form, incrementBy: parseInt(e.target.value) || 1 })} />
+                <input type="number" value={form.incrementBy} onChange={(e) => setForm({ incrementBy: parseInt(e.target.value) || 1 })} />
               </label>
               <label>
                 <span>Start value</span>
-                <input type="number" value={form.startValue} onChange={(e) => setForm({ ...form, startValue: parseInt(e.target.value) || 1 })} />
+                <input type="number" value={form.startValue} onChange={(e) => setForm({ startValue: parseInt(e.target.value) || 1 })} />
               </label>
             </div>
             <div className="form-row">
               <label>
                 <span>Min value</span>
-                <input type="number" value={form.minValue} onChange={(e) => setForm({ ...form, minValue: parseInt(e.target.value) || 1 })} />
+                <input type="number" value={form.minValue} onChange={(e) => setForm({ minValue: parseInt(e.target.value) || 1 })} />
               </label>
               <label>
                 <span>Max value</span>
-                <input type="number" value={form.maxValue} onChange={(e) => setForm({ ...form, maxValue: parseInt(e.target.value) || 9223372036854775807 })} />
+                <input type="number" value={form.maxValue} onChange={(e) => setForm({ maxValue: parseInt(e.target.value) || 9223372036854775807 })} />
               </label>
             </div>
             <label className="checkbox-label">
-              <input type="checkbox" checked={form.isCycled} onChange={(e) => setForm({ ...form, isCycled: e.target.checked })} />
+              <input type="checkbox" checked={form.isCycled} onChange={(e) => setForm({ isCycled: e.target.checked })} />
               <span>Cycle when limit reached</span>
             </label>
             <div className="form-footer">
-              <button type="button" className="compact-btn" onClick={() => setShowCreate(false)}>Cancel</button>
+              <button type="button" className="compact-btn" onClick={closeCreate}>Cancel</button>
               <button type="submit" className="compact-btn primary" disabled={isSubmitting}>
                 {isSubmitting ? 'Creating…' : 'Create Sequence'}
               </button>

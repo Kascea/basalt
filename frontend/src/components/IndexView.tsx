@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
 import { DatabaseService, type IndexInfo, type CreateIndexRequest } from '../../bindings/basalt/db'
 import { Modal } from './Modal'
+import { useSchemaObjects } from '../hooks/useSchemaObjects'
 
 interface Props {
   connectionID: string
@@ -8,7 +8,7 @@ interface Props {
   onStatus: (msg: string) => void
 }
 
-const defaultReq = (schema: string): CreateIndexRequest => ({
+const defaultForm = (schema: string): CreateIndexRequest => ({
   schema,
   table: '',
   name: '',
@@ -18,56 +18,23 @@ const defaultReq = (schema: string): CreateIndexRequest => ({
 })
 
 export function IndexView({ connectionID, schema, onStatus }: Props) {
-  const [indexes, setIndexes] = useState<IndexInfo[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm] = useState<CreateIndexRequest>(defaultReq(schema))
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const load = () => {
-    setIsLoading(true)
-    DatabaseService.ListIndexes(connectionID, schema)
-      .then(setIndexes)
-      .catch((err) => onStatus(String(err)))
-      .finally(() => setIsLoading(false))
-  }
-
-  useEffect(() => {
-    load()
-  }, [connectionID, schema])
-
-  const handleDrop = (idx: IndexInfo) => {
-    if (idx.isPrimary) {
-      onStatus(`Cannot drop primary key index ${idx.name} directly — drop the constraint instead`)
-      return
-    }
-    if (!confirm(`Drop index ${idx.name}? This cannot be undone.`)) return
-    DatabaseService.DropIndex(connectionID, schema, idx.name)
-      .then(() => {
-        onStatus(`Dropped index ${idx.name}`)
-        load()
-      })
-      .catch((err) => onStatus(String(err)))
-  }
-
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    DatabaseService.CreateIndex(connectionID, form)
-      .then(() => {
-        onStatus(`Created index ${form.name}`)
-        setShowCreate(false)
-        setForm(defaultReq(schema))
-        load()
-      })
-      .catch((err) => onStatus(String(err)))
-      .finally(() => setIsSubmitting(false))
-  }
-
-  const openCreate = () => {
-    setForm(defaultReq(schema))
-    setShowCreate(true)
-  }
+  const { items: indexes, isLoading, showCreate, form, isSubmitting,
+          load, setForm, openCreate, closeCreate, handleDrop, handleCreate } =
+    useSchemaObjects<IndexInfo, CreateIndexRequest>({
+      connectionID,
+      schema,
+      onStatus,
+      onLoad: () => DatabaseService.ListIndexes(connectionID, schema),
+      onDrop: (idx) => DatabaseService.DropIndex(connectionID, schema, idx.name),
+      onCreate: (f) => DatabaseService.CreateIndex(connectionID, f),
+      defaultForm: () => defaultForm(schema),
+      dropConfirmMessage: (idx) => `Drop index ${idx.name}? This cannot be undone.`,
+      dropStatusMessage: (idx) => `Dropped index ${idx.name}`,
+      createStatusMessage: (f) => `Created index ${f.name}`,
+      canDrop: (idx) => idx.isPrimary
+        ? `Cannot drop primary key index ${idx.name} directly — drop the constraint instead`
+        : null,
+    })
 
   return (
     <div className="mgmt-view">
@@ -129,13 +96,13 @@ export function IndexView({ connectionID, schema, onStatus }: Props) {
       )}
 
       {showCreate && (
-        <Modal title="Create Index" onClose={() => setShowCreate(false)}>
+        <Modal title="Create Index" onClose={closeCreate}>
           <form className="mgmt-form" onSubmit={handleCreate}>
             <label>
               <span>Table</span>
               <input
                 value={form.table}
-                onChange={(e) => setForm({ ...form, table: e.target.value })}
+                onChange={(e) => setForm({ table: e.target.value })}
                 placeholder="table_name"
                 required
               />
@@ -144,7 +111,7 @@ export function IndexView({ connectionID, schema, onStatus }: Props) {
               <span>Index name</span>
               <input
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                onChange={(e) => setForm({ name: e.target.value })}
                 placeholder="idx_table_column"
                 required
               />
@@ -153,7 +120,7 @@ export function IndexView({ connectionID, schema, onStatus }: Props) {
               <span>Columns (comma-separated)</span>
               <input
                 value={form.columns}
-                onChange={(e) => setForm({ ...form, columns: e.target.value })}
+                onChange={(e) => setForm({ columns: e.target.value })}
                 placeholder="col1, col2"
                 required
               />
@@ -161,7 +128,7 @@ export function IndexView({ connectionID, schema, onStatus }: Props) {
             <div className="form-row">
               <label>
                 <span>Method</span>
-                <select value={form.method} onChange={(e) => setForm({ ...form, method: e.target.value })}>
+                <select value={form.method} onChange={(e) => setForm({ method: e.target.value })}>
                   <option value="btree">btree</option>
                   <option value="hash">hash</option>
                   <option value="gin">gin</option>
@@ -170,11 +137,11 @@ export function IndexView({ connectionID, schema, onStatus }: Props) {
               </label>
             </div>
             <label className="checkbox-label">
-              <input type="checkbox" checked={form.isUnique} onChange={(e) => setForm({ ...form, isUnique: e.target.checked })} />
+              <input type="checkbox" checked={form.isUnique} onChange={(e) => setForm({ isUnique: e.target.checked })} />
               <span>Unique</span>
             </label>
             <div className="form-footer">
-              <button type="button" className="compact-btn" onClick={() => setShowCreate(false)}>Cancel</button>
+              <button type="button" className="compact-btn" onClick={closeCreate}>Cancel</button>
               <button type="submit" className="compact-btn primary" disabled={isSubmitting}>
                 {isSubmitting ? 'Creating…' : 'Create Index'}
               </button>

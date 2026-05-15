@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { ChevronDown, Check, Plus, Trash2, RotateCcw, Database, AlertCircle } from 'lucide-react'
+import { ChevronDown, Check, Plus, Trash2, RotateCcw, AlertCircle } from 'lucide-react'
 import { DatabaseService, type ColumnInfo, type TypeGroup } from '../../bindings/basalt/db'
+import { GridToolbar } from './GridToolbar'
 
 interface Props {
   connectionID: string
@@ -163,8 +164,6 @@ export function SchemaView({ connectionID, schema, table, onTableRefresh }: Prop
   const patchNewCol = (id: string, patch: Partial<NewCol>) =>
     setNewCols(prev => prev.map(c => c.id === id ? { ...c, ...patch } : c))
 
-  const hasPendingChanges = Object.keys(edits).length > 0 || deletes.size > 0 || newCols.length > 0
-
   const discard = () => { setEdits({}); setDeletes(new Set()); setNewCols([]); setError('') }
 
   const commit = async () => {
@@ -209,39 +208,29 @@ export function SchemaView({ connectionID, schema, table, onTableRefresh }: Prop
     }
   }
 
-  const pendingLabel = () => {
+  const pendingLabel = (() => {
     const parts: string[] = []
     if (deletes.size > 0) parts.push(`${deletes.size} dropped`)
     if (Object.keys(edits).length > 0) parts.push(`${Object.keys(edits).length} altered`)
     if (newCols.length > 0) parts.push(`${newCols.length} added`)
-    return parts.join(', ') + ' pending'
-  }
+    return parts.length > 0 ? `${parts.join(', ')} pending` : undefined
+  })()
 
   return (
     <div className="schema-view">
-      <div className="grid-toolbar">
-        <div className="grid-toolbar-left">
-          <span className="grid-label">{schema}.{table}</span>
-          <span className="grid-count">{dbCols.length} column{dbCols.length !== 1 ? 's' : ''}</span>
-          {hasPendingChanges && (
-            <>
-              <div className="toolbar-sep" />
-              <span className="dirty-indicator">{pendingLabel()}</span>
-              <button className="compact-btn toolbar-btn" onClick={discard} disabled={isCommitting}>
-                <RotateCcw size={12} /> Discard
-              </button>
-              <button className="compact-btn toolbar-btn primary" onClick={commit} disabled={isCommitting}>
-                <Database size={12} /><Check size={10} strokeWidth={3} /> {isCommitting ? 'Saving…' : 'Commit'}
-              </button>
-            </>
-          )}
-        </div>
-        <div className="grid-toolbar-right">
+      <GridToolbar
+        label={`${schema}.${table}`}
+        count={`${dbCols.length} column${dbCols.length !== 1 ? 's' : ''}`}
+        pendingLabel={pendingLabel}
+        isCommitting={isCommitting}
+        onDiscard={discard}
+        onCommit={commit}
+        actions={
           <button className="compact-btn toolbar-btn" onClick={addNewCol}>
             <Plus size={12} strokeWidth={2.5} /> Add Column
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {error && (
         <div className="schema-error-banner">

@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+
 func (d *DatabaseService) ListIndexes(connectionID, schema string) ([]IndexInfo, error) {
 	conn, err := d.connection(connectionID)
 	if err != nil {
@@ -48,10 +49,6 @@ func (d *DatabaseService) ListIndexes(connectionID, schema string) ([]IndexInfo,
 }
 
 func (d *DatabaseService) CreateIndex(connectionID string, req CreateIndexRequest) error {
-	conn, err := d.connection(connectionID)
-	if err != nil {
-		return err
-	}
 	if strings.TrimSpace(req.Name) == "" || strings.TrimSpace(req.Table) == "" || strings.TrimSpace(req.Columns) == "" {
 		return fmt.Errorf("name, table, and columns are required")
 	}
@@ -86,24 +83,10 @@ func (d *DatabaseService) CreateIndex(connectionID string, req CreateIndexReques
 		method,
 		strings.Join(quotedCols, ", "),
 	)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	_, err = conn.db.ExecContext(ctx, query)
-	return err
+	return d.execDDL(connectionID, 30*time.Second, query)
 }
 
 func (d *DatabaseService) DropIndex(connectionID, schema, name string) error {
-	conn, err := d.connection(connectionID)
-	if err != nil {
-		return err
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	query := fmt.Sprintf("DROP INDEX %s.%s", quoteIdent(schema), quoteIdent(name))
-	_, err = conn.db.ExecContext(ctx, query)
-	return err
+	return d.execDDL(connectionID, 10*time.Second, query)
 }
