@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"time"
 )
 
@@ -106,21 +107,16 @@ func (d *DatabaseService) ListColumnTypes(connectionID string) ([]TypeGroup, err
 		return nil, err
 	}
 
-	switch conn.driver {
-	case DriverPostgres:
-		return listPostgresTypes(conn)
-	default:
-		return staticTypes(conn.driver), nil
-	}
-}
-
-func listPostgresTypes(conn *openConnection) ([]TypeGroup, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	return introspectorFor(conn.driver).ListColumnTypes(ctx, conn.db)
+}
+
+func listPostgresTypes(ctx context.Context, db *sql.DB) ([]TypeGroup, error) {
 	// Return a curated set of common base/range types plus all user-defined
 	// enums and domains from the actual database.
-	rows, err := conn.db.QueryContext(ctx, `
+	rows, err := db.QueryContext(ctx, `
 		SELECT t.typname, t.typcategory
 		FROM pg_catalog.pg_type t
 		JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace

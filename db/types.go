@@ -93,9 +93,20 @@ type RowDelete struct {
 
 // ── Introspector interface ────────────────────────────────────────────────────
 
+// Introspector is the per-driver adapter for database metadata and row addressing.
+// Each driver provides one concrete adapter; callers go through introspectorFor().
 type Introspector interface {
 	ListObjects(ctx context.Context, db *sql.DB) ([]SchemaObject, error)
 	ObjectStats(ctx context.Context, db *sql.DB) ([]SchemaObjectSummary, error)
+	ListColumnTypes(ctx context.Context, db *sql.DB) ([]TypeGroup, error)
+
+	// RowIDExpr returns a SQL expression that selects a stable physical row identifier.
+	// The result is aliased to __rowid by FetchTable and consumed opaquely as a RowID.
+	RowIDExpr() string
+
+	// WhereRowID returns a parameterised WHERE predicate matching a row by its RowID.
+	// param is the placeholder index (e.g. 2 → "$2 ::tid" for postgres).
+	WhereRowID(param int) string
 }
 
 // ── Object operation types ────────────────────────────────────────────────────

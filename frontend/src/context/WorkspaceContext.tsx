@@ -3,55 +3,59 @@ import type { Connection, QueryResult, SchemaObject } from '../../bindings/basal
 import type { Tab, TableState, WorksheetTabState, RowRecord, DirtyCells, FKError } from '../types'
 
 export interface WorkspaceSession {
-  // Connection
-  activeConnection: Connection | undefined
-  objects: SchemaObject[]
+  connection: {
+    active: Connection | undefined
+    objects: SchemaObject[]
+  }
 
-  // Tabs
-  tabs: Tab[]
-  activeTabId: string
-  activeTab: Tab
-  activeTableState: TableState | null
-  activeWorksheetState: WorksheetTabState | null
-  setActiveTab: (id: string) => void
-  closeTab: (id: string) => void
-  togglePinTab: (id: string) => void
-  renameTab: (id: string, name: string) => void
-  openTableTab: (schema: string, table: string) => void
-  openTableTabWithPrefill: (schema: string, table: string, prefill: Record<string, string>) => void
-  openSchemaTab: (schema: string, table: string) => void
-  openGroupTab: (schema: string, kind: 'sequences' | 'indexes' | 'foreignkeys') => void
-  openWorksheetTab: () => void
+  tabs: {
+    list: Tab[]
+    activeId: string
+    active: Tab
+    activeTableState: TableState | null
+    activeWorksheetState: WorksheetTabState | null
+    setActive: (id: string) => void
+    close: (id: string) => void
+    togglePin: (id: string) => void
+    rename: (id: string, name: string) => void
+    openTable: (schema: string, table: string) => void
+    openTableWithPrefill: (schema: string, table: string, prefill: Record<string, string>) => void
+    openSchema: (schema: string, table: string) => void
+    openGroup: (schema: string, kind: 'sequences' | 'indexes' | 'foreignkeys') => void
+    openWorksheet: () => void
+  }
 
-  // Table editing
-  updateCell: (rowIndex: number, col: string, value: string) => void
-  updateNewCell: (rowIndex: number, col: string, value: string) => void
-  addNewRow: () => void
-  removeNewRow: (i: number) => void
-  markForDelete: (i: number) => void
-  discardEdits: () => void
-  commitEdits: () => void
-  refreshActiveTable: () => void
-  setFilterExpr: (expr: string) => void
+  tableEditor: {
+    updateCell: (rowIndex: number, col: string, value: string) => void
+    updateNewCell: (rowIndex: number, col: string, value: string) => void
+    addRow: () => void
+    removeRow: (i: number) => void
+    markForDelete: (i: number) => void
+    discard: () => void
+    commit: () => void
+    refresh: () => void
+    setFilter: (expr: string) => void
+  }
 
-  // Worksheet
-  isRunning: boolean
-  queryResult: QueryResult | null
-  queryRows: RowRecord[]
-  queryDirty: DirtyCells
-  sql: string
-  setSql: (sql: string) => void
-  runQuery: () => void
-  updateQueryCell: (rowIndex: number, col: string, value: string) => void
-  discardQueryEdits: () => void
+  worksheet: {
+    isRunning: boolean
+    result: QueryResult | null
+    rows: RowRecord[]
+    dirtyCells: DirtyCells
+    sql: string
+    setSql: (sql: string) => void
+    run: () => void
+    updateCell: (rowIndex: number, col: string, value: string) => void
+    discard: () => void
+  }
 
-  // Status
-  statusMessage: string
-  setStatus: (msg: string) => void
-  activeFkError: FKError | null
-  openFkTab: () => void
+  status: {
+    message: string
+    set: (msg: string) => void
+    activeFkError: FKError | null
+    openFkTab: () => void
+  }
 
-  // Display
   nullText: string
 }
 

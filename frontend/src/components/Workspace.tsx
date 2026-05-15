@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { Window, Dialogs } from '@wailsio/runtime'
-import { Pin, X } from 'lucide-react'
+import { Pin, X, Save } from 'lucide-react'
 import { SqlWorksheet } from './SqlWorksheet'
 import { TableView } from './TableView'
 import { SequenceView } from './SequenceView'
@@ -30,18 +30,22 @@ interface Props { onCommit: () => void }
 
 export function Workspace({ onCommit }: Props) {
   const session = useWorkspaceSession()
+  const { connection, tabs: tabsNs, tableEditor, worksheet, status, nullText } = session
+  const { active: activeConnection, objects } = connection
   const {
-    tabs, activeTabId, activeTab, activeTableState,
-    setActiveTab, closeTab, togglePinTab, renameTab, openWorksheetTab,
-    activeConnection, objects,
-    isRunning, sql, queryResult, queryRows, queryDirty,
-    updateCell, updateNewCell, addNewRow, removeNewRow, markForDelete,
-    discardEdits, refreshActiveTable, setFilterExpr,
-    setSql, runQuery, updateQueryCell, discardQueryEdits,
-    openSchemaTab,
-    statusMessage, activeFkError, openFkTab, setStatus,
-    nullText,
-  } = session
+    list: tabs, activeId: activeTabId, active: activeTab, activeTableState,
+    setActive: setActiveTab, close: closeTab, togglePin: togglePinTab,
+    rename: renameTab, openWorksheet: openWorksheetTab, openSchema: openSchemaTab,
+  } = tabsNs
+  const {
+    updateCell, updateNewCell, addRow: addNewRow, removeRow: removeNewRow,
+    markForDelete, discard: discardEdits, refresh: refreshActiveTable, setFilter: setFilterExpr,
+  } = tableEditor
+  const {
+    isRunning, result: queryResult, rows: queryRows, dirtyCells: queryDirty,
+    sql, setSql, run: runQuery, updateCell: updateQueryCell, discard: discardQueryEdits,
+  } = worksheet
+  const { message: statusMessage, set: setStatus, activeFkError, openFkTab } = status
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null)
@@ -222,7 +226,7 @@ export function Workspace({ onCommit }: Props) {
         <div className="topbar-actions">
           {activeTab.kind === 'worksheet' && (
             <>
-              <button className="compact-btn" onClick={handleSaveFile}>Save…</button>
+              <button className="compact-btn" onClick={handleSaveFile}><Save size={13} />Save…</button>
               <button className="run-btn" onClick={runQuery} disabled={isRunning || !activeConnection}>
                 ▶ {isRunning ? 'Running…' : 'Run'}
               </button>
@@ -239,6 +243,8 @@ export function Workspace({ onCommit }: Props) {
             rows={queryRows}
             dirtyCells={queryDirty}
             objects={objects}
+            connectionId={activeConnection?.id}
+            driver={activeConnection?.driver}
             isRunning={isRunning}
             nullText={nullText}
             onSqlChange={setSql}

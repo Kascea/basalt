@@ -98,7 +98,8 @@ func (d *DatabaseService) FetchTable(connectionID, schema, table, where string) 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	query := fmt.Sprintf("SELECT ctid::text AS __rowid, * FROM %s.%s", quoteIdent(schema), quoteIdent(table))
+	intr := introspectorFor(conn.driver)
+	query := fmt.Sprintf("SELECT %s AS __rowid, * FROM %s.%s", intr.RowIDExpr(), quoteIdent(schema), quoteIdent(table))
 	if trimmedWhere != "" {
 		query += " WHERE " + trimmedWhere
 	}

@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -60,15 +61,28 @@ func (d *DatabaseService) ListSchemaObjects(connectionID string) ([]SchemaObject
 
 // ── Introspector implementations ──────────────────────────────────────────────
 
-type UnsupportedIntrospector struct{}
+// StaticIntrospector is the adapter for drivers whose metadata cannot be queried
+// at runtime (MySQL, SQLite, or unknown drivers). It returns static type catalogs
+// and does not support physical row addressing.
+type StaticIntrospector struct{ driver Driver }
 
-func (UnsupportedIntrospector) ListObjects(context.Context, *sql.DB) ([]SchemaObject, error) {
+func (StaticIntrospector) ListObjects(context.Context, *sql.DB) ([]SchemaObject, error) {
 	return []SchemaObject{}, nil
 }
 
-func (UnsupportedIntrospector) ObjectStats(context.Context, *sql.DB) ([]SchemaObjectSummary, error) {
+func (StaticIntrospector) ObjectStats(context.Context, *sql.DB) ([]SchemaObjectSummary, error) {
 	return []SchemaObjectSummary{}, nil
 }
+
+func (s StaticIntrospector) ListColumnTypes(_ context.Context, _ *sql.DB) ([]TypeGroup, error) {
+	return staticTypes(s.driver), nil
+}
+
+// Row addressing is not supported for static drivers; RowIDExpr produces a NULL
+// placeholder and WhereRowID produces an always-false predicate so mutations
+// on unsupported drivers are safe no-ops until a real adapter is wired up.
+func (StaticIntrospector) RowIDExpr() string            { return "null" }
+func (StaticIntrospector) WhereRowID(_ int) string      { return "1 = 0" }
 
 type PostgresIntrospector struct{}
 
@@ -148,4 +162,14 @@ func (PostgresIntrospector) ObjectStats(ctx context.Context, db *sql.DB) ([]Sche
 	}
 
 	return stats, rows.Err()
+}
+
+func (PostgresIntrospector) ListColumnTypes(ctx context.Context, db *sql.DB) ([]TypeGroup, error) {
+	return listPostgresTypes(ctx, db)
+}
+
+func (PostgresIntrospector) RowIDExpr() string { return "ctid::text" }
+
+func (PostgresIntrospector) WhereRowID(param int) string {
+	return fmt.Sprintf("ctid = $%d::tid", param)
 }

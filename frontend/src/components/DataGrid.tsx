@@ -1,39 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { type RowRecord, type DirtyCells, type SortDirection, cellKey } from '../types'
-
-// ── Column type helpers ───────────────────────────────────────────────────────
-
-const NUMERIC_TYPES = new Set([
-  'INT2', 'INT4', 'INT8', 'INT', 'INTEGER', 'SMALLINT', 'BIGINT',
-  'FLOAT4', 'FLOAT8', 'REAL', 'DOUBLE PRECISION',
-  'NUMERIC', 'DECIMAL', 'MONEY',
-  'OID', 'XID', 'CID',
-])
-
-const BOOL_TYPES = new Set(['BOOL', 'BOOLEAN'])
-
-function colCategory(dbType: string): 'numeric' | 'boolean' | 'text' {
-  const upper = dbType.toUpperCase()
-  if (NUMERIC_TYPES.has(upper)) return 'numeric'
-  if (BOOL_TYPES.has(upper)) return 'boolean'
-  return 'text'
-}
-
-function isKeyAllowed(key: string, category: 'numeric' | 'boolean' | 'text', currentValue: string): boolean {
-  if (category === 'text') return true
-  if (key.length > 1) return true
-  if (category === 'boolean') {
-    return ['t', 'f', 'T', 'F', '1', '0'].includes(key)
-  }
-  if (category === 'numeric') {
-    if (/[0-9]/.test(key)) return true
-    if (key === '-' && currentValue === '') return true
-    if (key === '.' && !currentValue.includes('.')) return true
-    if (key === 'e' && !currentValue.includes('e') && !currentValue.includes('E')) return true
-    return false
-  }
-  return true
-}
+import { colCategory, isKeyAllowed } from '../columnCategory'
 
 // ── TypedCell ─────────────────────────────────────────────────────────────────
 

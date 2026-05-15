@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { type QueryResult, type SchemaObject } from '../../bindings/basalt/db'
 import { type RowRecord, type DirtyCells } from '../types'
 import { DataGrid } from './DataGrid'
+import { SqlEditor } from './SqlEditor'
 
 type ResultTab = 'data' | 'structure' | 'plan'
 
@@ -11,6 +12,8 @@ interface Props {
   rows: RowRecord[]
   dirtyCells: DirtyCells
   objects: SchemaObject[]
+  connectionId?: string
+  driver?: string
   isRunning: boolean
   nullText?: string
   onSqlChange: (sql: string) => void
@@ -19,7 +22,7 @@ interface Props {
 }
 
 export function SqlWorksheet({
-  sql, result, rows, dirtyCells, objects, isRunning,
+  sql, result, rows, dirtyCells, objects, connectionId, driver, isRunning,
   nullText = 'NULL',
   onSqlChange, onCellChange, onDiscard,
 }: Props) {
@@ -29,7 +32,7 @@ export function SqlWorksheet({
   return (
     <div className="sql-worksheet">
       <div className="editor-area">
-        <textarea value={sql} onChange={(e) => onSqlChange(e.target.value)} spellCheck={false} />
+        <SqlEditor value={sql} connectionId={connectionId} driver={driver} objects={objects} onChange={onSqlChange} />
       </div>
 
       <div className="results">

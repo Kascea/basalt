@@ -62,7 +62,7 @@ func introspectorFor(driver Driver) Introspector {
 	case DriverPostgres:
 		return PostgresIntrospector{}
 	default:
-		return UnsupportedIntrospector{}
+		return StaticIntrospector{driver: driver}
 	}
 }
 

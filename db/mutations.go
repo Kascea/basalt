@@ -65,6 +65,7 @@ func (d *DatabaseService) CommitEdits(connectionID string, edits []RowEdit) erro
 	if err != nil {
 		return err
 	}
+	intr := introspectorFor(conn.driver)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -91,9 +92,9 @@ func (d *DatabaseService) CommitEdits(connectionID string, edits []RowEdit) erro
 		args = append(args, edit.RowID)
 
 		query := fmt.Sprintf(
-			"UPDATE %s.%s SET %s WHERE ctid = $%d::tid",
+			"UPDATE %s.%s SET %s WHERE %s",
 			quoteIdent(edit.Schema), quoteIdent(edit.Table),
-			strings.Join(setClauses, ", "), i,
+			strings.Join(setClauses, ", "), intr.WhereRowID(i),
 		)
 
 		if _, err := tx.ExecContext(ctx, query, args...); err != nil {
@@ -109,6 +110,7 @@ func (d *DatabaseService) DeleteRows(connectionID string, deletes []RowDelete) e
 	if err != nil {
 		return err
 	}
+	intr := introspectorFor(conn.driver)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -121,8 +123,8 @@ func (d *DatabaseService) DeleteRows(connectionID string, deletes []RowDelete) e
 
 	for _, del := range deletes {
 		query := fmt.Sprintf(
-			"DELETE FROM %s.%s WHERE ctid = $1::tid",
-			quoteIdent(del.Schema), quoteIdent(del.Table),
+			"DELETE FROM %s.%s WHERE %s",
+			quoteIdent(del.Schema), quoteIdent(del.Table), intr.WhereRowID(1),
 		)
 		if _, err := tx.ExecContext(ctx, query, del.RowID); err != nil {
 			return fmt.Errorf("deleting row %s: %w", del.RowID, err)

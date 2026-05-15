@@ -717,19 +717,36 @@ td input:focus {
     flex-direction: column;
 }
 
-.editor-area textarea {
+.editor-area .cm-editor {
     flex: 1;
-    width: 100%;
-    padding: 16px 20px;
-    resize: none;
-    border: 0;
-    outline: 0;
-    background: var(--bg-base);
-    color: #bcc0c6;
-    font-family: var(--mono);
-    font-size: 14px;
+    height: 100%;
+    outline: none;
+}
+
+.editor-area .cm-scroller {
+    padding: 8px 0;
     line-height: 23px;
-    caret-color: var(--accent);
+    font-size: 13px;
+}
+
+.editor-area .cm-content {
+    padding: 0 12px;
+}
+
+.editor-area .cm-gutters {
+    border-right: 1px solid var(--border);
+    padding: 0 4px;
+}
+
+.editor-area .cm-tooltip-autocomplete {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+}
+
+.editor-area .cm-tooltip-autocomplete ul li[aria-selected] {
+    background: var(--bg-active);
+    color: var(--text-primary);
 }
 
 /* ── Grid toolbar (table view) ── */
@@ -1154,6 +1171,9 @@ th.col-sorted .sort-indicator {
 }
 
 .compact-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     height: 26px;
     padding: 0 10px;
     border-radius: 5px;
