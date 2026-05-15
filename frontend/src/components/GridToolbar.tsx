@@ -1,4 +1,4 @@
-import { Database, Check, RotateCcw, RefreshCw, Plus } from 'lucide-react'
+import { Database, Check, RotateCcw, RefreshCw, Plus, Settings2 } from 'lucide-react'
 
 interface Props {
   label: string
@@ -12,12 +12,13 @@ interface Props {
   onDiscard: () => void
   onCommit: () => void
   onAddRow: () => void
+  onEditSchema: () => void
 }
 
 export function GridToolbar({
   label, rowCount, newRowCount, dirtyCount, deleteCount,
   isCommitting, isRefreshing,
-  onRefresh, onDiscard, onCommit, onAddRow,
+  onRefresh, onDiscard, onCommit, onAddRow, onEditSchema,
 }: Props) {
   const hasPendingChanges = dirtyCount > 0 || newRowCount > 0 || deleteCount > 0
 
@@ -49,6 +50,9 @@ export function GridToolbar({
       </div>
 
       <div className="grid-toolbar-right">
+        <button className="compact-btn toolbar-btn" onClick={onEditSchema} title="Edit schema">
+          <Settings2 size={12} strokeWidth={2} /> Schema
+        </button>
         <button className="compact-btn toolbar-btn" onClick={onAddRow}>
           <Plus size={12} strokeWidth={2.5} /> Add Row
         </button>

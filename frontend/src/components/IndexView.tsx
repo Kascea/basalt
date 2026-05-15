@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { DatabaseService, type IndexInfo, type CreateIndexRequest } from '../../bindings/basalt'
+import { DatabaseService, type IndexInfo, type CreateIndexRequest } from '../../bindings/basalt/db'
 import { Modal } from './Modal'
 
 interface Props {

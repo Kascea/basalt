@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { DatabaseService, type ForeignKeyInfo, type AddForeignKeyRequest } from '../../bindings/basalt'
+import { DatabaseService, type ForeignKeyInfo, type AddForeignKeyRequest } from '../../bindings/basalt/db'
 import { Modal } from './Modal'
 
 interface Props {

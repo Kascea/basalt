@@ -1,10 +1,10 @@
-import type { QueryResult } from '../bindings/basalt'
+import type { QueryResult } from '../bindings/basalt/db'
 
 export type RowRecord = Record<string, string | undefined>
 
 export type SortDirection = 'asc' | 'desc'
 
-export type TabKind = 'worksheet' | 'table' | 'sequences' | 'indexes' | 'foreignkeys'
+export type TabKind = 'worksheet' | 'table' | 'sequences' | 'indexes' | 'foreignkeys' | 'schema'
 
 export interface Tab {
   id: string

@@ -10,7 +10,7 @@ import { useDatabase } from './hooks/useDatabase'
 import { useWorksheet } from './hooks/useWorksheet'
 import { useTableTabs } from './hooks/useTableTabs'
 import { useSettings } from './hooks/useSettings'
-import type { AppSettings, SavedConnection } from '../bindings/basalt'
+import type { AppSettings, SavedConnection } from '../bindings/basalt/db'
 
 function App() {
   const [statusMessage, setStatusMessage] = useState('Not connected')
@@ -164,6 +164,7 @@ function App() {
             }
             tableTabs.commitEdits()
           }}
+          onTableEditSchema={tableTabs.openSchemaTab}
           activeFkError={activeFkError}
           onOpenFkTab={handleOpenFkTab}
           statusMessage={statusMessage}

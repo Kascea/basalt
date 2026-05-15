@@ -1,4 +1,4 @@
-import { type Connection, type QueryResult, type SchemaObject } from '../../bindings/basalt'
+import { type Connection, type QueryResult, type SchemaObject } from '../../bindings/basalt/db'
 import { Window } from '@wailsio/runtime'
 import { type Tab, type TableState, type RowRecord, type DirtyCells, type FKError } from '../types'
 import { SqlWorksheet } from './SqlWorksheet'
@@ -6,6 +6,7 @@ import { TableView } from './TableView'
 import { SequenceView } from './SequenceView'
 import { IndexView } from './IndexView'
 import { ForeignKeyView } from './ForeignKeyView'
+import { SchemaView } from './SchemaView'
 import { StatusBar } from './StatusBar'
 
 interface Props {
@@ -35,6 +36,7 @@ interface Props {
   onTableFilterChange: (expr: string) => void
   onTableDiscard: () => void
   onTableCommit: () => void
+  onTableEditSchema: (schema: string, table: string) => void
   activeFkError: FKError | null
   onOpenFkTab: () => void
   statusMessage: string
@@ -49,6 +51,7 @@ function tabLabel(tab: Tab): string {
     case 'sequences': return `${tab.schema} · Sequences`
     case 'indexes': return `${tab.schema} · Indexes`
     case 'foreignkeys': return `${tab.schema} · Foreign Keys`
+    case 'schema': return `${tab.schema}.${tab.table} · Schema`
   }
 }
 
@@ -63,6 +66,7 @@ export function Workspace({
   onTableRefresh, onTableFilterChange, onTableDiscard, onTableCommit,
   activeFkError, onOpenFkTab,
   statusMessage, onStatus,
+  onTableEditSchema,
   nullText = 'NULL',
 }: Props) {
   const connContext = activeConnection
@@ -128,6 +132,7 @@ export function Workspace({
         {activeTab.kind === 'table' && activeTableState && (
           <TableView
             target={{ connectionID: activeTab.connectionID, schema: activeTab.schema, table: activeTab.table! }}
+
             result={activeTableState.result}
             rows={activeTableState.rows}
             newRows={activeTableState.newRows}
@@ -147,6 +152,7 @@ export function Workspace({
             onFilterChange={onTableFilterChange}
             onDiscard={onTableDiscard}
             onCommit={onTableCommit}
+            onEditSchema={() => onTableEditSchema(activeTab.schema, activeTab.table!)}
           />
         )}
 
@@ -171,6 +177,15 @@ export function Workspace({
             connectionID={activeTab.connectionID}
             schema={activeTab.schema}
             onStatus={onStatus}
+          />
+        )}
+
+        {activeTab.kind === 'schema' && activeTab.table && (
+          <SchemaView
+            connectionID={activeTab.connectionID}
+            schema={activeTab.schema}
+            table={activeTab.table}
+            onTableRefresh={onTableRefresh}
           />
         )}
       </div>

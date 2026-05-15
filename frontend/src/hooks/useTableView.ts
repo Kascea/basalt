@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { DatabaseService, type QueryResult } from '../../bindings/basalt'
+import { DatabaseService, type QueryResult } from '../../bindings/basalt/db'
 import { type RowRecord, type DirtyCells, type TableTarget, cellKey, buildRowEdits } from '../types'
 
 export interface TableViewState {

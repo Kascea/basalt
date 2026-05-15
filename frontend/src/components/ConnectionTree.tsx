@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { type Connection, type SavedConnection, type SchemaObject } from '../../bindings/basalt'
+import { type Connection, type SavedConnection, type SchemaObject } from '../../bindings/basalt/db'
 
 // ── Type metadata ────────────────────────────────────────────────────────────
 

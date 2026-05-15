@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { DatabaseService, type ColumnDef, type CreateSequenceRequest, type CreateIndexRequest } from '../../bindings/basalt'
+import { DatabaseService, type ColumnDef, type CreateSequenceRequest, type CreateIndexRequest } from '../../bindings/basalt/db'
 import { Modal } from './Modal'
 
 interface Props {

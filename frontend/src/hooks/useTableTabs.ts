@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { DatabaseService, type QueryResult } from '../../bindings/basalt'
+import { DatabaseService, type QueryResult } from '../../bindings/basalt/db'
 import {
   type Tab, type TabKind, type TableState, type RowRecord, type FKError,
   cellKey, buildRowEdits,
@@ -105,6 +105,15 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
       setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, kind: 'table' as const, schema, table } : t))
       loadTable(activeTabId, schema, table)
     }
+  }
+
+  const openSchemaTab = (schema: string, table: string) => {
+    const id = `${schema}.${table}:schema`
+    const existing = tabs.find(t => t.id === id)
+    if (existing) { setActiveTabId(id); return }
+    const tab: Tab = { id, kind: 'schema', connectionID, schema, table }
+    setTabs(prev => [...prev, tab])
+    setActiveTabId(id)
   }
 
   const openGroupTab = (schema: string, kind: 'sequences' | 'indexes' | 'foreignkeys') => {
@@ -307,6 +316,7 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
     activeTableState,
     openTableTab,
     openTableTabWithPrefill,
+    openSchemaTab,
     openGroupTab,
     closeTab,
     refreshActiveTable,

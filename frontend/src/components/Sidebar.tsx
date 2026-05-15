@@ -1,4 +1,4 @@
-import { type Connection, type SavedConnection, type SchemaObject } from '../../bindings/basalt'
+import { type Connection, type SavedConnection, type SchemaObject } from '../../bindings/basalt/db'
 import { Window } from '@wailsio/runtime'
 import { ConnectionTree } from './ConnectionTree'
 

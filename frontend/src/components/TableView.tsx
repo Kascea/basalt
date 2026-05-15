@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { type QueryResult } from '../../bindings/basalt'
+import { type QueryResult } from '../../bindings/basalt/db'
 import { type TableTarget, type RowRecord, type DirtyCells, type SortDirection } from '../types'
 import { GridToolbar } from './GridToolbar'
 import { FilterBar } from './FilterBar'
@@ -25,6 +25,7 @@ interface Props {
   onFilterChange: (expr: string) => void
   onDiscard: () => void
   onCommit: () => void
+  onEditSchema: () => void
   nullText?: string
 }
 
@@ -33,7 +34,7 @@ export function TableView({
   filterExpr,
   isLoading, isRefreshing, isCommitting,
   onCellChange, onNewCellChange, onAddRow, onRemoveNewRow, onDeleteRow,
-  onRefresh, onFilterChange, onDiscard, onCommit,
+  onRefresh, onFilterChange, onDiscard, onCommit, onEditSchema,
   nullText = 'NULL',
 }: Props) {
   const [sortColumn, setSortColumn] = useState<string | null>(null)
@@ -70,6 +71,7 @@ export function TableView({
         onDiscard={onDiscard}
         onCommit={onCommit}
         onAddRow={onAddRow}
+        onEditSchema={onEditSchema}
       />
       <div className={`table-refresh-bar${isRefreshing ? ' active' : ''}`} />
       <FilterBar

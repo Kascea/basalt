@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { AppSettings } from '../../bindings/basalt'
+import type { AppSettings } from '../../bindings/basalt/db'
 import { SettingsAppearance } from './settings/SettingsAppearance'
 import { SettingsQuery } from './settings/SettingsQuery'
 import { SettingsGeneral } from './settings/SettingsGeneral'

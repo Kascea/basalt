@@ -1,19 +1,19 @@
 package main
 
 import (
+	"basalt/db"
+
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type menuState struct {
 	app        *application.App
-	svc        *DatabaseService
+	svc        *db.DatabaseService
 	recentMenu *application.Menu
 	tray       *application.SystemTray
 }
 
-// buildMenus sets up the application menu bar and system tray.
-// Returns a function that rebuilds dynamic sections (call after connection changes).
-func buildMenus(app *application.App, svc *DatabaseService) func() {
+func buildMenus(app *application.App, svc *db.DatabaseService) func() {
 	ms := &menuState{app: app, svc: svc}
 	app.Menu.Set(ms.buildAppMenu())
 	ms.tray = ms.buildSystemTray()
@@ -60,11 +60,11 @@ func (ms *menuState) buildAppMenu() *application.Menu {
 	edit.AddRole(application.SelectAll)
 
 	// ── Database menu ─────────────────────────────────────────────────────────
-	db := menu.AddSubmenu("Database")
-	db.Add("Run Query").
+	dbMenu := menu.AddSubmenu("Database")
+	dbMenu.Add("Run Query").
 		SetAccelerator("CmdOrCtrl+Return").
 		OnClick(func(*application.Context) { ms.app.Event.Emit("menu:run-query") })
-	db.Add("Refresh Schema").
+	dbMenu.Add("Refresh Schema").
 		SetAccelerator("CmdOrCtrl+Shift+R").
 		OnClick(func(*application.Context) { ms.app.Event.Emit("menu:refresh-schema") })
 

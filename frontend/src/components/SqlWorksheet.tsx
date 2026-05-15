@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { type QueryResult, type SchemaObject } from '../../bindings/basalt'
+import { type QueryResult, type SchemaObject } from '../../bindings/basalt/db'
 import { type RowRecord, type DirtyCells } from '../types'
 import { DataGrid } from './DataGrid'
 

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { SavedConnection } from '../../bindings/basalt'
+import type { SavedConnection } from '../../bindings/basalt/db'
 
 interface Props {
   isConnecting: boolean
