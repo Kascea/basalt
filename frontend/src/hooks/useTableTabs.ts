@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { DatabaseService, type QueryResult } from '../../bindings/basalt/db'
-import { type Tab, type TabKind, type TableState, type RowRecord, type FKError } from '../types'
+import { type Tab, type TabKind, type TableState, type WorksheetTabState, type RowRecord, type FKError, cellKey } from '../types'
 import {
   applyUpdateCell, applyUpdateNewCell, applyAddNewRow, applyRemoveNewRow,
   applyMarkForDelete, applyDiscard, buildCommitPayload,
@@ -21,6 +21,10 @@ function emptyTableState(): TableState {
     isCommitting: false,
     commitError: null,
   }
+}
+
+function emptyWorksheetState(): WorksheetTabState {
+  return { sql: '', result: null, rows: [], dirtyCells: {}, isRunning: false }
 }
 
 function baseTabId(kind: TabKind, schema: string, table?: string): string {
@@ -48,15 +52,26 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
   const [tabs, setTabs] = useState<Tab[]>([worksheetTab])
   const [activeTabId, setActiveTabId] = useState(WORKSHEET_ID)
   const [tableStates, setTableStates] = useState<Record<string, TableState>>({})
+  const [worksheetStates, setWorksheetStates] = useState<Record<string, WorksheetTabState>>({
+    [WORKSHEET_ID]: emptyWorksheetState(),
+  })
 
   const activeTab = tabs.find(t => t.id === activeTabId) ?? worksheetTab
   const activeTableState: TableState | null =
     activeTab.kind === 'table' ? (tableStates[activeTabId] ?? null) : null
+  const activeWorksheetState: WorksheetTabState | null =
+    activeTab.kind === 'worksheet' ? (worksheetStates[activeTabId] ?? emptyWorksheetState()) : null
 
   const patchState = (id: string, patch: Partial<TableState>) =>
     setTableStates(prev => ({
       ...prev,
       [id]: { ...(prev[id] ?? emptyTableState()), ...patch },
+    }))
+
+  const patchWorksheetState = (id: string, patch: Partial<WorksheetTabState>) =>
+    setWorksheetStates(prev => ({
+      ...prev,
+      [id]: { ...(prev[id] ?? emptyWorksheetState()), ...patch },
     }))
 
   const loadTable = (id: string, schema: string, table: string, prefill?: Record<string, string>, where?: string) => {
@@ -88,20 +103,14 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
     loadTable(id, schema, table, prefill)
   }
 
-  const openTableTab = (schema: string, table: string, newTab = false) => {
-    const existing = tabs.find(t => t.schema === schema && t.table === table)
+  const openTableTab = (schema: string, table: string) => {
+    const existing = tabs.find(t => t.kind === 'table' && t.schema === schema && t.table === table)
     if (existing) { setActiveTabId(existing.id); return }
-
-    if (newTab || activeTabId === WORKSHEET_ID) {
-      const id = `${baseTabId('table', schema, table)}:${Date.now()}`
-      const tab: Tab = { id, kind: 'table', connectionID, schema, table }
-      setTabs(prev => [...prev, tab])
-      setActiveTabId(id)
-      loadTable(id, schema, table)
-    } else {
-      setTabs(prev => prev.map(t => t.id === activeTabId ? { ...t, kind: 'table' as const, schema, table } : t))
-      loadTable(activeTabId, schema, table)
-    }
+    const id = `${baseTabId('table', schema, table)}:${Date.now()}`
+    const tab: Tab = { id, kind: 'table', connectionID, schema, table }
+    setTabs(prev => [...prev, tab])
+    setActiveTabId(id)
+    loadTable(id, schema, table)
   }
 
   const openSchemaTab = (schema: string, table: string) => {
@@ -122,18 +131,40 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
     setActiveTabId(id)
   }
 
+  const openWorksheetTab = () => {
+    const id = `worksheet:${Date.now()}`
+    const tab: Tab = { id, kind: 'worksheet', connectionID, schema: '' }
+    setTabs(prev => [...prev, tab])
+    setWorksheetStates(prev => ({ ...prev, [id]: emptyWorksheetState() }))
+    setActiveTabId(id)
+  }
+
+  const togglePinTab = (id: string) => {
+    setTabs(prev => prev.map(t => t.id === id ? { ...t, pinned: !t.pinned } : t))
+  }
+
+  const renameTab = (id: string, name: string) => {
+    setTabs(prev => prev.map(t => t.id === id ? { ...t, name: name.trim() || undefined } : t))
+  }
+
   const closeTab = (id: string) => {
-    if (id === WORKSHEET_ID) return
+    const tab = tabs.find(t => t.id === id)
+    if (tab?.pinned) return
     setTabs(prev => {
       const idx = prev.findIndex(t => t.id === id)
       const next = prev.filter(t => t.id !== id)
       if (activeTabId === id) {
         const newActive = next[Math.max(0, idx - 1)]
-        setActiveTabId(newActive?.id ?? WORKSHEET_ID)
+        setActiveTabId(newActive?.id ?? '')
       }
       return next
     })
     setTableStates(prev => {
+      const next = { ...prev }
+      delete next[id]
+      return next
+    })
+    setWorksheetStates(prev => {
       const next = { ...prev }
       delete next[id]
       return next
@@ -268,16 +299,69 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
       })
   }
 
+  // ── Worksheet methods ──
+
+  const setSql = (sql: string) => {
+    if (activeTab.kind !== 'worksheet') return
+    patchWorksheetState(activeTabId, { sql })
+  }
+
+  const runQuery = () => {
+    if (activeTab.kind !== 'worksheet') return
+    if (!connectionID) { setStatus('Connect to a database before running SQL.'); return }
+    const id = activeTabId
+    const sql = worksheetStates[id]?.sql ?? ''
+    patchWorksheetState(id, { isRunning: true })
+    DatabaseService.ExecuteQuery(connectionID, sql)
+      .then(res => {
+        patchWorksheetState(id, { result: res, rows: res.rows as RowRecord[], dirtyCells: {}, isRunning: false })
+        setStatus(res.message)
+      })
+      .catch(err => {
+        patchWorksheetState(id, { isRunning: false })
+        setStatus(String(err))
+      })
+  }
+
+  const updateQueryCell = (rowIndex: number, column: string, value: string) => {
+    if (activeTab.kind !== 'worksheet') return
+    const id = activeTabId
+    setWorksheetStates(prev => {
+      const s = prev[id] ?? emptyWorksheetState()
+      return {
+        ...prev,
+        [id]: {
+          ...s,
+          rows: s.rows.map((row, i) => i === rowIndex ? { ...row, [column]: value } : row),
+          dirtyCells: { ...s.dirtyCells, [cellKey(rowIndex, column)]: true },
+        },
+      }
+    })
+  }
+
+  const discardQueryEdits = () => {
+    if (activeTab.kind !== 'worksheet') return
+    const id = activeTabId
+    setWorksheetStates(prev => {
+      const s = prev[id] ?? emptyWorksheetState()
+      return { ...prev, [id]: { ...s, rows: s.result?.rows as RowRecord[] ?? [], dirtyCells: {} } }
+    })
+  }
+
   return {
     tabs,
     activeTabId,
     setActiveTab: setActiveTabId,
     activeTab,
     activeTableState,
+    activeWorksheetState,
     openTableTab,
     openTableTabWithPrefill,
     openSchemaTab,
     openGroupTab,
+    openWorksheetTab,
+    togglePinTab,
+    renameTab,
     closeTab,
     refreshActiveTable,
     setFilterExpr,
@@ -288,5 +372,9 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
     markForDelete,
     discardEdits,
     commitEdits,
+    setSql,
+    runQuery,
+    updateQueryCell,
+    discardQueryEdits,
   }
 }

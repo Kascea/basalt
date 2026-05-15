@@ -12,6 +12,16 @@ export interface Tab {
   connectionID: string
   schema: string
   table?: string
+  pinned?: boolean
+  name?: string
+}
+
+export interface WorksheetTabState {
+  sql: string
+  result: QueryResult | null
+  rows: RowRecord[]
+  dirtyCells: DirtyCells
+  isRunning: boolean
 }
 
 export interface FKError {

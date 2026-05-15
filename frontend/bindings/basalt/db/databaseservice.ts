@@ -171,6 +171,10 @@ export function ListSequences(connectionID: string, schema: string): $Cancellabl
     });
 }
 
+export function ReadFile(path: string): $CancellablePromise<string> {
+    return $Call.ByID(2181123383, path);
+}
+
 export function SaveSettings(s: config$0.AppSettings): $CancellablePromise<void> {
     return $Call.ByID(215950889, s);
 }
@@ -180,6 +184,10 @@ export function SaveSettings(s: config$0.AppSettings): $CancellablePromise<void>
  */
 export function UpdateSavedConnection(conn: config$0.SavedConnection): $CancellablePromise<void> {
     return $Call.ByID(3171678203, conn);
+}
+
+export function WriteFile(path: string, content: string): $CancellablePromise<void> {
+    return $Call.ByID(2476041102, path, content);
 }
 
 // Private type creation functions

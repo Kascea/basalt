@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react'
 import type { Connection, QueryResult, SchemaObject } from '../../bindings/basalt/db'
-import type { Tab, TableState, RowRecord, DirtyCells, FKError } from '../types'
+import type { Tab, TableState, WorksheetTabState, RowRecord, DirtyCells, FKError } from '../types'
 
 export interface WorkspaceSession {
   // Connection
@@ -12,12 +12,16 @@ export interface WorkspaceSession {
   activeTabId: string
   activeTab: Tab
   activeTableState: TableState | null
+  activeWorksheetState: WorksheetTabState | null
   setActiveTab: (id: string) => void
   closeTab: (id: string) => void
-  openTableTab: (schema: string, table: string, newTab?: boolean) => void
+  togglePinTab: (id: string) => void
+  renameTab: (id: string, name: string) => void
+  openTableTab: (schema: string, table: string) => void
   openTableTabWithPrefill: (schema: string, table: string, prefill: Record<string, string>) => void
   openSchemaTab: (schema: string, table: string) => void
   openGroupTab: (schema: string, kind: 'sequences' | 'indexes' | 'foreignkeys') => void
+  openWorksheetTab: () => void
 
   // Table editing
   updateCell: (rowIndex: number, col: string, value: string) => void
@@ -31,11 +35,11 @@ export interface WorkspaceSession {
   setFilterExpr: (expr: string) => void
 
   // Worksheet
-  sql: string
   isRunning: boolean
   queryResult: QueryResult | null
   queryRows: RowRecord[]
   queryDirty: DirtyCells
+  sql: string
   setSql: (sql: string) => void
   runQuery: () => void
   updateQueryCell: (rowIndex: number, col: string, value: string) => void

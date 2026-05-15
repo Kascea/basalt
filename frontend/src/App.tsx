@@ -7,7 +7,6 @@ import { Modal } from './components/Modal'
 import { ConfirmModal } from './components/ConfirmModal'
 import { ConnectForm } from './components/ConnectForm'
 import { useDatabase } from './hooks/useDatabase'
-import { useWorksheet } from './hooks/useWorksheet'
 import { useTableTabs } from './hooks/useTableTabs'
 import { useSettings } from './hooks/useSettings'
 import { WorkspaceProvider } from './context/WorkspaceContext'
@@ -22,7 +21,6 @@ function App() {
 
   const db = useDatabase(setStatusMessage)
   const { settings, saveSettings } = useSettings()
-  const worksheet = useWorksheet(db.activeConnectionID, setStatusMessage)
   const tableTabs = useTableTabs(db.activeConnectionID, setStatusMessage)
 
   const [settingsDraft, setSettingsDraft] = useState<AppSettings | null>(null)
@@ -64,7 +62,7 @@ function App() {
     openNewConnection: () => setShowConnectForm(true),
     openSettings: () => setShowSettings(true),
     refreshSchema: () => db.refreshObjects(),
-    runQuery: () => worksheet.runQuery(),
+    runQuery: () => tableTabs.runQuery(),
     connectSaved: (id: string) => db.reconnect(id),
     closeConnection: () => { if (db.activeConnectionID) db.disconnect(db.activeConnectionID) },
   })
@@ -72,7 +70,7 @@ function App() {
     openNewConnection: () => setShowConnectForm(true),
     openSettings: () => setShowSettings(true),
     refreshSchema: () => db.refreshObjects(),
-    runQuery: () => worksheet.runQuery(),
+    runQuery: () => tableTabs.runQuery(),
     connectSaved: (id: string) => db.reconnect(id),
     closeConnection: () => { if (db.activeConnectionID) db.disconnect(db.activeConnectionID) },
   }
@@ -89,6 +87,8 @@ function App() {
     return () => offs.forEach((off) => off())
   }, [])
 
+  const activeWS = tableTabs.activeWorksheetState
+
   const session = {
     activeConnection: db.activeConnection,
     objects: db.objects,
@@ -97,12 +97,16 @@ function App() {
     activeTabId: tableTabs.activeTabId,
     activeTab: tableTabs.activeTab,
     activeTableState: tableTabs.activeTableState,
+    activeWorksheetState: tableTabs.activeWorksheetState,
     setActiveTab: tableTabs.setActiveTab,
     closeTab: tableTabs.closeTab,
+    togglePinTab: tableTabs.togglePinTab,
+    renameTab: tableTabs.renameTab,
     openTableTab: tableTabs.openTableTab,
     openTableTabWithPrefill: tableTabs.openTableTabWithPrefill,
     openSchemaTab: tableTabs.openSchemaTab,
     openGroupTab: tableTabs.openGroupTab,
+    openWorksheetTab: tableTabs.openWorksheetTab,
 
     updateCell: tableTabs.updateCell,
     updateNewCell: tableTabs.updateNewCell,
@@ -114,15 +118,15 @@ function App() {
     refreshActiveTable: tableTabs.refreshActiveTable,
     setFilterExpr: tableTabs.setFilterExpr,
 
-    sql: worksheet.sql,
-    isRunning: worksheet.isRunning,
-    queryResult: worksheet.result,
-    queryRows: worksheet.rows,
-    queryDirty: worksheet.dirtyCells,
-    setSql: worksheet.setSql,
-    runQuery: worksheet.runQuery,
-    updateQueryCell: worksheet.updateCell,
-    discardQueryEdits: worksheet.discardEdits,
+    sql: activeWS?.sql ?? '',
+    isRunning: activeWS?.isRunning ?? false,
+    queryResult: activeWS?.result ?? null,
+    queryRows: activeWS?.rows ?? [],
+    queryDirty: activeWS?.dirtyCells ?? {},
+    setSql: tableTabs.setSql,
+    runQuery: tableTabs.runQuery,
+    updateQueryCell: tableTabs.updateQueryCell,
+    discardQueryEdits: tableTabs.discardQueryEdits,
 
     statusMessage,
     setStatus: setStatusMessage,
@@ -160,8 +164,8 @@ function App() {
         onSchemaToggle={db.toggleSchema}
         onFilterChange={db.setFilter}
         onRefresh={db.refreshObjects}
-        onTableOpen={(schema, table) => { tableTabs.openTableTab(schema, table, false); setShowSettings(false) }}
-        onTableOpenNewTab={(schema, table) => { tableTabs.openTableTab(schema, table, true); setShowSettings(false) }}
+        onTableOpen={(schema, table) => { tableTabs.openTableTab(schema, table); setShowSettings(false) }}
+        onTableOpenNewTab={(schema, table) => { tableTabs.openTableTab(schema, table); setShowSettings(false) }}
         onTableOpenSchema={(schema, table) => { tableTabs.openSchemaTab(schema, table); setShowSettings(false) }}
         onGroupOpen={(schema, kind) => { tableTabs.openGroupTab(schema, kind); setShowSettings(false) }}
         onSettingsToggle={() => setShowSettings((v) => !v)}

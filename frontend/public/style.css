@@ -631,7 +631,7 @@ td input:focus {
 
 .ws-tab {
     height: 34px;
-    padding: 0 16px;
+    padding: 0 14px;
     font-size: 12px;
     font-weight: 600;
     background: transparent;
@@ -641,6 +641,10 @@ td input:focus {
     border-bottom: none;
     align-self: flex-end;
     transition: color 0.1s, background 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
 }
 
 .ws-tab:hover {
@@ -653,6 +657,16 @@ td input:focus {
     border-color: var(--border);
     border-bottom-color: var(--bg-base);
     font-weight: 700;
+}
+
+.ws-tab.pinned {
+    padding-left: 10px;
+}
+
+.tab-pin-indicator {
+    color: var(--teal);
+    opacity: 0.85;
+    flex-shrink: 0;
 }
 
 .topbar-context {
@@ -945,23 +959,129 @@ th.col-sorted .sort-indicator {
     margin: 2px 0;
 }
 
+/* ── Tab rename input ── */
+
+.tab-rename-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--teal);
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 700;
+    font-family: inherit;
+    outline: none;
+    padding: 0;
+    min-width: 4ch;
+    max-width: 20ch;
+}
+
 /* ── Tab close button ── */
 
 .tab-close {
-    display: inline-grid;
+    display: none;
     place-items: center;
     width: 14px;
     height: 14px;
-    margin-left: 7px;
+    margin-left: 3px;
     border-radius: 3px;
     font-size: 9px;
     color: var(--text-muted);
     cursor: pointer;
-    vertical-align: middle;
+}
+
+.ws-tab:hover .tab-close,
+.ws-tab.active .tab-close {
+    display: inline-grid;
 }
 
 .tab-close:hover {
     background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+/* ── Tab context menu ── */
+
+.tab-context-menu {
+    z-index: 1000;
+    min-width: 160px;
+    padding: 4px;
+    border-radius: 8px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.tab-context-item {
+    width: 100%;
+    padding: 7px 10px;
+    text-align: left;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-radius: 5px;
+    background: transparent;
+    transition: background 0.1s, color 0.1s;
+}
+
+.tab-context-item:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-primary);
+}
+
+.tab-context-item.danger {
+    color: var(--red, #f47174);
+}
+
+.tab-context-item.danger:hover {
+    background: rgba(244, 113, 116, 0.12);
+    color: var(--red, #f47174);
+}
+
+/* ── Empty workspace state ── */
+
+.workspace-empty {
+    display: grid;
+    grid-template-rows: 46px 1fr;
+}
+
+.empty-state-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.empty-state-logo {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--text-muted);
+    opacity: 0.25;
+    user-select: none;
+}
+
+/* ── New worksheet button ── */
+
+.tab-new-worksheet {
+    height: 24px;
+    width: 24px;
+    margin-left: 4px;
+    align-self: center;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 16px;
+    line-height: 1;
+    display: inline-grid;
+    place-items: center;
+    transition: color 0.1s, background 0.1s;
+    flex-shrink: 0;
+}
+
+.tab-new-worksheet:hover {
+    background: rgba(255, 255, 255, 0.08);
     color: var(--text-primary);
 }
 
