@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { DatabaseService, type AppSettings } from '../../bindings/basalt/db'
+import { DatabaseService } from '../../bindings/basalt/db'
+import type { AppSettings } from '../../bindings/basalt/config'
 
 const DENSITY_VARS: Record<string, Record<string, string>> = {
   compact:     { '--cell-height': '26px', '--cell-font-size': '12px' },

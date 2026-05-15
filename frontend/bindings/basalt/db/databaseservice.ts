@@ -7,6 +7,10 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
+import * as config$0 from "../config/models.js";
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
 import * as $models from "./models.js";
 
 export function AddForeignKey(connectionID: string, req: $models.AddForeignKeyRequest): $CancellablePromise<void> {
@@ -101,7 +105,7 @@ export function GetNextSequenceValues(connectionID: string, schema: string, tabl
     });
 }
 
-export function GetSettings(): $CancellablePromise<$models.AppSettings> {
+export function GetSettings(): $CancellablePromise<config$0.AppSettings> {
     return $Call.ByID(1353327822).then(($result: any) => {
         return $$createType3($result);
     });
@@ -149,7 +153,7 @@ export function ListIndexes(connectionID: string, schema: string): $CancellableP
 /**
  * ListSavedConnections returns all persisted connection profiles.
  */
-export function ListSavedConnections(): $CancellablePromise<$models.SavedConnection[]> {
+export function ListSavedConnections(): $CancellablePromise<config$0.SavedConnection[]> {
     return $Call.ByID(1978726301).then(($result: any) => {
         return $$createType14($result);
     });
@@ -167,14 +171,14 @@ export function ListSequences(connectionID: string, schema: string): $Cancellabl
     });
 }
 
-export function SaveSettings(s: $models.AppSettings): $CancellablePromise<void> {
+export function SaveSettings(s: config$0.AppSettings): $CancellablePromise<void> {
     return $Call.ByID(215950889, s);
 }
 
 /**
  * UpdateSavedConnection updates the name and/or connection string of a saved connection.
  */
-export function UpdateSavedConnection(conn: $models.SavedConnection): $CancellablePromise<void> {
+export function UpdateSavedConnection(conn: config$0.SavedConnection): $CancellablePromise<void> {
     return $Call.ByID(3171678203, conn);
 }
 
@@ -182,7 +186,7 @@ export function UpdateSavedConnection(conn: $models.SavedConnection): $Cancellab
 const $$createType0 = $models.Connection.createFrom;
 const $$createType1 = $models.QueryResult.createFrom;
 const $$createType2 = $Create.Map($Create.Any, $Create.Any);
-const $$createType3 = $models.AppSettings.createFrom;
+const $$createType3 = config$0.AppSettings.createFrom;
 const $$createType4 = $models.ColumnInfo.createFrom;
 const $$createType5 = $Create.Array($$createType4);
 const $$createType6 = $models.TypeGroup.createFrom;
@@ -192,7 +196,7 @@ const $$createType9 = $models.ForeignKeyInfo.createFrom;
 const $$createType10 = $Create.Array($$createType9);
 const $$createType11 = $models.IndexInfo.createFrom;
 const $$createType12 = $Create.Array($$createType11);
-const $$createType13 = $models.SavedConnection.createFrom;
+const $$createType13 = config$0.SavedConnection.createFrom;
 const $$createType14 = $Create.Array($$createType13);
 const $$createType15 = $models.SchemaObject.createFrom;
 const $$createType16 = $Create.Array($$createType15);

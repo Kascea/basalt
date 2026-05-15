@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { type QueryResult } from '../../bindings/basalt/db'
 import { type TableTarget, type RowRecord, type DirtyCells, type SortDirection } from '../types'
 import { GridToolbar } from './GridToolbar'
@@ -39,6 +39,10 @@ export function TableView({
 }: Props) {
   const [sortColumn, setSortColumn] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection | null>(null)
+  const [filterDraft, setFilterDraft] = useState(filterExpr)
+
+  // Keep draft in sync when the committed filter changes from outside (tab switch, clear)
+  useEffect(() => { setFilterDraft(filterExpr) }, [filterExpr])
 
   const columns = result?.columns ?? []
   const columnTypes = result?.columnTypes ?? []
@@ -48,10 +52,11 @@ export function TableView({
     setSortDirection(dir)
   }
 
+  // Only update the draft text — the DB query fires when the user presses Enter
   const handleAddFilter = (col: string) => {
     const snippet = `${col} = ''`
-    const next = filterExpr.trim() ? `${filterExpr.trim()} AND ${snippet}` : snippet
-    onFilterChange(next)
+    const next = filterDraft.trim() ? `${filterDraft.trim()} AND ${snippet}` : snippet
+    setFilterDraft(next)
   }
 
   const label = `${target.schema}.${target.table}`
@@ -76,8 +81,10 @@ export function TableView({
       <div className={`table-refresh-bar${isRefreshing ? ' active' : ''}`} />
       <FilterBar
         expr={filterExpr}
+        draft={filterDraft}
         hasError={false}
-        onChange={onFilterChange}
+        onChange={setFilterDraft}
+        onCommit={onFilterChange}
       />
       {isLoading ? (
         <p className="empty-state centered">Loading {label}…</p>

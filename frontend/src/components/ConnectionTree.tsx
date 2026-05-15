@@ -1,5 +1,150 @@
 import { useEffect, useMemo, useState } from 'react'
-import { type Connection, type SavedConnection, type SchemaObject } from '../../bindings/basalt/db'
+import { type Connection, type SchemaObject } from '../../bindings/basalt/db'
+import type { SavedConnection } from '../../bindings/basalt/config'
+
+// ── Icons ────────────────────────────────────────────────────────────────────
+
+function IconDb() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <ellipse cx="6" cy="3.5" rx="4" ry="1.5" />
+      <path d="M2 3.5v5c0 .83 1.79 1.5 4 1.5s4-.67 4-1.5v-5" />
+      <path d="M2 6.5c0 .83 1.79 1.5 4 1.5s4-.67 4-1.5" />
+    </svg>
+  )
+}
+
+function IconSchema() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 4v6.5h10V5H6.5L5.5 3.5H1V4z" />
+    </svg>
+  )
+}
+
+function IconTable() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="1" width="10" height="10" rx="1" />
+      <line x1="1" y1="4.5" x2="11" y2="4.5" />
+      <line x1="4.5" y1="4.5" x2="4.5" y2="11" />
+    </svg>
+  )
+}
+
+function IconEye() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 6s2-4 5-4 5 4 5 4-2 4-5 4-5-4-5-4z" />
+      <circle cx="6" cy="6" r="1.5" />
+    </svg>
+  )
+}
+
+function IconEyeSolid() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 6s2-4 5-4 5 4 5 4-2 4-5 4-5-4-5-4z" />
+      <circle cx="6" cy="6" r="1.5" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+function IconKey() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="4" cy="5" r="2.5" />
+      <path d="M5.8 6.8L10 11" />
+      <path d="M8 9l-1 1.5" />
+    </svg>
+  )
+}
+
+function IconSequence() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1.5 10.5h2V8h2V5.5h2V3h2" />
+    </svg>
+  )
+}
+
+
+function IconSquares() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="1" width="4" height="4" rx="0.5" />
+      <rect x="7" y="1" width="4" height="4" rx="0.5" />
+      <rect x="1" y="7" width="4" height="4" rx="0.5" />
+      <rect x="7" y="7" width="4" height="4" rx="0.5" />
+    </svg>
+  )
+}
+
+function IconOpen() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 6h7" />
+      <path d="M6.5 3.5L9.5 6l-3 2.5" />
+    </svg>
+  )
+}
+
+function IconOpenNewTab() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 2H2.5a1 1 0 0 0-1 1v6.5a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7" />
+      <path d="M7.5 1.5h3v3" />
+      <path d="M10.5 1.5L5.5 6.5" />
+    </svg>
+  )
+}
+
+function IconOpenSchema() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="1" width="10" height="10" rx="1" />
+      <line x1="1" y1="4.5" x2="11" y2="4.5" />
+      <line x1="1" y1="7.5" x2="11" y2="7.5" />
+    </svg>
+  )
+}
+
+function IconConnect() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 1.5v3M8 1.5v3M3 4.5h6v1.5a3 3 0 0 1-6 0V4.5z" />
+      <line x1="6" y1="8.5" x2="6" y2="10.5" />
+    </svg>
+  )
+}
+
+function IconDisconnect() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 1.5v3M8 1.5v3M3 4.5h6v1.5a3 3 0 0 1-6 0V4.5z" />
+      <line x1="6" y1="8.5" x2="6" y2="10.5" />
+      <line x1="4" y1="9" x2="8" y2="11" />
+    </svg>
+  )
+}
+
+function IconPencil() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8.5 1.5l2 2L4 10H2v-2L8.5 1.5z" />
+    </svg>
+  )
+}
+
+function IconTrash() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="2" y1="3.5" x2="10" y2="3.5" />
+      <path d="M4.5 3.5V2.5h3v1" />
+      <path d="M4 3.5v6.5h4V3.5" />
+    </svg>
+  )
+}
 
 // ── Type metadata ────────────────────────────────────────────────────────────
 
@@ -11,24 +156,17 @@ const TYPE_TO_GROUP: Record<string, string> = {
   Sequence: 'Sequences',
 }
 
-const GROUP_ICON: Record<string, string> = {
-  Tables: '▦',
-  Views: '◉',
-  'Materialized Views': '◉',
-  Indexes: '⊟',
-  Sequences: '≡',
-  'Foreign Keys': '⇒',
+const GROUP_ICON: Record<string, JSX.Element> = {
+  Tables: <IconTable />,
+  Views: <IconEye />,
+  'Materialized Views': <IconEyeSolid />,
+  Indexes: <IconKey />,
+  Sequences: <IconSequence />,
 }
 
-const GROUP_ORDER = ['Tables', 'Views', 'Materialized Views', 'Sequences', 'Indexes']
+const GROUP_ORDER = ['Tables', 'Views', 'Materialized Views', 'Sequences']
 
 const OPENABLE_GROUPS = new Set(['Tables', 'Views', 'Materialized Views'])
-
-const MANAGED_KIND: Record<string, 'sequences' | 'indexes' | 'foreignkeys'> = {
-  Sequences: 'sequences',
-  Indexes: 'indexes',
-  'Foreign Keys': 'foreignkeys',
-}
 
 function groupOrder(name: string) {
   const i = GROUP_ORDER.indexOf(name)
@@ -97,13 +235,19 @@ interface Props {
   onRefresh: () => void
   onTableOpen: (schema: string, table: string) => void
   onTableOpenNewTab: (schema: string, table: string) => void
-  onGroupOpen?: (schema: string, kind: 'sequences' | 'indexes' | 'foreignkeys') => void
+  onTableOpenSchema: (schema: string, table: string) => void
+  onGroupOpen?: (schema: string, kind: 'sequences' | 'indexes') => void
+}
+
+const GROUP_TAB_KIND: Record<string, 'sequences' | 'indexes'> = {
+  Sequences: 'sequences',
+  Indexes: 'indexes',
 }
 
 export function ConnectionTree({
   savedConnections, connections, activeConnectionID, objects, expandedConnections, expandedSchemas,
   filter, isConnecting, onConnectionClick, onReconnect, onDisconnect, onDeleteSaved, onEditSaved,
-  onSchemaToggle, onFilterChange, onRefresh, onTableOpen, onTableOpenNewTab, onGroupOpen,
+  onSchemaToggle, onFilterChange, onRefresh, onTableOpen, onTableOpenNewTab, onTableOpenSchema, onGroupOpen,
 }: Props) {
   const [activeSchema, setActiveSchema] = useState<string | null>(null)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
@@ -171,7 +315,7 @@ export function ConnectionTree({
               }}
             >
               <span className={`chevron${isConnected ? ' expandable' : ''}${connExpanded ? ' open' : ''}`} />
-              <span className={`node-icon conn-icon${!isConnected ? ' conn-icon--off' : ''}`}>⬡</span>
+              <span className={`node-icon conn-icon${!isConnected ? ' conn-icon--off' : ''}`}><IconDb /></span>
               <span className="node-label">{liveConn?.name ?? saved.name}</span>
               <span className="driver-badge">{saved.driver}</span>
               {connecting && <span className="conn-spinner" />}
@@ -206,46 +350,37 @@ export function ConnectionTree({
                         onClick={() => handleSchemaClick(schema)}
                       >
                         <span className={`chevron expandable${schemaExpanded ? ' open' : ''}`} />
-                        <span className="node-icon schema-icon">◈</span>
+                        <span className="node-icon schema-icon"><IconSchema /></span>
                         <span className="node-label">{schema}</span>
                         <span className="count-badge">{schemaObjs.length}</span>
                       </button>
 
                       {schemaExpanded && (
                         <div className="tree-children">
-                          {onGroupOpen && (
-                            <button
-                              className="tree-node type-group-node nav-group"
-                              onClick={() => onGroupOpen(schema, 'foreignkeys')}
-                            >
-                              <span className="chevron" />
-                              <span className="group-icon">{GROUP_ICON['Foreign Keys']}</span>
-                              <span className="node-label">Foreign Keys</span>
-                            </button>
-                          )}
-
                           {typeGroups.map(({ groupName, items }) => {
                             const groupKey = `${schema}:${groupName}`
                             const groupExpanded = expandedGroups.has(groupKey)
                             const isOpenable = OPENABLE_GROUPS.has(groupName)
-                            const managedKind = MANAGED_KIND[groupName]
+                            const leafIcon = GROUP_ICON[groupName] ?? <IconSquares />
+
+                            const tabKind = GROUP_TAB_KIND[groupName]
 
                             return (
                               <div key={groupKey}>
                                 <button
-                                  className={`tree-node type-group-node${managedKind ? ' nav-group' : ''}`}
+                                  className="tree-node type-group-node"
                                   onClick={() => {
-                                    if (managedKind && onGroupOpen) onGroupOpen(schema, managedKind)
+                                    if (tabKind && onGroupOpen) onGroupOpen(schema, tabKind)
                                     else toggleGroup(groupKey)
                                   }}
                                 >
-                                  <span className={managedKind ? 'chevron' : `chevron expandable${groupExpanded ? ' open' : ''}`} />
-                                  <span className="group-icon">{GROUP_ICON[groupName] ?? '▤'}</span>
+                                  <span className={tabKind ? 'chevron' : `chevron expandable${groupExpanded ? ' open' : ''}`} />
+                                  <span className="group-icon">{leafIcon}</span>
                                   <span className="node-label">{groupName}</span>
                                   <span className="count-badge">{items.length}</span>
                                 </button>
 
-                                {!managedKind && groupExpanded && (
+                                {groupExpanded && (
                                   <div className="tree-children">
                                     {items.map((obj) => (
                                       <button
@@ -261,6 +396,7 @@ export function ConnectionTree({
                                         }}
                                         title={obj.name}
                                       >
+                                        <span className="node-icon">{leafIcon}</span>
                                         <span className="node-label">{obj.name}</span>
                                       </button>
                                     ))}
@@ -287,10 +423,13 @@ export function ConnectionTree({
           onClick={(e) => e.stopPropagation()}
         >
           <button onClick={() => { onTableOpen(contextMenu.schema, contextMenu.name); setContextMenu(null) }}>
-            Open
+            <IconOpen /> Open
           </button>
           <button onClick={() => { onTableOpenNewTab(contextMenu.schema, contextMenu.name); setContextMenu(null) }}>
-            Open in New Tab
+            <IconOpenNewTab /> Open in New Tab
+          </button>
+          <button onClick={() => { onTableOpenSchema(contextMenu.schema, contextMenu.name); setContextMenu(null) }}>
+            <IconOpenSchema /> Open Schema
           </button>
         </div>
       )}
@@ -303,11 +442,11 @@ export function ConnectionTree({
         >
           {contextMenu.connected ? (
             <button onClick={() => { onDisconnect(contextMenu.id); setContextMenu(null) }}>
-              Disconnect
+              <IconDisconnect /> Disconnect
             </button>
           ) : (
             <button onClick={() => { onReconnect(contextMenu.id); setContextMenu(null) }}>
-              Connect
+              <IconConnect /> Connect
             </button>
           )}
           <button onClick={() => {
@@ -315,11 +454,11 @@ export function ConnectionTree({
             if (saved) onEditSaved(saved)
             setContextMenu(null)
           }}>
-            Edit
+            <IconPencil /> Edit
           </button>
           <div className="context-menu-separator" />
           <button className="context-menu-danger" onClick={() => { onDeleteSaved(contextMenu.id); setContextMenu(null) }}>
-            Delete
+            <IconTrash /> Delete
           </button>
         </div>
       )}

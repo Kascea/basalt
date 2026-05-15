@@ -1,31 +1,22 @@
-import { useState, useEffect, type KeyboardEvent } from 'react'
+import { type KeyboardEvent } from 'react'
 
 interface Props {
   expr: string
+  draft: string
   hasError: boolean
-  onChange: (expr: string) => void
+  onChange: (draft: string) => void
+  onCommit: (expr: string) => void
 }
 
-export function FilterBar({ expr, hasError, onChange }: Props) {
-  const [draft, setDraft] = useState(expr)
-
-  // Sync draft when the committed filter is cleared externally
-  useEffect(() => {
-    if (expr === '') setDraft('')
-  }, [expr])
-
-  const commit = (value: string) => {
-    onChange(value.trim())
-  }
-
+export function FilterBar({ expr, draft, hasError, onChange, onCommit }: Props) {
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') commit(draft)
-    if (e.key === 'Escape') { setDraft(expr); (e.target as HTMLInputElement).blur() }
+    if (e.key === 'Enter') onCommit(draft.trim())
+    if (e.key === 'Escape') { onChange(expr); (e.target as HTMLInputElement).blur() }
   }
 
   const handleClear = () => {
-    setDraft('')
-    commit('')
+    onChange('')
+    onCommit('')
   }
 
   const isDirty = draft.trim() !== expr.trim()
@@ -36,7 +27,7 @@ export function FilterBar({ expr, hasError, onChange }: Props) {
       <input
         className="filter-where-input"
         value={draft}
-        onChange={e => setDraft(e.target.value)}
+        onChange={e => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="name LIKE '%value%'  AND  col > 100  (press Enter to apply)"
         spellCheck={false}

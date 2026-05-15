@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { DatabaseService, type Connection, type SavedConnection, type SchemaObject } from '../../bindings/basalt/db'
+import { DatabaseService, type Connection, type SchemaObject } from '../../bindings/basalt/db'
+import type { SavedConnection } from '../../bindings/basalt/config'
 
 export interface DatabaseState {
   savedConnections: SavedConnection[]

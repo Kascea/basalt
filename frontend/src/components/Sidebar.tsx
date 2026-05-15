@@ -1,4 +1,5 @@
-import { type Connection, type SavedConnection, type SchemaObject } from '../../bindings/basalt/db'
+import { type Connection, type SchemaObject } from '../../bindings/basalt/db'
+import type { SavedConnection } from '../../bindings/basalt/config'
 import { Window } from '@wailsio/runtime'
 import { ConnectionTree } from './ConnectionTree'
 
@@ -23,7 +24,8 @@ interface Props {
   onRefresh: () => void
   onTableOpen: (schema: string, table: string) => void
   onTableOpenNewTab: (schema: string, table: string) => void
-  onGroupOpen?: (schema: string, kind: 'sequences' | 'indexes' | 'foreignkeys') => void
+  onTableOpenSchema: (schema: string, table: string) => void
+  onGroupOpen?: (schema: string, kind: 'sequences' | 'indexes') => void
   onSettingsToggle: () => void
 }
 
@@ -31,7 +33,7 @@ export function Sidebar({
   savedConnections, connections, activeConnectionID, objects, expandedConnections, expandedSchemas,
   filter, isConnecting, showSettings, onNewConnection, onConnectionClick, onReconnect, onDisconnect,
   onDeleteSaved, onEditSaved, onSchemaToggle, onFilterChange, onRefresh,
-  onTableOpen, onTableOpenNewTab, onGroupOpen, onSettingsToggle,
+  onTableOpen, onTableOpenNewTab, onTableOpenSchema, onGroupOpen, onSettingsToggle,
 }: Props) {
   return (
     <aside className="sidebar">
@@ -63,6 +65,7 @@ export function Sidebar({
           onRefresh={onRefresh}
           onTableOpen={onTableOpen}
           onTableOpenNewTab={onTableOpenNewTab}
+          onTableOpenSchema={onTableOpenSchema}
           onGroupOpen={onGroupOpen}
         />
       </div>

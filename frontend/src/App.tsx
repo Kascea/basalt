@@ -10,7 +10,7 @@ import { useDatabase } from './hooks/useDatabase'
 import { useWorksheet } from './hooks/useWorksheet'
 import { useTableTabs } from './hooks/useTableTabs'
 import { useSettings } from './hooks/useSettings'
-import type { AppSettings, SavedConnection } from '../bindings/basalt/db'
+import type { AppSettings, SavedConnection } from '../bindings/basalt/config'
 
 function App() {
   const [statusMessage, setStatusMessage] = useState('Not connected')
@@ -118,6 +118,7 @@ function App() {
         onRefresh={db.refreshObjects}
         onTableOpen={(schema, table) => { tableTabs.openTableTab(schema, table, false); setShowSettings(false) }}
         onTableOpenNewTab={(schema, table) => { tableTabs.openTableTab(schema, table, true); setShowSettings(false) }}
+        onTableOpenSchema={(schema, table) => { tableTabs.openSchemaTab(schema, table); setShowSettings(false) }}
         onGroupOpen={(schema, kind) => { tableTabs.openGroupTab(schema, kind); setShowSettings(false) }}
         onSettingsToggle={() => setShowSettings((v) => !v)}
       />
