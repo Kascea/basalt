@@ -215,9 +215,11 @@ function App() {
       {showSettings && effectiveSettings ? (
         <SettingsView
           settings={effectiveSettings}
+          savedConnections={db.savedConnections}
           onClose={() => setShowSettings(false)}
           onSettingsChange={handleSettingsChange}
           onSettingsSave={handleSettingsSave}
+          onDeleteSaved={(id) => db.deleteSaved(id)}
         />
       ) : (
         <WorkspaceProvider value={session}>

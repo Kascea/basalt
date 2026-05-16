@@ -2,11 +2,15 @@ package planetscale
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	ps "github.com/planetscale/planetscale-go/planetscale"
 )
+
+const apiBase = "https://api.planetscale.com/v1"
 
 type Database struct {
 	Name          string
@@ -23,6 +27,40 @@ type Password struct {
 	PlainText    string
 	Hostname     string
 	DatabaseName string // actual PostgreSQL database name (may differ from PlanetScale DB name)
+}
+
+type User struct {
+	DisplayName string
+	Email       string
+}
+
+func GetUser(token string) (User, error) {
+	req, err := http.NewRequest("GET", apiBase+"/user", nil)
+	if err != nil {
+		return User{}, err
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Accept", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return User{}, err
+	}
+	defer resp.Body.Close()
+
+	var u struct {
+		DisplayName string `json:"display_name"`
+		Name        string `json:"name"`
+		Email       string `json:"email"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&u); err != nil {
+		return User{}, err
+	}
+	name := u.DisplayName
+	if name == "" {
+		name = u.Name
+	}
+	return User{DisplayName: name, Email: u.Email}, nil
 }
 
 func newClient(token string) (*ps.Client, error) {

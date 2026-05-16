@@ -2047,8 +2047,46 @@ tr.new-row:hover td.row-index {
     font-family: inherit;
 }
 
-.confirm-modal-danger-btn:hover {
+.confirm-modal-danger-btn:hover:not(:disabled) {
     background: #e74c3c;
+}
+
+.confirm-modal-danger-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.confirm-modal-input-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.confirm-modal-input-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.confirm-modal-input-label strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.confirm-modal-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 10px;
+    background: var(--bg-input, #1a1d1f);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+}
+
+.confirm-modal-input:focus {
+    border-color: var(--accent, #4a9eff);
 }
 
 /* tighten the connect form when it lives inside a modal */
@@ -2989,15 +3027,16 @@ tr.new-row:hover td.row-index {
     display: flex;
     align-items: center;
     gap: 10px;
-    height: 36px;
-    padding: 0 16px;
+    height: 34px;
+    padding: 0 14px;
     border-radius: 0;
     background: transparent;
     color: var(--text-primary);
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 500;
     text-align: left;
     width: 100%;
+    white-space: nowrap;
     box-sizing: border-box;
     transition: background 0.1s, color 0.1s;
 }
@@ -3612,4 +3651,155 @@ tr:hover .icon-btn {
     color: var(--teal-hover);
     border-color: color-mix(in srgb, var(--teal) 40%, transparent);
     background: rgba(42, 143, 110, 0.1);
+}
+
+/* ── Connected Accounts ──────────────────────────────────────────────────── */
+
+.connected-account-card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.connected-account-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid var(--border);
+}
+
+.connected-account-identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.connected-account-logo {
+    display: flex;
+    align-items: center;
+    color: var(--text-secondary);
+}
+
+.connected-account-status {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.connected-account-status.is-disconnected {
+    color: #888;
+}
+
+.connected-account-signout {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.connected-account-signout:hover {
+    color: var(--text-primary);
+    border-color: rgba(200, 80, 80, 0.5);
+    background: rgba(200, 80, 80, 0.08);
+}
+
+.connected-account-user {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.connected-account-user-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.connected-account-user-email {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.connected-account-dbs {
+    padding: 12px 16px;
+}
+
+.connected-account-dbs-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.connected-account-empty {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.connected-account-db-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.connected-account-db-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border-light);
+}
+
+.connected-account-db-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.connected-account-db-name {
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.connected-account-db-meta {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.connected-account-db-remove {
+    font-size: 11px;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.connected-account-db-remove:hover {
+    color: #e06060;
+    border-color: rgba(210, 60, 60, 0.4);
+    background: rgba(210, 60, 60, 0.1);
 }

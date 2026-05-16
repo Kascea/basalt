@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { type SchemaObject } from '../../bindings/basalt/db'
 import { useConnectionSession } from '../context/ConnectionContext'
+import { DeleteConfirmModal } from './DeleteConfirmModal'
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 
@@ -155,6 +156,15 @@ function IconRefresh() {
   )
 }
 
+function IconPlanetScale() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M-0.0981445 16C-0.0981438 7.16344 7.0653 -7.52254e-07 15.9019 0C22.399 5.67998e-07 27.9917 3.87258 30.4975 9.43544L9.3373 30.5956C8.42926 30.1866 7.56625 29.6953 6.75778 29.1313L19.8891 16H15.9019L4.58815 27.3137C1.69272 24.4183 -0.0981449 20.4183 -0.0981445 16Z" fill="white" />
+      <path d="M31.9019 16.0055L15.9074 32C24.7396 31.997 31.8989 24.8377 31.9019 16.0055Z" fill="white" />
+    </svg>
+  )
+}
+
 // ── Type metadata ────────────────────────────────────────────────────────────
 
 const TYPE_TO_GROUP: Record<string, string> = {
@@ -241,6 +251,7 @@ export function ConnectionTree() {
   const [activeSchema, setActiveSchema] = useState<string | null>(null)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!contextMenu) return
@@ -304,7 +315,7 @@ export function ConnectionTree() {
               }}
             >
               <span className={`chevron${isConnected ? ' expandable' : ''}${connExpanded ? ' open' : ''}`} />
-              <span className={`node-icon conn-icon${!isConnected ? ' conn-icon--off' : ''}`}><IconDb /></span>
+              <span className={`node-icon conn-icon${!isConnected ? ' conn-icon--off' : ''}`}>{saved.planetscaleKey ? <IconPlanetScale /> : <IconDb />}</span>
               <span className="node-label">{liveConn?.name ?? saved.name}</span>
               <span className="driver-badge">{saved.driver}</span>
               {connecting && <span className="conn-spinner" />}
@@ -448,11 +459,23 @@ export function ConnectionTree() {
             <IconPencil /> Edit
           </button>
           <div className="context-menu-separator" />
-          <button className="context-menu-danger" onClick={() => { onDeleteSaved(contextMenu.id); setContextMenu(null) }}>
+          <button className="context-menu-danger" onClick={() => { setConfirmDeleteId(contextMenu.id); setContextMenu(null) }}>
             <IconTrash /> Delete
           </button>
         </div>
       )}
+
+      {confirmDeleteId && (() => {
+        const conn = savedConnections.find(s => s.id === confirmDeleteId)
+        return conn ? (
+          <DeleteConfirmModal
+            message={`Remove "${conn.name}"? The saved credentials will be deleted.`}
+            confirmText={conn.name}
+            onConfirm={() => { onDeleteSaved(confirmDeleteId); setConfirmDeleteId(null) }}
+            onCancel={() => setConfirmDeleteId(null)}
+          />
+        ) : null
+      })()}
     </>
   )
 }

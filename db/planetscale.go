@@ -32,12 +32,30 @@ func (d *DatabaseService) PlanetScaleStartAuth() error {
 	return nil
 }
 
-// PlanetScaleIsSignedIn returns true if a valid token is loaded (either from
-// a previous session or from a completed auth flow this session).
+// PlanetScaleIsSignedIn returns true if a valid token is loaded.
 func (d *DatabaseService) PlanetScaleIsSignedIn() bool {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	return d.planetscaleToken != ""
+}
+
+// PlanetScaleGetUser returns the display name and email of the signed-in user.
+func (d *DatabaseService) PlanetScaleGetUser() (planetscale.User, error) {
+	d.mu.Lock()
+	token := d.planetscaleToken
+	d.mu.Unlock()
+	if token == "" {
+		return planetscale.User{}, fmt.Errorf("not signed in to PlanetScale")
+	}
+	return planetscale.GetUser(token)
+}
+
+// PlanetScaleSignOut clears the stored token from memory and disk.
+func (d *DatabaseService) PlanetScaleSignOut() {
+	d.mu.Lock()
+	d.planetscaleToken = ""
+	d.mu.Unlock()
+	_ = config.SavePlanetScaleToken("")
 }
 
 func (d *DatabaseService) PlanetScaleListDatabases() ([]PlanetScaleDatabase, error) {

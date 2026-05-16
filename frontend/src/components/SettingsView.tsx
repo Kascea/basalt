@@ -1,28 +1,34 @@
 import { useState } from 'react'
-import type { AppSettings } from '../../bindings/basalt/config'
+import { Paintbrush, Terminal, Settings, Link } from 'lucide-react'
+import type { AppSettings, SavedConnection } from '../../bindings/basalt/config'
 import { SettingsAppearance } from './settings/SettingsAppearance'
 import { SettingsQuery } from './settings/SettingsQuery'
 import { SettingsGeneral } from './settings/SettingsGeneral'
+import { SettingsConnectedAccounts } from './settings/SettingsConnectedAccounts'
 
-type Section = 'appearance' | 'query' | 'general'
+type Section = 'appearance' | 'query' | 'general' | 'connected-accounts'
 
-const NAV_ITEMS: Array<{ id: Section; label: string; icon: string }> = [
-  { id: 'appearance',  label: 'Appearance',  icon: '◑' },
-  { id: 'query',       label: 'Query',        icon: '⊞' },
-  { id: 'general',     label: 'General',      icon: '⊙' },
+const NAV_ITEMS: Array<{ id: Section; label: string; icon: React.ReactNode }> = [
+  { id: 'appearance',         label: 'Appearance',         icon: <Paintbrush size={15} /> },
+  { id: 'query',              label: 'Query',              icon: <Terminal size={15} /> },
+  { id: 'general',            label: 'General',            icon: <Settings size={15} /> },
+  { id: 'connected-accounts', label: 'Connected Accounts', icon: <Link size={15} /> },
 ]
 
 interface Props {
   settings: AppSettings
+  savedConnections: SavedConnection[]
   onClose: () => void
   onSettingsChange: (patch: Partial<AppSettings>) => void
   onSettingsSave: (s: AppSettings) => void
+  onDeleteSaved: (id: string) => void
   initialSection?: Section
 }
 
 export function SettingsView({
   settings,
-  onClose, onSettingsChange, onSettingsSave,
+  savedConnections,
+  onClose, onSettingsChange, onSettingsSave, onDeleteSaved,
   initialSection = 'appearance',
 }: Props) {
   const [activeSection, setActiveSection] = useState<Section>(initialSection)
@@ -71,6 +77,9 @@ export function SettingsView({
           )}
           {activeSection === 'general' && (
             <SettingsGeneral settings={settings} onChange={handleChange} />
+          )}
+          {activeSection === 'connected-accounts' && (
+            <SettingsConnectedAccounts savedConnections={savedConnections} onDeleteSaved={onDeleteSaved} />
           )}
         </div>
       </div>

@@ -8,6 +8,9 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
 import * as config$0 from "../config/models.js";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore: Unused imports
+import * as planetscale$0 from "../planetscale/models.js";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
@@ -196,8 +199,16 @@ export function PlanetScaleGetConnectionString(org: string, database: string, br
 }
 
 /**
- * PlanetScaleIsSignedIn returns true if a valid token is loaded (either from
- * a previous session or from a completed auth flow this session).
+ * PlanetScaleGetUser returns the display name and email of the signed-in user.
+ */
+export function PlanetScaleGetUser(): $CancellablePromise<planetscale$0.User> {
+    return $Call.ByID(2949378294).then(($result: any) => {
+        return $$createType21($result);
+    });
+}
+
+/**
+ * PlanetScaleIsSignedIn returns true if a valid token is loaded.
  */
 export function PlanetScaleIsSignedIn(): $CancellablePromise<boolean> {
     return $Call.ByID(1557999076);
@@ -205,8 +216,15 @@ export function PlanetScaleIsSignedIn(): $CancellablePromise<boolean> {
 
 export function PlanetScaleListDatabases(): $CancellablePromise<$models.PlanetScaleDatabase[]> {
     return $Call.ByID(2527986755).then(($result: any) => {
-        return $$createType22($result);
+        return $$createType23($result);
     });
+}
+
+/**
+ * PlanetScaleSignOut clears the stored token from memory and disk.
+ */
+export function PlanetScaleSignOut(): $CancellablePromise<void> {
+    return $Call.ByID(4157967454);
 }
 
 export function PlanetScaleStartAuth(): $CancellablePromise<void> {
@@ -254,5 +272,6 @@ const $$createType17 = $models.SchemaObject.createFrom;
 const $$createType18 = $Create.Array($$createType17);
 const $$createType19 = $models.SequenceInfo.createFrom;
 const $$createType20 = $Create.Array($$createType19);
-const $$createType21 = $models.PlanetScaleDatabase.createFrom;
-const $$createType22 = $Create.Array($$createType21);
+const $$createType21 = planetscale$0.User.createFrom;
+const $$createType22 = $models.PlanetScaleDatabase.createFrom;
+const $$createType23 = $Create.Array($$createType22);
