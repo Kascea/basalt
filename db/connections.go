@@ -8,9 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"basalt/config"
+	"basalt/localdb"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func (d *DatabaseService) Connect(request ConnectRequest) (Connection, error) {
@@ -18,16 +19,23 @@ func (d *DatabaseService) Connect(request ConnectRequest) (Connection, error) {
 	if driver == "" {
 		driver = DriverPostgres
 	}
-	if driver != DriverPostgres {
-		return Connection{}, errors.New(string(driver) + " connections are planned, but only postgres is wired right now")
+	switch driver {
+	case DriverPostgres, DriverSQLite:
+		// supported
+	default:
+		return Connection{}, errors.New(string(driver) + " connections are not yet supported")
 	}
 
 	connectionString := strings.TrimSpace(request.ConnectionString)
 	if connectionString == "" {
-		connectionString = loadEnvValue("DATABASE_URL")
+		connectionString = localdb.LoadEnvValue("DATABASE_URL")
 	}
 	if connectionString == "" {
 		return Connection{}, errors.New("enter a connection string or set DATABASE_URL in .env")
+	}
+
+	if driver == DriverSQLite {
+		connectionString = sqliteURI(connectionString)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -43,7 +51,6 @@ func (d *DatabaseService) Connect(request ConnectRequest) (Connection, error) {
 	}
 
 	id := d.upsertSaved(request.Name, driver, connectionString, request.PlanetScaleKey)
-
 	profile := connectionFromURL(id, request.Name, driver, connectionString)
 
 	d.mu.Lock()
@@ -58,68 +65,15 @@ func (d *DatabaseService) Connect(request ConnectRequest) (Connection, error) {
 
 // ConnectSaved reconnects using stored credentials for the given saved connection ID.
 func (d *DatabaseService) ConnectSaved(id string) (Connection, error) {
-	d.mu.Lock()
-	var found *config.SavedConnection
-	for i := range d.saved {
-		if d.saved[i].ID == id {
-			found = &d.saved[i]
-			break
-		}
-	}
-	d.mu.Unlock()
-
-	if found == nil {
+	found, err := d.store.FindConnection(id)
+	if err != nil {
 		return Connection{}, errors.New("saved connection not found")
 	}
-
 	return d.Connect(ConnectRequest{
 		Name:             found.Name,
 		Driver:           found.Driver,
 		ConnectionString: found.ConnectionString,
 	})
-}
-
-// ListSavedConnections returns all persisted connection profiles.
-func (d *DatabaseService) ListSavedConnections() []config.SavedConnection {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-	out := make([]config.SavedConnection, len(d.saved))
-	copy(out, d.saved)
-	return out
-}
-
-// DeleteSavedConnection removes a saved connection from disk (does not disconnect if active).
-func (d *DatabaseService) DeleteSavedConnection(id string) error {
-	d.mu.Lock()
-
-	filtered := d.saved[:0]
-	for _, s := range d.saved {
-		if s.ID != id {
-			filtered = append(filtered, s)
-		}
-	}
-	d.saved = filtered
-	err := config.WriteSavedConnections(d.saved)
-	cb := d.OnConnectionsChanged
-	d.mu.Unlock()
-	if cb != nil {
-		go cb()
-	}
-	return err
-}
-
-// UpdateSavedConnection updates the name and/or connection string of a saved connection.
-func (d *DatabaseService) UpdateSavedConnection(conn config.SavedConnection) error {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
-	for i, s := range d.saved {
-		if s.ID == conn.ID {
-			d.saved[i] = conn
-			return config.WriteSavedConnections(d.saved)
-		}
-	}
-	return errors.New("connection not found")
 }
 
 // DisconnectConnection closes the live DB connection but keeps the saved entry.
@@ -134,56 +88,50 @@ func (d *DatabaseService) DisconnectConnection(id string) error {
 	return nil
 }
 
+// ListConnections returns all currently open (live) connections.
 func (d *DatabaseService) ListConnections() []Connection {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 
-	connections := make([]Connection, 0, len(d.connections))
+	out := make([]Connection, 0, len(d.connections))
 	for _, conn := range d.connections {
 		c := conn.profile
 		c.Connected = true
-		connections = append(connections, c)
+		out = append(out, c)
 	}
-	return connections
+	return out
 }
 
-// upsertSaved finds an existing saved connection with the same connection string,
-// or creates a new one. Returns the stable ID. Must be called without the lock held.
+// upsertSaved persists a connection by connection string, creating or updating
+// as needed. Returns the stable ID.
 func (d *DatabaseService) upsertSaved(name string, driver Driver, connectionString, psKey string) string {
-	d.mu.Lock()
-
-	for i, s := range d.saved {
-		if s.ConnectionString == connectionString {
-			d.saved[i].Name = name
-			if psKey != "" {
-				d.saved[i].PlanetScaleKey = psKey
-			}
-			_ = config.WriteSavedConnections(d.saved)
-			id := s.ID
-			cb := d.OnConnectionsChanged
-			d.mu.Unlock()
-			if cb != nil {
-				go cb()
-			}
-			return id
+	existing, err := d.store.FindConnectionByString(connectionString)
+	if err == nil {
+		existing.Name = name
+		if psKey != "" {
+			existing.PlanetScaleKey = psKey
 		}
+		_ = d.store.UpsertConnection(*existing)
+		d.notifyConnectionsChanged()
+		return existing.ID
 	}
 
-	id := config.NewID()
-	d.saved = append(d.saved, config.SavedConnection{
+	id := localdb.NewID()
+	_ = d.store.UpsertConnection(localdb.SavedConnection{
 		ID:               id,
 		Name:             name,
 		Driver:           string(driver),
 		ConnectionString: connectionString,
 		PlanetScaleKey:   psKey,
 	})
-	_ = config.WriteSavedConnections(d.saved)
-	cb := d.OnConnectionsChanged
-	d.mu.Unlock()
-	if cb != nil {
+	d.notifyConnectionsChanged()
+	return id
+}
+
+func (d *DatabaseService) notifyConnectionsChanged() {
+	if cb := d.OnConnectionsChanged; cb != nil {
 		go cb()
 	}
-	return id
 }
 
 func connectionFromURL(id, name string, driver Driver, connectionString string) Connection {

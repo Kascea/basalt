@@ -5,6 +5,45 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+/**
+ * Database is the Wails-facing type for a connectable PlanetScale database branch.
+ */
+export class Database {
+    "Org": string;
+    "Name": string;
+    "Branch": string;
+    "Kind": string;
+
+    /** Creates a new Database instance. */
+    constructor($$source: Partial<Database> = {}) {
+        if (!("Org" in $$source)) {
+            this["Org"] = "";
+        }
+        if (!("Name" in $$source)) {
+            this["Name"] = "";
+        }
+        if (!("Branch" in $$source)) {
+            this["Branch"] = "";
+        }
+        if (!("Kind" in $$source)) {
+            this["Kind"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new Database instance from a string or object.
+     */
+    static createFrom($$source: any = {}): Database {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new Database($$parsedSource as Partial<Database>);
+    }
+}
+
+/**
+ * User is the Wails-facing type for the signed-in PlanetScale account.
+ */
 export class User {
     "DisplayName": string;
     "Email": string;

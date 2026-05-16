@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { DatabaseService, type Connection, type SchemaObject } from '../../bindings/basalt/db'
-import type { SavedConnection } from '../../bindings/basalt/config'
+import * as LocaldbService from '../../bindings/basalt/localdb/service'
+import type { SavedConnection } from '../../bindings/basalt/localdb/models'
 
 export interface DatabaseState {
   savedConnections: SavedConnection[]
   connections: Connection[]
   activeConnectionID: string
   activeConnection: Connection | undefined
-  objects: SchemaObject[]
+  objectsByConnection: Record<string, SchemaObject[]>
   filter: string
   isConnecting: string | null // ID being connected, or null
   expandedConnections: Set<string>
@@ -27,7 +28,7 @@ export function useDatabase(setStatus: (msg: string) => void): DatabaseState {
   const [savedConnections, setSavedConnections] = useState<SavedConnection[]>([])
   const [connections, setConnections] = useState<Connection[]>([])
   const [activeConnectionID, setActiveConnectionID] = useState('')
-  const [objects, setObjects] = useState<SchemaObject[]>([])
+  const [objectsByConnection, setObjectsByConnection] = useState<Record<string, SchemaObject[]>>({})
   const [filter, setFilter] = useState('')
   const [isConnecting, setIsConnecting] = useState<string | null>(null)
   const [expandedConnections, setExpandedConnections] = useState<Set<string>>(new Set())
@@ -37,7 +38,7 @@ export function useDatabase(setStatus: (msg: string) => void): DatabaseState {
 
   // Load saved connections on mount.
   useEffect(() => {
-    DatabaseService.ListSavedConnections()
+    LocaldbService.ListSavedConnections()
       .then(setSavedConnections)
       .catch(() => {/* ignore */})
   }, [])
@@ -50,15 +51,15 @@ export function useDatabase(setStatus: (msg: string) => void): DatabaseState {
     const db = conn.database ? `/${conn.database}` : ''
     setStatus(`Connected — ${who}${db} (${conn.driver})`)
     onSuccess?.()
-    DatabaseService.ListSavedConnections().then(setSavedConnections).catch(() => {})
+    LocaldbService.ListSavedConnections().then(setSavedConnections).catch(() => {})
     return DatabaseService.ListSchemaObjects(conn.id)
       .then((objs) => {
-        setObjects(objs)
-        if (objs.length > 0) setExpandedSchemas(new Set([objs[0].schema]))
+        setObjectsByConnection((prev) => ({ ...prev, [conn.id]: objs }))
+        if (objs.length > 0) setExpandedSchemas((prev) => new Set([...prev, objs[0].schema]))
       })
       .catch((err) => {
         setStatus(String(err))
-        setObjects([])
+        setObjectsByConnection((prev) => ({ ...prev, [conn.id]: [] }))
       })
   }
 
@@ -90,30 +91,26 @@ export function useDatabase(setStatus: (msg: string) => void): DatabaseState {
     DatabaseService.DisconnectConnection(id)
       .then(() => {
         setConnections((prev) => prev.filter((c) => c.id !== id))
-        if (activeConnectionID === id) {
-          setActiveConnectionID('')
-          setObjects([])
-        }
+        setObjectsByConnection((prev) => { const next = { ...prev }; delete next[id]; return next })
+        if (activeConnectionID === id) setActiveConnectionID('')
         setStatus(`Disconnected from ${label}`)
       })
       .catch((err) => setStatus(String(err)))
   }
 
   const deleteSaved = (id: string) => {
-    DatabaseService.DeleteSavedConnection(id)
+    LocaldbService.DeleteSavedConnection(id)
       .then(() => {
         setSavedConnections((prev) => prev.filter((s) => s.id !== id))
         setConnections((prev) => prev.filter((c) => c.id !== id))
-        if (activeConnectionID === id) {
-          setActiveConnectionID('')
-          setObjects([])
-        }
+        setObjectsByConnection((prev) => { const next = { ...prev }; delete next[id]; return next })
+        if (activeConnectionID === id) setActiveConnectionID('')
       })
       .catch((err) => setStatus(String(err)))
   }
 
   const updateSaved = (conn: SavedConnection) => {
-    DatabaseService.UpdateSavedConnection(conn)
+    LocaldbService.UpdateSavedConnection(conn)
       .then(() => setSavedConnections((prev) => prev.map((s) => s.id === conn.id ? conn : s)))
       .catch((err) => setStatus(String(err)))
   }
@@ -121,7 +118,7 @@ export function useDatabase(setStatus: (msg: string) => void): DatabaseState {
   const refreshObjects = () => {
     if (!activeConnectionID) return
     DatabaseService.ListSchemaObjects(activeConnectionID)
-      .then(setObjects)
+      .then((objs) => setObjectsByConnection((prev) => ({ ...prev, [activeConnectionID]: objs })))
       .catch((err) => setStatus(String(err)))
   }
 
@@ -147,7 +144,7 @@ export function useDatabase(setStatus: (msg: string) => void): DatabaseState {
     connections,
     activeConnectionID,
     activeConnection,
-    objects,
+    objectsByConnection,
     filter,
     isConnecting,
     expandedConnections,

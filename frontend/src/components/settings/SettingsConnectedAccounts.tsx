@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { DatabaseService } from '../../../bindings/basalt/db'
-import type { SavedConnection } from '../../../bindings/basalt/config'
+import * as PlanetScaleService from '../../../bindings/basalt/planetscale/service'
+import type { SavedConnection } from '../../../bindings/basalt/localdb/models'
 import type { User as PSUser } from '../../../bindings/basalt/planetscale/models'
 import { DeleteConfirmModal } from '../DeleteConfirmModal'
 
@@ -40,7 +40,7 @@ function PlanetScaleAccount({ savedConnections, onDeleteSaved }: Props) {
   const psConnections = savedConnections.filter(s => s.planetscaleKey && s.planetscaleKey !== '')
 
   useEffect(() => {
-    DatabaseService.PlanetScaleGetUser()
+    PlanetScaleService.GetUser()
       .then(u => setUser(u))
       .catch(() => setUser(null))
       .finally(() => setLoading(false))
@@ -48,7 +48,7 @@ function PlanetScaleAccount({ savedConnections, onDeleteSaved }: Props) {
 
   const handleSignOut = () => {
     setSigningOut(true)
-    DatabaseService.PlanetScaleSignOut()
+    PlanetScaleService.SignOut()
       .then(() => setUser(null))
       .finally(() => setSigningOut(false))
   }

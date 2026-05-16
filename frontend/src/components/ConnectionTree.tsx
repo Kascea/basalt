@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { type SchemaObject } from '../../bindings/basalt/db'
 import { useConnectionSession } from '../context/ConnectionContext'
 import { DeleteConfirmModal } from './DeleteConfirmModal'
@@ -242,7 +242,7 @@ const GROUP_TAB_KIND: Record<string, 'sequences' | 'indexes'> = {
 
 export function ConnectionTree() {
   const {
-    savedConnections, connections, activeConnectionID, objects,
+    savedConnections, connections, activeConnectionID, objectsByConnection,
     expandedConnections, expandedSchemas, filter, isConnecting,
     onConnectionClick, onReconnect, onDisconnect, onDeleteSaved, onEditSaved,
     onSchemaToggle, onFilterChange, onRefresh, onTableOpen, onTableOpenNewTab,
@@ -260,15 +260,7 @@ export function ConnectionTree() {
     return () => document.removeEventListener('click', close)
   }, [contextMenu])
 
-  const filteredObjects = useMemo(() => {
-    const q = filter.trim().toLowerCase()
-    if (!q) return objects
-    return objects.filter((o) =>
-      [o.schema, o.name, o.type].some((v) => v.toLowerCase().includes(q)),
-    )
-  }, [filter, objects])
-
-  const objectsBySchema = useMemo(() => groupBySchema(filteredObjects), [filteredObjects])
+  const q = filter.trim().toLowerCase()
 
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) => {
@@ -295,6 +287,12 @@ export function ConnectionTree() {
         const isActive = saved.id === activeConnectionID
         const connExpanded = expandedConnections.has(saved.id)
         const connecting = isConnecting === saved.id
+
+        const connObjects = objectsByConnection[saved.id] ?? []
+        const filteredObjects = q
+          ? connObjects.filter((o) => [o.schema, o.name, o.type].some((v) => v.toLowerCase().includes(q)))
+          : connObjects
+        const objectsBySchema = groupBySchema(filteredObjects)
 
         const handleConnClick = () => {
           if (isConnected) {

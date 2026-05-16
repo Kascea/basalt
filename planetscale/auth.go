@@ -22,7 +22,7 @@ const (
 // Register http://127.0.0.1:7739/callback in your PlanetScale OAuth app.
 const callbackPort = 7739
 
-func Authenticate(clientID, clientSecret string, openBrowser func(string)) (string, error) {
+func authenticate(clientID, clientSecret string, openBrowser func(string)) (string, error) {
 	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", callbackPort))
 	if err != nil {
 		return "", fmt.Errorf("port %d is already in use — is another sign-in in progress?", callbackPort)

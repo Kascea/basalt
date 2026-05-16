@@ -2,19 +2,21 @@ package main
 
 import (
 	"basalt/db"
+	"basalt/localdb"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type menuState struct {
 	app        *application.App
-	svc        *db.DatabaseService
+	dbSvc      *db.DatabaseService
+	appSvc     *localdb.Service
 	recentMenu *application.Menu
 	tray       *application.SystemTray
 }
 
-func buildMenus(app *application.App, svc *db.DatabaseService) func() {
-	ms := &menuState{app: app, svc: svc}
+func buildMenus(app *application.App, dbSvc *db.DatabaseService, appSvc *localdb.Service) func() {
+	ms := &menuState{app: app, dbSvc: dbSvc, appSvc: appSvc}
 	app.Menu.Set(ms.buildAppMenu())
 	ms.tray = ms.buildSystemTray()
 	return ms.rebuildDynamic
@@ -23,7 +25,6 @@ func buildMenus(app *application.App, svc *db.DatabaseService) func() {
 func (ms *menuState) buildAppMenu() *application.Menu {
 	menu := application.NewMenu()
 
-	// ── Basalt (app) menu ─────────────────────────────────────────────────────
 	basalt := menu.AddSubmenu("Basalt")
 	basalt.AddRole(application.About)
 	basalt.AddSeparator()
@@ -37,18 +38,16 @@ func (ms *menuState) buildAppMenu() *application.Menu {
 	basalt.AddSeparator()
 	basalt.AddRole(application.Quit)
 
-	// ── File menu ─────────────────────────────────────────────────────────────
 	file := menu.AddSubmenu("File")
 	file.Add("New Connection...").
 		SetAccelerator("CmdOrCtrl+N").
 		OnClick(func(*application.Context) { ms.app.Event.Emit("menu:new-connection") })
 	ms.recentMenu = file.AddSubmenu("Recent Connections")
-	ms.populateRecentMenu()
+	ms.populateRecentMenuFrom(ms.appSvc.ListSavedConnections())
 	file.AddSeparator()
 	file.Add("Close Connection").
 		OnClick(func(*application.Context) { ms.app.Event.Emit("menu:close-connection") })
 
-	// ── Edit menu ─────────────────────────────────────────────────────────────
 	edit := menu.AddSubmenu("Edit")
 	edit.AddRole(application.Undo)
 	edit.AddRole(application.Redo)
@@ -59,7 +58,6 @@ func (ms *menuState) buildAppMenu() *application.Menu {
 	edit.AddSeparator()
 	edit.AddRole(application.SelectAll)
 
-	// ── Database menu ─────────────────────────────────────────────────────────
 	dbMenu := menu.AddSubmenu("Database")
 	dbMenu.Add("Run Query").
 		SetAccelerator("CmdOrCtrl+Return").
@@ -71,9 +69,15 @@ func (ms *menuState) buildAppMenu() *application.Menu {
 	return menu
 }
 
-func (ms *menuState) populateRecentMenu() {
+func (ms *menuState) rebuildDynamic() {
+	saved := ms.appSvc.ListSavedConnections()
+	ms.populateRecentMenuFrom(saved)
+	ms.recentMenu.Update()
+	ms.tray.SetMenu(ms.buildTrayMenuFrom(saved))
+}
+
+func (ms *menuState) populateRecentMenuFrom(saved []localdb.SavedConnection) {
 	ms.recentMenu.Clear()
-	saved := ms.svc.ListSavedConnections()
 	if len(saved) == 0 {
 		ms.recentMenu.Add("No Recent Connections").SetEnabled(false)
 		return
@@ -86,12 +90,6 @@ func (ms *menuState) populateRecentMenu() {
 	}
 }
 
-func (ms *menuState) rebuildDynamic() {
-	ms.populateRecentMenu()
-	ms.recentMenu.Update()
-	ms.tray.SetMenu(ms.buildTrayMenu())
-}
-
 func (ms *menuState) buildSystemTray() *application.SystemTray {
 	tray := ms.app.SystemTray.New()
 	tray.SetLabel("Basalt")
@@ -101,15 +99,14 @@ func (ms *menuState) buildSystemTray() *application.SystemTray {
 			win.Focus()
 		}
 	})
-	tray.SetMenu(ms.buildTrayMenu())
+	tray.SetMenu(ms.buildTrayMenuFrom(ms.appSvc.ListSavedConnections()))
 	return tray
 }
 
-func (ms *menuState) buildTrayMenu() *application.Menu {
+func (ms *menuState) buildTrayMenuFrom(saved []localdb.SavedConnection) *application.Menu {
 	m := application.NewMenu()
 
 	connectTo := m.AddSubmenu("Connect To")
-	saved := ms.svc.ListSavedConnections()
 	if len(saved) == 0 {
 		connectTo.Add("No saved connections").SetEnabled(false)
 	} else {

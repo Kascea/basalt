@@ -12,29 +12,34 @@ import (
 
 const apiBase = "https://api.planetscale.com/v1"
 
-type Database struct {
-	Name          string
-	DefaultBranch string
-	Kind          string // "mysql" or "postgresql"
-}
-
-type Organization struct {
-	Name string
-}
-
-type Password struct {
-	Username     string
-	PlainText    string
-	Hostname     string
-	DatabaseName string // actual PostgreSQL database name (may differ from PlanetScale DB name)
-}
-
+// User is the Wails-facing type for the signed-in PlanetScale account.
 type User struct {
 	DisplayName string
 	Email       string
 }
 
-func GetUser(token string) (User, error) {
+type apiDatabase struct {
+	Name          string
+	DefaultBranch string
+	Kind          string
+}
+
+type apiOrganization struct {
+	Name string
+}
+
+type apiPassword struct {
+	Username     string
+	PlainText    string
+	Hostname     string
+	DatabaseName string
+}
+
+func newClient(token string) (*ps.Client, error) {
+	return ps.NewClient(ps.WithAccessToken(token))
+}
+
+func getUser(token string) (User, error) {
 	req, err := http.NewRequest("GET", apiBase+"/user", nil)
 	if err != nil {
 		return User{}, err
@@ -63,11 +68,7 @@ func GetUser(token string) (User, error) {
 	return User{DisplayName: name, Email: u.Email}, nil
 }
 
-func newClient(token string) (*ps.Client, error) {
-	return ps.NewClient(ps.WithAccessToken(token))
-}
-
-func ListOrganizations(token string) ([]Organization, error) {
+func listOrganizations(token string) ([]apiOrganization, error) {
 	client, err := newClient(token)
 	if err != nil {
 		return nil, err
@@ -76,14 +77,14 @@ func ListOrganizations(token string) ([]Organization, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := make([]Organization, len(orgs))
+	out := make([]apiOrganization, len(orgs))
 	for i, o := range orgs {
-		out[i] = Organization{Name: o.Name}
+		out[i] = apiOrganization{Name: o.Name}
 	}
 	return out, nil
 }
 
-func ListDatabases(token, org string) ([]Database, error) {
+func listDatabases(token, org string) ([]apiDatabase, error) {
 	client, err := newClient(token)
 	if err != nil {
 		return nil, err
@@ -92,9 +93,9 @@ func ListDatabases(token, org string) ([]Database, error) {
 	if err != nil {
 		return nil, err
 	}
-	out := make([]Database, len(dbs))
+	out := make([]apiDatabase, len(dbs))
 	for i, d := range dbs {
-		out[i] = Database{
+		out[i] = apiDatabase{
 			Name:          d.Name,
 			DefaultBranch: "main",
 			Kind:          string(d.Kind),
@@ -103,7 +104,7 @@ func ListDatabases(token, org string) ([]Database, error) {
 	return out, nil
 }
 
-func CreatePassword(token, org, database, branch, kind string) (*Password, error) {
+func createPassword(token, org, database, branch, kind string) (*apiPassword, error) {
 	client, err := newClient(token)
 	if err != nil {
 		return nil, err
@@ -120,7 +121,7 @@ func CreatePassword(token, org, database, branch, kind string) (*Password, error
 		if err != nil {
 			return nil, err
 		}
-		return &Password{
+		return &apiPassword{
 			Username:     role.Username,
 			PlainText:    role.Password,
 			Hostname:     role.AccessHostURL,
@@ -141,7 +142,7 @@ func CreatePassword(token, org, database, branch, kind string) (*Password, error
 	if pwd.PlainText == "" {
 		return nil, fmt.Errorf("PlanetScale did not return a password")
 	}
-	return &Password{
+	return &apiPassword{
 		Username:  pwd.Username,
 		PlainText: pwd.PlainText,
 		Hostname:  pwd.Hostname,

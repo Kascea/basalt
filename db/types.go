@@ -115,13 +115,21 @@ type Introspector interface {
 	ListObjects(ctx context.Context, db *sql.DB) ([]SchemaObject, error)
 	ObjectStats(ctx context.Context, db *sql.DB) ([]SchemaObjectSummary, error)
 	ListColumnTypes(ctx context.Context, db *sql.DB) ([]TypeGroup, error)
+	GetTableColumns(ctx context.Context, db *sql.DB, schema, table string) ([]ColumnInfo, error)
+
+	// TableExpr returns a quoted table reference. Postgres uses schema.table; SQLite omits the schema.
+	TableExpr(schema, table string) string
+
+	// Placeholder returns the driver-appropriate parameter placeholder for position n.
+	// Postgres uses $1, $2, …; SQLite uses ? for every position.
+	Placeholder(n int) string
 
 	// RowIDExpr returns a SQL expression that selects a stable physical row identifier.
 	// The result is aliased to __rowid by FetchTable and consumed opaquely as a RowID.
 	RowIDExpr() string
 
 	// WhereRowID returns a parameterised WHERE predicate matching a row by its RowID.
-	// param is the placeholder index (e.g. 2 → "$2 ::tid" for postgres).
+	// param is the placeholder index (e.g. 2 → "$2::tid" for Postgres).
 	WhereRowID(param int) string
 }
 
@@ -209,16 +217,6 @@ type ColumnInfo struct {
 	DataType      string  `json:"dataType"`
 	IsNullable    bool    `json:"isNullable"`
 	ColumnDefault *string `json:"columnDefault"`
-}
-
-// ── PlanetScale types ─────────────────────────────────────────────────────────
-
-// PlanetScaleDatabase is a database entry returned from the PlanetScale API.
-type PlanetScaleDatabase struct {
-	Org    string `json:"org"`
-	Name   string `json:"name"`
-	Branch string `json:"branch"`
-	Kind   string `json:"kind"` // "mysql" or "postgresql"
 }
 
 // ── Column type catalog ───────────────────────────────────────────────────────

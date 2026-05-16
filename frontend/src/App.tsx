@@ -11,7 +11,7 @@ import { useTableTabs } from './hooks/useTableTabs'
 import { useSettings } from './hooks/useSettings'
 import { WorkspaceProvider } from './context/WorkspaceContext'
 import { ConnectionProvider } from './context/ConnectionContext'
-import type { AppSettings, SavedConnection } from '../bindings/basalt/config'
+import type { AppSettings, SavedConnection } from '../bindings/basalt/localdb/models'
 import type { LogEntry } from './types'
 import { useResizeDrag } from './hooks/useResizeDrag'
 
@@ -115,7 +115,7 @@ function App() {
     savedConnections: db.savedConnections,
     connections: db.connections,
     activeConnectionID: db.activeConnectionID,
-    objects: db.objects,
+    objectsByConnection: db.objectsByConnection,
     expandedConnections: db.expandedConnections,
     expandedSchemas: db.expandedSchemas,
     filter: db.filter,
@@ -138,7 +138,7 @@ function App() {
   const session = {
     connection: {
       active: db.activeConnection,
-      objects: db.objects,
+      objects: db.objectsByConnection[db.activeConnectionID] ?? [],
     },
 
     tabs: {

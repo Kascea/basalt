@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import type { SavedConnection } from '../../bindings/basalt/config'
-import { DatabaseService, type PlanetScaleDatabase } from '../../bindings/basalt/db'
+import type { SavedConnection } from '../../bindings/basalt/localdb/models'
+import { DatabaseService } from '../../bindings/basalt/db'
+import * as PlanetScaleService from '../../bindings/basalt/planetscale/service'
+import type { Database as PlanetScaleDatabase } from '../../bindings/basalt/planetscale/models'
 
 type ConnectionMode = 'url' | 'fields'
 type PSState = 'idle' | 'signing-in' | 'listing' | 'ready' | 'connecting'
@@ -100,9 +102,9 @@ export function ConnectForm({ isConnecting, initialValues, onConnect, onSaveOnly
     setPSError(null)
     setPSState('signing-in')
     try {
-      await DatabaseService.PlanetScaleStartAuth()
+      await PlanetScaleService.StartAuth()
       setPSState('listing')
-      const dbs = await DatabaseService.PlanetScaleListDatabases()
+      const dbs = await PlanetScaleService.ListDatabases()
       setPSDatabases(dbs ?? [])
       setPSState('ready')
     } catch (err: unknown) {
@@ -115,8 +117,8 @@ export function ConnectForm({ isConnecting, initialValues, onConnect, onSaveOnly
     setPSError(null)
     setPSState('connecting')
     try {
-      const cs = await DatabaseService.PlanetScaleGetConnectionString(db.org, db.name, db.branch, db.kind)
-      await onConnect(db.name, 'postgres', cs, `${db.org}/${db.name}/${db.branch}`)
+      const cs = await PlanetScaleService.GetConnectionString(db.Org, db.Name, db.Branch, db.Kind)
+      await onConnect(db.Name, 'postgres', cs, `${db.Org}/${db.Name}/${db.Branch}`)
     } catch (err: unknown) {
       setPSError(extractErrorMessage(err))
       setPSState('ready')
@@ -273,10 +275,10 @@ export function ConnectForm({ isConnecting, initialValues, onConnect, onSaveOnly
                 ) : (
                   <ul className="ps-db-list">
                     {psDatabases.map((db) => (
-                      <li key={`${db.org}/${db.name}`} className="ps-db-item">
+                      <li key={`${db.Org}/${db.Name}`} className="ps-db-item">
                         <div className="ps-db-info">
-                          <span className="ps-db-name">{db.name}</span>
-                          <span className="ps-db-meta">{db.org} · {db.branch}</span>
+                          <span className="ps-db-name">{db.Name}</span>
+                          <span className="ps-db-meta">{db.Org} · {db.Branch}</span>
                         </div>
                         <button
                           type="button"

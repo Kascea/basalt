@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { DatabaseService } from '../../bindings/basalt/db'
-import type { AppSettings } from '../../bindings/basalt/config'
+import * as LocaldbService from '../../bindings/basalt/localdb/service'
+import type { AppSettings } from '../../bindings/basalt/localdb/models'
 
 const DENSITY_VARS: Record<string, Record<string, string>> = {
   compact:     { '--cell-height': '26px', '--cell-font-size': '12px' },
@@ -26,7 +26,7 @@ export function useSettings(): SettingsState {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    DatabaseService.GetSettings()
+    LocaldbService.GetSettings()
       .then((s) => {
         setSettings(s)
         applyDensity(s.rowDensity)
@@ -36,7 +36,7 @@ export function useSettings(): SettingsState {
   }, [])
 
   const saveSettings = async (s: AppSettings) => {
-    await DatabaseService.SaveSettings(s)
+    await LocaldbService.SaveSettings(s)
     setSettings(s)
     applyDensity(s.rowDensity)
   }

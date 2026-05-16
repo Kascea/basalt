@@ -1,4 +1,4 @@
-import type { AppSettings } from '../../../bindings/basalt/config'
+import type { AppSettings } from '../../../bindings/basalt/localdb/models'
 
 interface Props {
   settings: AppSettings

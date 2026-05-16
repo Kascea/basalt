@@ -54,10 +54,6 @@ export class SavedConnection {
     "name": string;
     "driver": string;
     "connectionString": string;
-
-    /**
-     * "org/database/branch" for PS connections
-     */
     "planetscaleKey"?: string;
 
     /** Creates a new SavedConnection instance. */

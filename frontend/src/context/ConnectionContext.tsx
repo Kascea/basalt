@@ -1,12 +1,12 @@
 import { createContext, useContext } from 'react'
 import type { Connection, SchemaObject } from '../../bindings/basalt/db'
-import type { SavedConnection } from '../../bindings/basalt/config'
+import type { SavedConnection } from '../../bindings/basalt/localdb/models'
 
 export interface ConnectionSession {
   savedConnections: SavedConnection[]
   connections: Connection[]
   activeConnectionID: string
-  objects: SchemaObject[]
+  objectsByConnection: Record<string, SchemaObject[]>
   expandedConnections: Set<string>
   expandedSchemas: Set<string>
   filter: string

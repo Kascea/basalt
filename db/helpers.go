@@ -1,9 +1,8 @@
 package db
 
 import (
-	"bufio"
 	"fmt"
-	"os"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -28,48 +27,32 @@ func formatDBValue(value any) string {
 	}
 }
 
-func loadEnvValue(key string) string {
-	if value := strings.TrimSpace(os.Getenv(key)); value != "" {
-		return value
-	}
-
-	file, err := os.Open(".env")
-	if err != nil {
-		return ""
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-
-		name, value, ok := strings.Cut(line, "=")
-		if !ok || strings.TrimSpace(name) != key {
-			continue
-		}
-
-		return strings.Trim(strings.TrimSpace(value), `"'`)
-	}
-
-	return ""
-}
-
 func introspectorFor(driver Driver) Introspector {
 	switch driver {
 	case DriverPostgres:
 		return PostgresIntrospector{}
+	case DriverSQLite:
+		return SQLiteIntrospector{}
 	default:
 		return StaticIntrospector{driver: driver}
 	}
+}
+
+// sqliteURI converts a plain file path to a SQLite URI so that paths
+// containing spaces or other special characters open correctly via mattn/go-sqlite3.
+func sqliteURI(s string) string {
+	if s == ":memory:" || strings.HasPrefix(s, "file:") {
+		return s
+	}
+	return (&url.URL{Scheme: "file", Path: s}).String()
 }
 
 func sqlDriverName(driver Driver) string {
 	switch driver {
 	case DriverPostgres:
 		return "pgx"
+	case DriverSQLite:
+		return "sqlite3"
 	default:
 		return string(driver)
 	}

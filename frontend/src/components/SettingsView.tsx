@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Paintbrush, Terminal, Settings, Link } from 'lucide-react'
-import type { AppSettings, SavedConnection } from '../../bindings/basalt/config'
+import type { AppSettings, SavedConnection } from '../../bindings/basalt/localdb/models'
 import { SettingsAppearance } from './settings/SettingsAppearance'
 import { SettingsQuery } from './settings/SettingsQuery'
 import { SettingsGeneral } from './settings/SettingsGeneral'

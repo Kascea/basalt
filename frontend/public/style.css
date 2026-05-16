@@ -2997,7 +2997,7 @@ tr.new-row:hover td.row-index {
     flex: 1;
     min-width: 0;
     display: grid;
-    grid-template-columns: 180px 1fr;
+    grid-template-columns: 210px 1fr;
     grid-template-rows: var(--chrome-height) 1fr;
     height: 100%;
     overflow: hidden;

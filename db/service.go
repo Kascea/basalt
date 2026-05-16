@@ -5,18 +5,19 @@ import (
 	"errors"
 	"sync"
 
-	"basalt/config"
+	"basalt/localdb"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
+// DatabaseService manages live sql.DB connections to user-specified databases
+// and exposes query and schema operations to the frontend via Wails.
 type DatabaseService struct {
-	mu                   sync.Mutex
-	connections          map[string]*openConnection
-	saved                []config.SavedConnection
-	settings             config.AppSettings
-	planetscaleToken     string
-	App                  *application.App
+	mu          sync.Mutex
+	connections map[string]*openConnection
+	store       *localdb.Store
+	App         *application.App
+	// OnConnectionsChanged is called after Connect upserts a new saved connection.
 	OnConnectionsChanged func()
 }
 
@@ -26,13 +27,10 @@ type openConnection struct {
 	driver  Driver
 }
 
-func NewDatabaseService() *DatabaseService {
-	saved, _ := config.LoadSavedConnections()
+func NewDatabaseService(store *localdb.Store) *DatabaseService {
 	return &DatabaseService{
-		connections:      make(map[string]*openConnection),
-		saved:            saved,
-		settings:         config.LoadAppSettings(),
-		planetscaleToken: config.LoadPlanetScaleToken(),
+		connections: make(map[string]*openConnection),
+		store:       store,
 	}
 }
 

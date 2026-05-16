@@ -539,46 +539,6 @@ export class IndexInfo {
     }
 }
 
-/**
- * PlanetScaleDatabase is a database entry returned from the PlanetScale API.
- */
-export class PlanetScaleDatabase {
-    "org": string;
-    "name": string;
-    "branch": string;
-
-    /**
-     * "mysql" or "postgresql"
-     */
-    "kind": string;
-
-    /** Creates a new PlanetScaleDatabase instance. */
-    constructor($$source: Partial<PlanetScaleDatabase> = {}) {
-        if (!("org" in $$source)) {
-            this["org"] = "";
-        }
-        if (!("name" in $$source)) {
-            this["name"] = "";
-        }
-        if (!("branch" in $$source)) {
-            this["branch"] = "";
-        }
-        if (!("kind" in $$source)) {
-            this["kind"] = "";
-        }
-
-        Object.assign(this, $$source);
-    }
-
-    /**
-     * Creates a new PlanetScaleDatabase instance from a string or object.
-     */
-    static createFrom($$source: any = {}): PlanetScaleDatabase {
-        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
-        return new PlanetScaleDatabase($$parsedSource as Partial<PlanetScaleDatabase>);
-    }
-}
-
 export class QueryResult {
     "columns": string[];
     "columnTypes": string[];

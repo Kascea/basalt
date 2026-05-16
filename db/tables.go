@@ -14,6 +14,12 @@ func (d *DatabaseService) CreateTable(connectionID string, req CreateTableReques
 		return fmt.Errorf("at least one column is required")
 	}
 
+	conn, err := d.connection(connectionID)
+	if err != nil {
+		return err
+	}
+	intr := introspectorFor(conn.driver)
+
 	colDefs := make([]string, 0, len(req.Columns))
 	for _, col := range req.Columns {
 		if strings.TrimSpace(col.Name) == "" || strings.TrimSpace(col.DataType) == "" {
@@ -33,14 +39,18 @@ func (d *DatabaseService) CreateTable(connectionID string, req CreateTableReques
 	}
 
 	query := fmt.Sprintf(
-		"CREATE TABLE %s.%s (\n  %s\n)",
-		quoteIdent(req.Schema), quoteIdent(req.Name),
+		"CREATE TABLE %s (\n  %s\n)",
+		intr.TableExpr(req.Schema, req.Name),
 		strings.Join(colDefs, ",\n  "),
 	)
 	return d.execDDL(connectionID, 10*time.Second, query)
 }
 
 func (d *DatabaseService) DropTable(connectionID, schema, name string) error {
-	query := fmt.Sprintf("DROP TABLE %s.%s", quoteIdent(schema), quoteIdent(name))
+	conn, err := d.connection(connectionID)
+	if err != nil {
+		return err
+	}
+	query := fmt.Sprintf("DROP TABLE %s", introspectorFor(conn.driver).TableExpr(schema, name))
 	return d.execDDL(connectionID, 10*time.Second, query)
 }

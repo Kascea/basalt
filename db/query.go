@@ -19,9 +19,8 @@ func (d *DatabaseService) ExecuteQuery(connectionID string, statement string) (Q
 		return QueryResult{}, err
 	}
 
-	d.mu.Lock()
-	timeout := time.Duration(d.settings.QueryTimeoutSec) * time.Second
-	d.mu.Unlock()
+	settings := d.store.GetSettings()
+	timeout := time.Duration(settings.QueryTimeoutSec) * time.Second
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
@@ -90,10 +89,9 @@ func (d *DatabaseService) FetchTable(connectionID, schema, table, where string) 
 		}
 	}
 
-	d.mu.Lock()
-	rowLimit := d.settings.DefaultRowLimit
-	timeout := time.Duration(d.settings.QueryTimeoutSec) * time.Second
-	d.mu.Unlock()
+	settings := d.store.GetSettings()
+	rowLimit := settings.DefaultRowLimit
+	timeout := time.Duration(settings.QueryTimeoutSec) * time.Second
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
