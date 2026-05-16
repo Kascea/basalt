@@ -13,6 +13,7 @@ type SavedConnection struct {
 	Name             string `json:"name"`
 	Driver           string `json:"driver"`
 	ConnectionString string `json:"connectionString"`
+	PlanetScaleKey   string `json:"planetscaleKey,omitempty"` // "org/database/branch" for PS connections
 }
 
 func ConnectionsPath() (string, error) {
@@ -61,4 +62,35 @@ func NewID() string {
 	b := make([]byte, 8)
 	_, _ = rand.Read(b)
 	return fmt.Sprintf("%x", b)
+}
+
+func PlanetScaleTokenPath() (string, error) {
+	dir, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(dir, "basalt", "planetscale_token"), nil
+}
+
+func LoadPlanetScaleToken() string {
+	path, err := PlanetScaleTokenPath()
+	if err != nil {
+		return ""
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	return string(data)
+}
+
+func SavePlanetScaleToken(token string) error {
+	path, err := PlanetScaleTokenPath()
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(token), 0600)
 }

@@ -24,6 +24,7 @@ export interface WorkspaceSession {
     openSchema: (schema: string, table: string) => void
     openGroup: (schema: string, kind: 'sequences' | 'indexes' | 'foreignkeys') => void
     openWorksheet: () => void
+    reorder: (fromIdx: number, toIdx: number) => void
   }
 
   tableEditor: {

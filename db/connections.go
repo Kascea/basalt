@@ -42,7 +42,7 @@ func (d *DatabaseService) Connect(request ConnectRequest) (Connection, error) {
 		return Connection{}, err
 	}
 
-	id := d.upsertSaved(request.Name, driver, connectionString)
+	id := d.upsertSaved(request.Name, driver, connectionString, request.PlanetScaleKey)
 
 	profile := connectionFromURL(id, request.Name, driver, connectionString)
 
@@ -149,12 +149,15 @@ func (d *DatabaseService) ListConnections() []Connection {
 
 // upsertSaved finds an existing saved connection with the same connection string,
 // or creates a new one. Returns the stable ID. Must be called without the lock held.
-func (d *DatabaseService) upsertSaved(name string, driver Driver, connectionString string) string {
+func (d *DatabaseService) upsertSaved(name string, driver Driver, connectionString, psKey string) string {
 	d.mu.Lock()
 
 	for i, s := range d.saved {
 		if s.ConnectionString == connectionString {
 			d.saved[i].Name = name
+			if psKey != "" {
+				d.saved[i].PlanetScaleKey = psKey
+			}
 			_ = config.WriteSavedConnections(d.saved)
 			id := s.ID
 			cb := d.OnConnectionsChanged
@@ -172,6 +175,7 @@ func (d *DatabaseService) upsertSaved(name string, driver Driver, connectionStri
 		Name:             name,
 		Driver:           string(driver),
 		ConnectionString: connectionString,
+		PlanetScaleKey:   psKey,
 	})
 	_ = config.WriteSavedConnections(d.saved)
 	cb := d.OnConnectionsChanged

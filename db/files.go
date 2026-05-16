@@ -13,3 +13,14 @@ func (d *DatabaseService) ReadFile(path string) (string, error) {
 func (d *DatabaseService) WriteFile(path string, content string) error {
 	return os.WriteFile(path, []byte(content), 0644)
 }
+
+func (d *DatabaseService) PickSQLiteFile() (string, error) {
+	if d.App == nil {
+		return "", nil
+	}
+	return d.App.Dialog.OpenFile().
+		SetTitle("Select SQLite Database").
+		AddFilter("SQLite Database", "*.db;*.sqlite;*.sqlite3").
+		AllowsOtherFileTypes(true).
+		PromptForSingleSelection()
+}

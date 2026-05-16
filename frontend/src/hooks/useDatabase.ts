@@ -13,7 +13,7 @@ export interface DatabaseState {
   expandedConnections: Set<string>
   expandedSchemas: Set<string>
   setFilter: (v: string) => void
-  connect: (name: string, driver: string, connectionString: string, onSuccess?: () => void) => void
+  connect: (name: string, driver: string, connectionString: string, onSuccess?: () => void, planetscaleKey?: string) => Promise<void>
   reconnect: (id: string, onSuccess?: () => void) => void
   disconnect: (id: string) => void
   deleteSaved: (id: string) => void
@@ -62,12 +62,15 @@ export function useDatabase(setStatus: (msg: string) => void): DatabaseState {
       })
   }
 
-  const connect = (name: string, driver: string, connectionString: string, onSuccess?: () => void) => {
+  const connect = (name: string, driver: string, connectionString: string, onSuccess?: () => void, planetscaleKey?: string): Promise<void> => {
     setIsConnecting('new')
     setStatus(`Connecting to ${name}…`)
-    DatabaseService.Connect({ name, driver, connectionString })
+    return DatabaseService.Connect({ name, driver, connectionString, planetscaleKey: planetscaleKey ?? '' })
       .then((conn) => afterConnect(conn, onSuccess))
-      .catch((err) => setStatus(String(err)))
+      .catch((err) => {
+        setStatus(String(err))
+        throw err
+      })
       .finally(() => setIsConnecting(null))
   }
 

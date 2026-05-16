@@ -203,6 +203,11 @@ input, textarea, select {
     font-size: 13px;
 }
 
+.connect-form input::placeholder,
+.connection-string::placeholder {
+    color: var(--text-muted);
+}
+
 .connect-form select {
     appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%236e8099'/%3E%3C/svg%3E");
@@ -220,9 +225,52 @@ input, textarea, select {
     line-height: 16px;
 }
 
+.sqlite-file-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.sqlite-file-input {
+    flex: 1;
+    height: 30px;
+    padding: 0 9px;
+    font-size: 13px;
+    font-family: var(--mono);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    outline: 0;
+    min-width: 0;
+}
+
+.sqlite-file-input::placeholder {
+    color: var(--text-muted);
+}
+
+.sqlite-browse-btn {
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.sqlite-browse-btn:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
 .connect-form input:focus,
 .connect-form select:focus,
 .connection-string:focus,
+.sqlite-file-input:focus,
 textarea:focus,
 td input:focus {
     border-color: var(--accent);
@@ -265,6 +313,265 @@ td input:focus {
 
 .connect-button--secondary:hover:not(:disabled) {
     background: var(--bg-hover) !important;
+}
+
+.connect-mode-tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 3px;
+}
+
+.connect-mode-tab {
+    flex: 1;
+    height: 26px;
+    border-radius: 5px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+}
+
+.connect-mode-tab:hover:not(.connect-mode-tab--active) {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.connect-mode-tab--active {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+}
+
+.connect-fields {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.connect-fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.connect-field--grow { flex: 1 1 120px; }
+.connect-field--port { flex: 0 0 70px; }
+.connect-field--full { flex: 1 1 100%; }
+.connect-field--half { flex: 1 1 calc(50% - 4px); }
+
+.connect-fields input {
+    height: 30px;
+    padding: 0 9px;
+    font-size: 13px;
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-panel);
+    color: var(--text-primary);
+    outline: 0;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.connect-fields input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(65, 131, 196, 0.2);
+}
+
+.connect-error {
+    background: rgba(180, 60, 60, 0.15);
+    border: 1px solid rgba(180, 60, 60, 0.4);
+    border-radius: 6px;
+    color: #e07070;
+    font-size: 12px;
+    line-height: 1.45;
+    padding: 8px 10px;
+    word-break: break-word;
+}
+
+/* ── PlanetScale OAuth section ── */
+
+.connect-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-muted);
+    font-size: 11px;
+    margin: 2px 0;
+}
+
+.connect-divider::before,
+.connect-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+}
+
+.ps-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ps-signin-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 34px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    width: 100%;
+}
+
+.ps-signin-btn:hover {
+    background: var(--bg-hover);
+    border-color: #5046e5;
+}
+
+.ps-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    padding: 4px 0;
+}
+
+.ps-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: ps-spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes ps-spin {
+    to { transform: rotate(360deg); }
+}
+
+.ps-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ps-header-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.ps-signout-btn {
+    font-size: 11px;
+    color: var(--text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: color 0.15s;
+}
+
+.ps-signout-btn:hover {
+    color: var(--text-secondary);
+}
+
+.ps-empty {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0;
+    text-align: center;
+    padding: 8px 0;
+}
+
+.ps-db-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.ps-db-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-light);
+}
+
+.ps-db-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.ps-db-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ps-db-meta {
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ps-connect-btn {
+    flex-shrink: 0;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 5px;
+    background: var(--teal);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.ps-connect-btn:hover:not(:disabled) {
+    background: var(--teal-hover);
+}
+
+.ps-connect-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
 }
 
 /* ── Connection tree ── */
@@ -646,9 +953,9 @@ td input:focus {
 
 .topbar-tabs {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     height: 100%;
-    padding: 0 4px;
+    padding: 0 6px;
     gap: 2px;
     overflow-x: auto;
     overflow-y: hidden;
@@ -662,37 +969,41 @@ td input:focus {
 }
 
 .ws-tab {
-    height: 34px;
-    padding: 0 14px;
+    height: 28px;
+    padding: 0 10px;
     font-size: 12px;
-    font-weight: 600;
+    font-weight: 500;
     background: transparent;
     color: var(--text-muted);
-    border-radius: 5px 5px 0 0;
-    border: 1px solid transparent;
-    border-bottom: none;
-    align-self: flex-end;
+    border-radius: 6px;
+    border: none;
     transition: color 0.1s, background 0.1s;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
 }
 
 .ws-tab:hover {
+    background: var(--bg-hover);
     color: var(--text-secondary);
 }
 
 .ws-tab.active {
-    background: var(--bg-base);
+    background: var(--bg-elevated);
     color: var(--text-primary);
-    border-color: var(--border);
-    border-bottom-color: var(--bg-base);
-    font-weight: 700;
+    font-weight: 600;
+}
+
+.ws-tab.drag-over {
+    outline: 1px solid var(--accent);
+    outline-offset: -1px;
 }
 
 .ws-tab.pinned {
-    padding-left: 10px;
+    padding-left: 8px;
 }
 
 .tab-pin-indicator {

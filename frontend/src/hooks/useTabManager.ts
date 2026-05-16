@@ -24,11 +24,22 @@ export function useTabManager({ connectionID, onLoadTable, onCreateWorksheet, on
   const openTableTab = (schema: string, table: string) => {
     const existing = tabs.find(t => t.kind === 'table' && t.schema === schema && t.table === table)
     if (existing) { setActiveTabId(existing.id); return }
-    const id = `${baseTabId('table', schema, table)}:${Date.now()}`
-    const tab: Tab = { id, kind: 'table', connectionID, schema, table }
-    setTabs(prev => [...prev, tab])
-    setActiveTabId(id)
-    onLoadTable(id, schema, table)
+
+    const activeTabSnapshot = tabs.find(t => t.id === activeTabId)
+    const isReplaceableTab = activeTabSnapshot && activeTabSnapshot.kind === 'table' && !activeTabSnapshot.pinned
+
+    const newId = `${baseTabId('table', schema, table)}:${Date.now()}`
+    const newTab: Tab = { id: newId, kind: 'table', connectionID, schema, table }
+
+    if (isReplaceableTab) {
+      const oldId = activeTabSnapshot.id
+      onCleanupTab(oldId)
+      setTabs(prev => prev.map(t => t.id === oldId ? newTab : t))
+    } else {
+      setTabs(prev => [...prev, newTab])
+    }
+    setActiveTabId(newId)
+    onLoadTable(newId, schema, table)
   }
 
   const openTableTabWithPrefill = (schema: string, table: string, prefill: Record<string, string>) => {
@@ -95,6 +106,16 @@ export function useTabManager({ connectionID, onLoadTable, onCreateWorksheet, on
     setActiveTabId(pinned[0]?.id ?? '')
   }
 
+  const reorderTabs = (fromIdx: number, toIdx: number) => {
+    if (fromIdx === toIdx) return
+    setTabs(prev => {
+      const next = [...prev]
+      const [tab] = next.splice(fromIdx, 1)
+      next.splice(toIdx, 0, tab)
+      return next
+    })
+  }
+
   return {
     tabs,
     activeTabId,
@@ -109,5 +130,6 @@ export function useTabManager({ connectionID, onLoadTable, onCreateWorksheet, on
     renameTab,
     closeTab,
     closeAllTabs,
+    reorderTabs,
   }
 }

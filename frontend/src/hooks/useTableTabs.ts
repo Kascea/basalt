@@ -54,6 +54,7 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string, isSu
     renameTab: tabManager.renameTab,
     closeTab: tabManager.closeTab,
     closeAllTabs: tabManager.closeAllTabs,
+    reorderTabs: tabManager.reorderTabs,
 
     // Table editing
     activeTableState: tableSession.activeTableState,

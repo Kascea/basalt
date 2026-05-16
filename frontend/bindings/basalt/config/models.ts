@@ -55,6 +55,11 @@ export class SavedConnection {
     "driver": string;
     "connectionString": string;
 
+    /**
+     * "org/database/branch" for PS connections
+     */
+    "planetscaleKey"?: string;
+
     /** Creates a new SavedConnection instance. */
     constructor($$source: Partial<SavedConnection> = {}) {
         if (!("id" in $$source)) {

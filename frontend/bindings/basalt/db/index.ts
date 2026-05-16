@@ -20,6 +20,7 @@ export {
     FKViolation,
     ForeignKeyInfo,
     IndexInfo,
+    PlanetScaleDatabase,
     QueryResult,
     RowDelete,
     RowEdit,

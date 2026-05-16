@@ -170,6 +170,11 @@ export class ConnectRequest {
     "driver": string;
     "connectionString": string;
 
+    /**
+     * set by PS flow to tag the saved connection
+     */
+    "planetscaleKey"?: string;
+
     /** Creates a new ConnectRequest instance. */
     constructor($$source: Partial<ConnectRequest> = {}) {
         if (!("name" in $$source)) {
@@ -531,6 +536,46 @@ export class IndexInfo {
     static createFrom($$source: any = {}): IndexInfo {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         return new IndexInfo($$parsedSource as Partial<IndexInfo>);
+    }
+}
+
+/**
+ * PlanetScaleDatabase is a database entry returned from the PlanetScale API.
+ */
+export class PlanetScaleDatabase {
+    "org": string;
+    "name": string;
+    "branch": string;
+
+    /**
+     * "mysql" or "postgresql"
+     */
+    "kind": string;
+
+    /** Creates a new PlanetScaleDatabase instance. */
+    constructor($$source: Partial<PlanetScaleDatabase> = {}) {
+        if (!("org" in $$source)) {
+            this["org"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("branch" in $$source)) {
+            this["branch"] = "";
+        }
+        if (!("kind" in $$source)) {
+            this["kind"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new PlanetScaleDatabase instance from a string or object.
+     */
+    static createFrom($$source: any = {}): PlanetScaleDatabase {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new PlanetScaleDatabase($$parsedSource as Partial<PlanetScaleDatabase>);
     }
 }
 

@@ -157,6 +157,7 @@ function App() {
       openSchema: tableTabs.openSchemaTab,
       openGroup: tableTabs.openGroupTab,
       openWorksheet: tableTabs.openWorksheetTab,
+      reorder: tableTabs.reorderTabs,
     },
 
     tableEditor: {
@@ -228,8 +229,8 @@ function App() {
         <Modal title="New Connection" onClose={handleCloseModal}>
           <ConnectForm
             isConnecting={db.isConnecting === 'new'}
-            onConnect={(name, driver, connectionString) =>
-              db.connect(name, driver, connectionString, handleCloseModal)
+            onConnect={(name, driver, connectionString, planetscaleKey) =>
+              db.connect(name, driver, connectionString, handleCloseModal, planetscaleKey)
             }
           />
         </Modal>
@@ -240,8 +241,8 @@ function App() {
           <ConnectForm
             isConnecting={db.isConnecting === editingConnection.id}
             initialValues={editingConnection}
-            onConnect={(name, driver, connectionString) =>
-              db.connect(name, driver, connectionString, handleCloseModal)
+            onConnect={(name, driver, connectionString, planetscaleKey) =>
+              db.connect(name, driver, connectionString, handleCloseModal, planetscaleKey)
             }
             onSaveOnly={(conn) => { db.updateSaved(conn); handleCloseModal() }}
           />

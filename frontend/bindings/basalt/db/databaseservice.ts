@@ -182,6 +182,37 @@ export function ListSequences(connectionID: string, schema: string): $Cancellabl
     });
 }
 
+export function PickSQLiteFile(): $CancellablePromise<string> {
+    return $Call.ByID(519332286);
+}
+
+/**
+ * PlanetScaleGetConnectionString returns a postgres:// connection string for
+ * the given database branch. If credentials were previously saved for this
+ * database they are reused; otherwise new credentials are created and saved.
+ */
+export function PlanetScaleGetConnectionString(org: string, database: string, branch: string, kind: string): $CancellablePromise<string> {
+    return $Call.ByID(190639000, org, database, branch, kind);
+}
+
+/**
+ * PlanetScaleIsSignedIn returns true if a valid token is loaded (either from
+ * a previous session or from a completed auth flow this session).
+ */
+export function PlanetScaleIsSignedIn(): $CancellablePromise<boolean> {
+    return $Call.ByID(1557999076);
+}
+
+export function PlanetScaleListDatabases(): $CancellablePromise<$models.PlanetScaleDatabase[]> {
+    return $Call.ByID(2527986755).then(($result: any) => {
+        return $$createType22($result);
+    });
+}
+
+export function PlanetScaleStartAuth(): $CancellablePromise<void> {
+    return $Call.ByID(406685935);
+}
+
 export function ReadFile(path: string): $CancellablePromise<string> {
     return $Call.ByID(2181123383, path);
 }
@@ -223,3 +254,5 @@ const $$createType17 = $models.SchemaObject.createFrom;
 const $$createType18 = $Create.Array($$createType17);
 const $$createType19 = $models.SequenceInfo.createFrom;
 const $$createType20 = $Create.Array($$createType19);
+const $$createType21 = $models.PlanetScaleDatabase.createFrom;
+const $$createType22 = $Create.Array($$createType21);

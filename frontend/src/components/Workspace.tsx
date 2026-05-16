@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useResizeDrag } from '../hooks/useResizeDrag'
-import { Window, Dialogs } from '@wailsio/runtime'
+import { Dialogs } from '@wailsio/runtime'
 import { Pin, X, Save } from 'lucide-react'
 import { SqlWorksheet } from './SqlWorksheet'
 import { TableView } from './TableView'
@@ -81,6 +81,7 @@ export function Workspace({ onCommit }: Props) {
     list: tabs, activeId: activeTabId, active: activeTab, activeTableState,
     setActive: setActiveTab, close: closeTab, closeAll, togglePin: togglePinTab,
     rename: renameTab, openWorksheet: openWorksheetTab, openSchema: openSchemaTab,
+    reorder: reorderTabs,
   } = tabsNs
   const {
     updateCell, updateNewCell, addRow: addNewRow, removeRow: removeNewRow,
@@ -95,6 +96,8 @@ export function Workspace({ onCommit }: Props) {
   const [logHeight, startLogDrag] = useResizeDrag(90, 40, 400)
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
+  const [dragSrcIdx, setDragSrcIdx] = useState<number | null>(null)
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
   const [renamingTabId, setRenamingTabId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
   const renameInputRef = useRef<HTMLInputElement>(null)
@@ -205,7 +208,7 @@ export function Workspace({ onCommit }: Props) {
   if (tabs.length === 0) {
     return (
       <section className="workspace workspace-empty">
-        <header className="topbar" onDoubleClick={() => Window.ToggleMaximise()}>
+        <header className="topbar">
           <div className="topbar-tabs">
             <button className="tab-new-worksheet" aria-label="New worksheet" title="New worksheet" onClick={openWorksheetTab}>+</button>
           </div>
@@ -223,21 +226,26 @@ export function Workspace({ onCommit }: Props) {
 
   return (
     <section className="workspace">
-      <header className="topbar" onDoubleClick={() => Window.ToggleMaximise()}>
+      <header className="topbar">
         <div className="topbar-tab-area">
         <div className="topbar-tabs">
-          {tabs.map(tab => {
+          {tabs.map((tab, idx) => {
             const isActive = tab.id === activeTabId
             const isPinned = tab.pinned ?? false
             const isRenaming = renamingTabId === tab.id
+            const isDragOver = dragOverIdx === idx && dragSrcIdx !== idx
 
             return (
               <button
                 key={tab.id}
-                className={`ws-tab${isActive ? ' active' : ''}${isPinned ? ' pinned' : ''}`}
-                onClick={() => setActiveTab(tab.id)}
-                onDoubleClick={() => startRename(tab)}
+                draggable
+                className={`ws-tab${isActive ? ' active' : ''}${isPinned ? ' pinned' : ''}${isDragOver ? ' drag-over' : ''}`}
+                onClick={() => { if (isActive) { startRename(tab) } else { setActiveTab(tab.id) } }}
                 onContextMenu={(e) => handleTabContextMenu(e, tab.id)}
+                onDragStart={(e) => { e.dataTransfer.effectAllowed = 'move'; setDragSrcIdx(idx) }}
+                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; setDragOverIdx(idx) }}
+                onDrop={(e) => { e.preventDefault(); if (dragSrcIdx !== null) reorderTabs(dragSrcIdx, idx); setDragSrcIdx(null); setDragOverIdx(null) }}
+                onDragEnd={() => { setDragSrcIdx(null); setDragOverIdx(null) }}
               >
                 {isPinned && <Pin size={10} className="tab-pin-indicator" />}
                 {isRenaming ? (

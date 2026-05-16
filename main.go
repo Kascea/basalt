@@ -34,12 +34,13 @@ func main() {
 		},
 	})
 
+	svc.App = app
 	svc.OnConnectionsChanged = buildMenus(app, svc)
 
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title: "basalt",
 		Mac: application.MacWindow{
-			InvisibleTitleBarHeight: 40,
+			InvisibleTitleBarHeight: 0,
 			Backdrop:                application.MacBackdropTranslucent,
 			TitleBar:                application.MacTitleBarHiddenInset,
 		},

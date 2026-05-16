@@ -19,6 +19,7 @@ type ConnectRequest struct {
 	Name             string `json:"name"`
 	Driver           string `json:"driver"`
 	ConnectionString string `json:"connectionString"`
+	PlanetScaleKey   string `json:"planetscaleKey,omitempty"` // set by PS flow to tag the saved connection
 }
 
 // Connection is a live (or previously live) connection summary shown in the UI.
@@ -208,6 +209,16 @@ type ColumnInfo struct {
 	DataType      string  `json:"dataType"`
 	IsNullable    bool    `json:"isNullable"`
 	ColumnDefault *string `json:"columnDefault"`
+}
+
+// ── PlanetScale types ─────────────────────────────────────────────────────────
+
+// PlanetScaleDatabase is a database entry returned from the PlanetScale API.
+type PlanetScaleDatabase struct {
+	Org    string `json:"org"`
+	Name   string `json:"name"`
+	Branch string `json:"branch"`
+	Kind   string `json:"kind"` // "mysql" or "postgresql"
 }
 
 // ── Column type catalog ───────────────────────────────────────────────────────

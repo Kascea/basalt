@@ -6,6 +6,8 @@ import (
 	"sync"
 
 	"basalt/config"
+
+	"github.com/wailsapp/wails/v3/pkg/application"
 )
 
 type DatabaseService struct {
@@ -13,6 +15,8 @@ type DatabaseService struct {
 	connections          map[string]*openConnection
 	saved                []config.SavedConnection
 	settings             config.AppSettings
+	planetscaleToken     string
+	App                  *application.App
 	OnConnectionsChanged func()
 }
 
@@ -25,9 +29,10 @@ type openConnection struct {
 func NewDatabaseService() *DatabaseService {
 	saved, _ := config.LoadSavedConnections()
 	return &DatabaseService{
-		connections: make(map[string]*openConnection),
-		saved:       saved,
-		settings:    config.LoadAppSettings(),
+		connections:      make(map[string]*openConnection),
+		saved:            saved,
+		settings:         config.LoadAppSettings(),
+		planetscaleToken: config.LoadPlanetScaleToken(),
 	}
 }
 
