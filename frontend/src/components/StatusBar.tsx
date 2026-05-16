@@ -67,7 +67,7 @@ export function StatusBar({ entries, durationMs, fkError, onOpenFkTab }: Props) 
         }
 
         return (
-          <div key={entry.id} className={`statusbar-log-entry${isError ? ' statusbar-log-entry--error' : ''}`}>
+          <div key={entry.id} className={`statusbar-log-entry${isError ? ' statusbar-log-entry--error' : entry.isSuccess ? ' statusbar-log-entry--success' : ''}`}>
             <span className="statusbar-log-ts">{entry.ts}</span>
             <span className="statusbar-log-text">{text}</span>
             {isLast && durationMs !== undefined && (

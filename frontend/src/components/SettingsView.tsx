@@ -40,6 +40,13 @@ export function SettingsView({
 
   return (
     <div className="settings-view">
+      <div className="settings-topbar">
+        <button className="settings-back-btn" onClick={onClose}>← Back</button>
+        {dirty && (
+          <button className="settings-save-btn" onClick={handleSave}>Save Changes</button>
+        )}
+      </div>
+
       <div className="settings-nav">
         <div className="settings-nav-header">Settings</div>
         {NAV_ITEMS.map((item) => (
@@ -55,13 +62,6 @@ export function SettingsView({
       </div>
 
       <div className="settings-content">
-        <div className="settings-topbar">
-          <button className="settings-back-btn" onClick={onClose}>← Back</button>
-          {dirty && (
-            <button className="settings-save-btn" onClick={handleSave}>Save Changes</button>
-          )}
-        </div>
-
         <div className="settings-body">
           {activeSection === 'appearance' && (
             <SettingsAppearance settings={settings} onChange={handleChange} />

@@ -46,7 +46,7 @@ function parseFKError(raw: string): FKError | null {
   return { column: m[1], value: m[2], referencedTable: m[3] }
 }
 
-export function useTableTabs(connectionID: string, setStatus: (msg: string) => void) {
+export function useTableTabs(connectionID: string, setStatus: (msg: string, isSuccess?: boolean) => void) {
   const worksheetTab: Tab = { id: WORKSHEET_ID, kind: 'worksheet', connectionID, schema: '', name: 'Worksheet 1' }
 
   const [tabs, setTabs] = useState<Tab[]>([worksheetTab])
@@ -283,7 +283,7 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string) => v
         if (inserts.length > 0) parts.push(`${inserts.length} inserted`)
         if (edits.length > 0) parts.push(`${edits.length} updated`)
         if (deletes.length > 0) parts.push(`${deletes.length} deleted`)
-        setStatus(`${schema}.${table} — ${parts.join(', ')} committed`)
+        setStatus(`${schema}.${table} — ${parts.join(', ')} committed`, true)
         patchState(id, { dirtyCells: {}, newRows: [], pendingDeletes: new Set() })
         return DatabaseService.FetchTable(connectionID, schema, table, s.filterExpr)
       })

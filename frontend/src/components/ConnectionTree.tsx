@@ -247,7 +247,7 @@ const GROUP_TAB_KIND: Record<string, 'sequences' | 'indexes'> = {
 export function ConnectionTree({
   savedConnections, connections, activeConnectionID, objects, expandedConnections, expandedSchemas,
   filter, isConnecting, onConnectionClick, onReconnect, onDisconnect, onDeleteSaved, onEditSaved,
-  onSchemaToggle, onFilterChange, onRefresh, onTableOpen, onTableOpenNewTab, onTableOpenSchema, onGroupOpen,
+  onSchemaToggle, onFilterChange, onTableOpen, onTableOpenNewTab, onTableOpenSchema, onGroupOpen,
 }: Props) {
   const [activeSchema, setActiveSchema] = useState<string | null>(null)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
@@ -324,15 +324,12 @@ export function ConnectionTree({
 
             {isConnected && connExpanded && (
               <div className="tree-children">
-                <div className="tree-filter-row">
-                  <input
-                    className="tree-filter"
-                    value={filter}
-                    onChange={(e) => onFilterChange(e.target.value)}
-                    placeholder="Filter…"
-                  />
-                  <button className="icon-button" title="Refresh" onClick={onRefresh}>↻</button>
-                </div>
+                <input
+                  className="tree-filter"
+                  value={filter}
+                  onChange={(e) => onFilterChange(e.target.value)}
+                  placeholder="Filter…"
+                />
 
                 {Object.keys(objectsBySchema).length === 0 && (
                   <p className="tree-empty indent">No objects found</p>

@@ -13,12 +13,16 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+//go:embed icons/basalt-icon.png
+var appIcon []byte
+
 func main() {
 	svc := db.NewDatabaseService()
 
 	app := application.New(application.Options{
 		Name:        "basalt",
 		Description: "A modern database workspace for browsing, querying, and editing",
+		Icon:        appIcon,
 		Services: []application.Service{
 			application.NewService(svc),
 		},

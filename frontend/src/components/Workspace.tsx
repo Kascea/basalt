@@ -25,6 +25,50 @@ function tabLabel(tab: Tab): string {
   }
 }
 
+function EmptyHexGrid() {
+  const R = 26
+  const colStep = R * Math.sqrt(3)
+  const rowStep = R * 1.5
+  const cols = 32
+  const rows = 24
+  const W = cols * colStep + colStep
+  const H = rows * rowStep + R * 2
+
+  const hexes: Array<React.ReactNode> = []
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const cx = c * colStep + (r % 2 ? colStep / 2 : 0)
+      const cy = r * rowStep + R
+      const pts = Array.from({ length: 6 }, (_, i) => {
+        const a = (Math.PI / 3) * i - Math.PI / 6
+        return `${(cx + R * Math.cos(a)).toFixed(2)},${(cy + R * Math.sin(a)).toFixed(2)}`
+      }).join(' ')
+      hexes.push(<polygon key={`${r}-${c}`} points={pts} />)
+    }
+  }
+
+  return (
+    <svg
+      className="empty-hex-bg"
+      viewBox={`0 0 ${W.toFixed(0)} ${H.toFixed(0)}`}
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+    >
+      <defs>
+        <radialGradient id="hex-vignette" cx="50%" cy="50%" r="55%">
+          <stop offset="0%"   stopColor="white" stopOpacity="0" />
+          <stop offset="55%"  stopColor="white" stopOpacity="0" />
+          <stop offset="100%" stopColor="white" stopOpacity="1" />
+        </radialGradient>
+        <mask id="hex-vignette-mask">
+          <rect width={W} height={H} fill="url(#hex-vignette)" />
+        </mask>
+      </defs>
+      <g mask="url(#hex-vignette-mask)">{hexes}</g>
+    </svg>
+  )
+}
+
 interface ContextMenuState { tabId: string; x: number; y: number }
 
 interface Props { onCommit: () => void }
@@ -162,7 +206,11 @@ export function Workspace({ onCommit }: Props) {
           </div>
         </header>
         <div className="empty-state-screen">
-          <span className="empty-state-logo">basalt</span>
+          <EmptyHexGrid />
+          <div className="empty-state-content">
+            <span className="empty-state-logo">basalt</span>
+            <p className="empty-state-hint">open a table or start a new worksheet</p>
+          </div>
         </div>
       </section>
     )

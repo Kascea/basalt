@@ -55,6 +55,7 @@ export interface LogEntry {
   ts: string
   text: string
   isError: boolean
+  isSuccess?: boolean
 }
 
 // cellKey lives in rowEdits.ts; re-exported here so existing imports keep working.

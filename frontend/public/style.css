@@ -1,4 +1,6 @@
 :root {
+    --chrome-height:  46px;
+
     --bg-base:        #0d0e0f;
     --bg-sidebar:     #131415;
     --bg-panel:       #191b1d;
@@ -96,7 +98,7 @@ input, textarea, select {
     display: flex;
     align-items: center;
     gap: 10px;
-    height: 40px;
+    height: var(--chrome-height);
     /* padding-left pushes content clear of macOS traffic-light buttons */
     padding: 0 10px 0 80px;
     flex-shrink: 0;
@@ -110,46 +112,34 @@ input, textarea, select {
 }
 
 .brand-mark {
-    display: grid;
-    width: 28px;
-    height: 28px;
-    place-items: center;
-    border-radius: 6px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    font-size: 13px;
-    font-weight: 800;
+    width: 24px;
+    height: 24px;
     flex-shrink: 0;
+    object-fit: contain;
 }
 
 .brand-name {
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 15px;
+    font-weight: 800;
     color: var(--text-primary);
-    letter-spacing: 0.02em;
+    letter-spacing: -0.05em;
 }
 
-.brand-add {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-left: auto;
-    height: 24px;
-    padding: 0 8px;
-    border-radius: 5px;
-    background: transparent;
-    border: 1px solid var(--border);
+.new-connection-row {
+    border-top: 1px solid var(--border);
+}
+
+.tree-node.new-connection-row {
+    color: var(--text-muted);
+}
+
+.tree-node.new-connection-row:hover {
     color: var(--text-secondary);
-    font-size: 11px;
-    font-weight: 600;
-    transition: background 0.1s, color 0.1s, border-color 0.1s;
 }
 
-.brand-add:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-    border-color: var(--border-light);
+.new-connection-plus {
+    margin-left: auto;
+    opacity: 0.5;
 }
 
 /* ── Icon button ── */
@@ -233,7 +223,6 @@ input, textarea, select {
 .connect-form input:focus,
 .connect-form select:focus,
 .connection-string:focus,
-.tree-filter:focus,
 textarea:focus,
 td input:focus {
     border-color: var(--accent);
@@ -284,7 +273,7 @@ td input:focus {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 4px 0;
+    padding: 0;
 }
 
 .tree-root::-webkit-scrollbar {
@@ -340,7 +329,7 @@ td input:focus {
 }
 
 .conn-node {
-    height: 36px;
+    height: 44px;
     padding: 0 10px 0 8px;
     font-size: 13px;
     font-weight: 600;
@@ -440,8 +429,8 @@ td input:focus {
     display: block;
     width: 5px;
     height: 5px;
-    border-right: 1.5px solid var(--text-muted);
-    border-bottom: 1.5px solid var(--text-muted);
+    border-right: 1.5px solid var(--text-secondary);
+    border-bottom: 1.5px solid var(--text-secondary);
     transform: rotate(-45deg) translate(-1px, 1px);
     transition: transform 0.12s ease;
 }
@@ -461,7 +450,7 @@ td input:focus {
 }
 
 .schema-icon {
-    color: var(--text-muted);
+    color: var(--text-secondary);
 }
 
 .schema-node.is-active {
@@ -487,25 +476,25 @@ td input:focus {
     padding: 0 10px 0 32px;
     font-size: 12px;
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--text-secondary);
     gap: 6px;
     letter-spacing: 0.02em;
 }
 
 .type-group-node:hover {
     background: var(--bg-hover);
-    color: var(--text-secondary);
+    color: var(--text-primary);
 }
 
 .group-icon {
     flex-shrink: 0;
     display: flex;
     align-items: center;
-    color: var(--text-muted);
+    color: var(--text-secondary);
 }
 
 .type-group-node:hover .group-icon {
-    color: var(--text-secondary);
+    color: var(--text-primary);
 }
 
 /* ── Object leaf node ── */
@@ -561,23 +550,28 @@ td input:focus {
 
 /* ── Tree filter ── */
 
-.tree-filter-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-}
-
 .tree-filter {
-    flex: 1;
-    height: 26px;
-    padding: 0 8px;
-    border: 1px solid var(--border);
-    border-radius: 5px;
-    background: var(--bg-panel);
-    color: var(--text-primary);
+    display: block;
+    width: 100%;
+    height: 30px;
+    padding: 0 12px 0 28px;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-secondary);
     font-size: 12px;
     outline: 0;
+    box-sizing: border-box;
+}
+
+.tree-filter::placeholder {
+    color: var(--text-muted);
+}
+
+.tree-filter:focus {
+    background: var(--bg-hover);
+    color: var(--text-primary);
 }
 
 /* ── Workspace ── */
@@ -634,7 +628,7 @@ td input:focus {
     display: flex;
     align-items: center;
     gap: 12px;
-    min-height: 46px;
+    height: var(--chrome-height);
     padding: 0 24px 0 0;
     border-bottom: 1px solid var(--border);
     background: var(--bg-panel);
@@ -882,7 +876,7 @@ td input:focus {
 }
 
 .filter-where-input::placeholder {
-    color: var(--text-muted);
+    color: var(--text-secondary);
 }
 
 .filter-remove-btn {
@@ -1106,18 +1100,51 @@ th.col-sorted .sort-indicator {
 }
 
 .empty-state-screen {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+}
+
+.empty-hex-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.empty-hex-bg polygon {
+    fill: none;
+    stroke: var(--text-muted);
+    stroke-width: 0.8;
+    stroke-opacity: 0.22;
+}
+
+.empty-state-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    user-select: none;
 }
 
 .empty-state-logo {
-    font-size: 28px;
+    font-size: 42px;
     font-weight: 800;
-    letter-spacing: -0.03em;
-    color: var(--text-muted);
-    opacity: 0.25;
+    letter-spacing: -0.05em;
+    color: var(--text-secondary);
     user-select: none;
+}
+
+.empty-state-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+    margin: 0;
 }
 
 /* ── New worksheet button ── */
@@ -1590,6 +1617,11 @@ tr.new-row:hover td.row-index {
 .statusbar-log-entry--error {
     color: #e07070;
     background: rgba(200, 50, 50, 0.07);
+}
+
+.statusbar-log-entry--success {
+    color: var(--teal-hover);
+    background: rgba(42, 143, 110, 0.07);
 }
 
 .statusbar-log-ts {
@@ -2613,44 +2645,49 @@ tr.new-row:hover td.row-index {
 /* ── Settings view ── */
 
 .settings-view {
+    flex: 1;
+    min-width: 0;
     display: grid;
     grid-template-columns: 180px 1fr;
+    grid-template-rows: var(--chrome-height) 1fr;
     height: 100%;
     overflow: hidden;
     background: var(--bg-base);
 }
 
 .settings-nav {
-    display: flex;
-    flex-direction: column;
-    padding: 12px 8px;
-    gap: 2px;
+    grid-row: 2;
+    grid-column: 1;
+    display: block;
+    padding: 12px 0 0;
     border-right: 1px solid var(--border);
     background: var(--bg-sidebar);
     overflow-y: auto;
 }
 
 .settings-nav-header {
-    padding: 4px 10px 10px;
+    padding: 4px 14px 10px;
     font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--text-muted);
+    color: var(--text-secondary);
 }
 
 .settings-nav-item {
     display: flex;
     align-items: center;
-    gap: 8px;
-    height: 32px;
-    padding: 0 10px;
-    border-radius: 6px;
+    gap: 10px;
+    height: 36px;
+    padding: 0 16px;
+    border-radius: 0;
     background: transparent;
-    color: var(--text-secondary);
-    font-size: 13px;
+    color: var(--text-primary);
+    font-size: 15px;
     font-weight: 500;
     text-align: left;
+    width: 100%;
+    box-sizing: border-box;
     transition: background 0.1s, color 0.1s;
 }
 
@@ -2665,11 +2702,14 @@ tr.new-row:hover td.row-index {
 }
 
 .settings-nav-icon {
-    font-size: 13px;
-    width: 16px;
+    font-size: 18px;
+    width: 22px;
     text-align: center;
     flex-shrink: 0;
-    color: var(--text-muted);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .settings-nav-item.is-active .settings-nav-icon {
@@ -2677,19 +2717,21 @@ tr.new-row:hover td.row-index {
 }
 
 .settings-content {
+    grid-row: 2;
+    grid-column: 2;
     display: flex;
     flex-direction: column;
     overflow: hidden;
 }
 
 .settings-topbar {
+    grid-column: 1 / -1;
+    grid-row: 1;
     display: flex;
     align-items: center;
     gap: 10px;
-    height: 40px;
     padding: 0 20px;
     border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
 }
 
 .settings-back-btn {

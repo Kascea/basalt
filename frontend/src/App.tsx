@@ -25,13 +25,14 @@ function App() {
   }])
 
   const logIdRef = useRef(1)
-  const addStatus = useCallback((msg: string) => {
+  const addStatus = useCallback((msg: string, isSuccess = false) => {
     const id = logIdRef.current++
     setStatusLog(prev => [...prev, {
       id,
       ts: new Date().toLocaleTimeString('en-US', { hour12: false }),
       text: msg,
       isError: msg.startsWith('Error:'),
+      isSuccess,
     }])
   }, [])
   const [showConnectForm, setShowConnectForm] = useState(false)
