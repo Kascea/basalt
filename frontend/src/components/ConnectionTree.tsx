@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { type Connection, type SchemaObject } from '../../bindings/basalt/db'
-import type { SavedConnection } from '../../bindings/basalt/config'
+import { type SchemaObject } from '../../bindings/basalt/db'
+import { useConnectionSession } from '../context/ConnectionContext'
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 
@@ -146,6 +146,15 @@ function IconTrash() {
   )
 }
 
+function IconRefresh() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 6a4 4 0 1 1-1.17-2.83" />
+      <polyline points="10 2 10 5.5 6.5 5.5" />
+    </svg>
+  )
+}
+
 // ── Type metadata ────────────────────────────────────────────────────────────
 
 const TYPE_TO_GROUP: Record<string, string> = {
@@ -216,39 +225,19 @@ interface ConnContextMenu {
 
 type ContextMenu = TableContextMenu | ConnContextMenu
 
-interface Props {
-  savedConnections: SavedConnection[]
-  connections: Connection[]
-  activeConnectionID: string
-  objects: SchemaObject[]
-  expandedConnections: Set<string>
-  expandedSchemas: Set<string>
-  filter: string
-  isConnecting: string | null
-  onConnectionClick: (id: string) => void
-  onReconnect: (id: string) => void
-  onDisconnect: (id: string) => void
-  onDeleteSaved: (id: string) => void
-  onEditSaved: (conn: SavedConnection) => void
-  onSchemaToggle: (schema: string) => void
-  onFilterChange: (value: string) => void
-  onRefresh: () => void
-  onTableOpen: (schema: string, table: string) => void
-  onTableOpenNewTab: (schema: string, table: string) => void
-  onTableOpenSchema: (schema: string, table: string) => void
-  onGroupOpen?: (schema: string, kind: 'sequences' | 'indexes') => void
-}
-
 const GROUP_TAB_KIND: Record<string, 'sequences' | 'indexes'> = {
   Sequences: 'sequences',
   Indexes: 'indexes',
 }
 
-export function ConnectionTree({
-  savedConnections, connections, activeConnectionID, objects, expandedConnections, expandedSchemas,
-  filter, isConnecting, onConnectionClick, onReconnect, onDisconnect, onDeleteSaved, onEditSaved,
-  onSchemaToggle, onFilterChange, onTableOpen, onTableOpenNewTab, onTableOpenSchema, onGroupOpen,
-}: Props) {
+export function ConnectionTree() {
+  const {
+    savedConnections, connections, activeConnectionID, objects,
+    expandedConnections, expandedSchemas, filter, isConnecting,
+    onConnectionClick, onReconnect, onDisconnect, onDeleteSaved, onEditSaved,
+    onSchemaToggle, onFilterChange, onRefresh, onTableOpen, onTableOpenNewTab,
+    onTableOpenSchema, onGroupOpen,
+  } = useConnectionSession()
   const [activeSchema, setActiveSchema] = useState<string | null>(null)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null)
@@ -438,9 +427,14 @@ export function ConnectionTree({
           onClick={(e) => e.stopPropagation()}
         >
           {contextMenu.connected ? (
-            <button onClick={() => { onDisconnect(contextMenu.id); setContextMenu(null) }}>
-              <IconDisconnect /> Disconnect
-            </button>
+            <>
+              <button onClick={() => { onRefresh(); setContextMenu(null) }}>
+                <IconRefresh /> Refresh
+              </button>
+              <button onClick={() => { onDisconnect(contextMenu.id); setContextMenu(null) }}>
+                <IconDisconnect /> Disconnect
+              </button>
+            </>
           ) : (
             <button onClick={() => { onReconnect(contextMenu.id); setContextMenu(null) }}>
               <IconConnect /> Connect

@@ -91,6 +91,21 @@ type RowDelete struct {
 	RowID  string `json:"rowId"`
 }
 
+type CommitPayload struct {
+	Inserts []RowInsert `json:"inserts"`
+	Edits   []RowEdit   `json:"edits"`
+	Deletes []RowDelete `json:"deletes"`
+}
+
+// FKViolation is returned by CommitTableEdits when a foreign-key constraint is
+// violated. The transaction is rolled back; callers should display this rather
+// than treating it as an unexpected error.
+type FKViolation struct {
+	Column          string `json:"column"`
+	Value           string `json:"value"`
+	ReferencedTable string `json:"referencedTable"`
+}
+
 // ── Introspector interface ────────────────────────────────────────────────────
 
 // Introspector is the per-driver adapter for database metadata and row addressing.

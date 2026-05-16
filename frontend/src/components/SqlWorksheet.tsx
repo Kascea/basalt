@@ -16,7 +16,6 @@ interface Props {
   connectionId?: string
   driver?: string
   isRunning: boolean
-  nullText?: string
   onSqlChange: (sql: string) => void
   onCellChange: (rowIndex: number, column: string, value: string) => void
   onDiscard: () => void
@@ -24,7 +23,6 @@ interface Props {
 
 export function SqlWorksheet({
   sql, result, rows, dirtyCells, objects, connectionId, driver, isRunning,
-  nullText = 'NULL',
   onSqlChange, onCellChange, onDiscard,
 }: Props) {
   const [activeTab, setActiveTab] = useState<ResultTab>('data')
@@ -70,7 +68,6 @@ export function SqlWorksheet({
             newRows={[]}
             dirtyCells={dirtyCells}
             pendingDeletes={new Set()}
-            nullText={nullText}
             onCellChange={onCellChange}
             onNewCellChange={() => {}}
             onDeleteRow={() => {}}

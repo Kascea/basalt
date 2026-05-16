@@ -12,16 +12,6 @@ export class AppSettings {
     "rowDensity": string;
 
     /**
-     * e.g. "NULL"
-     */
-    "nullText": string;
-
-    /**
-     * 12 | 13 | 14
-     */
-    "fontSize": number;
-
-    /**
      * 0 = unlimited
      */
     "defaultRowLimit": number;
@@ -33,12 +23,6 @@ export class AppSettings {
     constructor($$source: Partial<AppSettings> = {}) {
         if (!("rowDensity" in $$source)) {
             this["rowDensity"] = "";
-        }
-        if (!("nullText" in $$source)) {
-            this["nullText"] = "";
-        }
-        if (!("fontSize" in $$source)) {
-            this["fontSize"] = 0;
         }
         if (!("defaultRowLimit" in $$source)) {
             this["defaultRowLimit"] = 0;

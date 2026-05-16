@@ -10,12 +10,12 @@ interface TypedCellProps {
   isDirty?: boolean
   isNew?: boolean
   isPendingDelete?: boolean
-  ariaLabel: string
   nullText?: string
+  ariaLabel: string
   onChange: (value: string) => void
 }
 
-function TypedCell({ value, dbType, isDirty, isNew, isPendingDelete, ariaLabel, nullText, onChange }: TypedCellProps) {
+function TypedCell({ value, dbType, isDirty, isNew, isPendingDelete, nullText, ariaLabel, onChange }: TypedCellProps) {
   const category = colCategory(dbType)
   const [rejected, setRejected] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)

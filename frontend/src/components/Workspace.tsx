@@ -75,11 +75,11 @@ interface Props { onCommit: () => void }
 
 export function Workspace({ onCommit }: Props) {
   const session = useWorkspaceSession()
-  const { connection, tabs: tabsNs, tableEditor, worksheet, status, nullText } = session
+  const { connection, tabs: tabsNs, tableEditor, worksheet, status } = session
   const { active: activeConnection, objects } = connection
   const {
     list: tabs, activeId: activeTabId, active: activeTab, activeTableState,
-    setActive: setActiveTab, close: closeTab, togglePin: togglePinTab,
+    setActive: setActiveTab, close: closeTab, closeAll, togglePin: togglePinTab,
     rename: renameTab, openWorksheet: openWorksheetTab, openSchema: openSchemaTab,
   } = tabsNs
   const {
@@ -184,6 +184,11 @@ export function Workspace({ onCommit }: Props) {
 
     if (!tab.pinned) {
       items.push({ label: 'Close tab', onClick: () => closeTab(tabId), danger: true })
+    }
+
+    const closeable = tabs.filter(t => !t.pinned)
+    if (closeable.length > 1) {
+      items.push({ label: 'Close all tabs', onClick: () => closeAll(), danger: true })
     }
 
     return items
@@ -300,7 +305,6 @@ export function Workspace({ onCommit }: Props) {
             connectionId={activeConnection?.id}
             driver={activeConnection?.driver}
             isRunning={isRunning}
-            nullText={nullText}
             onSqlChange={setSql}
             onCellChange={updateQueryCell}
             onDiscard={discardQueryEdits}
@@ -318,7 +322,6 @@ export function Workspace({ onCommit }: Props) {
             isLoading={activeTableState.isLoading}
             isRefreshing={activeTableState.isRefreshing}
             isCommitting={activeTableState.isCommitting}
-            nullText={nullText}
             onCellChange={updateCell}
             onNewCellChange={updateNewCell}
             onAddRow={addNewRow}

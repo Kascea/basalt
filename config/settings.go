@@ -8,8 +8,6 @@ import (
 
 type AppSettings struct {
 	RowDensity        string `json:"rowDensity"`        // "compact" | "normal" | "comfortable"
-	NullText          string `json:"nullText"`           // e.g. "NULL"
-	FontSize          int    `json:"fontSize"`           // 12 | 13 | 14
 	DefaultRowLimit   int    `json:"defaultRowLimit"`    // 0 = unlimited
 	QueryTimeoutSec   int    `json:"queryTimeoutSec"`
 	ConfirmDropTable  bool   `json:"confirmDropTable"`
@@ -18,8 +16,6 @@ type AppSettings struct {
 
 var DefaultSettings = AppSettings{
 	RowDensity:        "normal",
-	NullText:          "NULL",
-	FontSize:          13,
 	DefaultRowLimit:   1000,
 	QueryTimeoutSec:   30,
 	ConfirmDropTable:  true,

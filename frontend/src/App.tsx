@@ -10,6 +10,7 @@ import { useDatabase } from './hooks/useDatabase'
 import { useTableTabs } from './hooks/useTableTabs'
 import { useSettings } from './hooks/useSettings'
 import { WorkspaceProvider } from './context/WorkspaceContext'
+import { ConnectionProvider } from './context/ConnectionContext'
 import type { AppSettings, SavedConnection } from '../bindings/basalt/config'
 import type { LogEntry } from './types'
 import { useResizeDrag } from './hooks/useResizeDrag'
@@ -110,6 +111,30 @@ function App() {
 
   const activeWS = tableTabs.activeWorksheetState
 
+  const connectionSession = {
+    savedConnections: db.savedConnections,
+    connections: db.connections,
+    activeConnectionID: db.activeConnectionID,
+    objects: db.objects,
+    expandedConnections: db.expandedConnections,
+    expandedSchemas: db.expandedSchemas,
+    filter: db.filter,
+    isConnecting: db.isConnecting,
+    onNewConnection: () => setShowConnectForm(true),
+    onConnectionClick: db.toggleConnection,
+    onReconnect: db.reconnect,
+    onDisconnect: db.disconnect,
+    onDeleteSaved: db.deleteSaved,
+    onEditSaved: handleEditSaved,
+    onSchemaToggle: db.toggleSchema,
+    onFilterChange: db.setFilter,
+    onRefresh: db.refreshObjects,
+    onTableOpen: (schema: string, table: string) => { tableTabs.openTableTab(schema, table); setShowSettings(false) },
+    onTableOpenNewTab: (schema: string, table: string) => { tableTabs.openTableTab(schema, table); setShowSettings(false) },
+    onTableOpenSchema: (schema: string, table: string) => { tableTabs.openSchemaTab(schema, table); setShowSettings(false) },
+    onGroupOpen: (schema: string, kind: 'sequences' | 'indexes') => { tableTabs.openGroupTab(schema, kind); setShowSettings(false) },
+  }
+
   const session = {
     connection: {
       active: db.activeConnection,
@@ -124,6 +149,7 @@ function App() {
       activeWorksheetState: tableTabs.activeWorksheetState,
       setActive: tableTabs.setActiveTab,
       close: tableTabs.closeTab,
+      closeAll: tableTabs.closeAllTabs,
       togglePin: tableTabs.togglePinTab,
       rename: tableTabs.renameTab,
       openTable: tableTabs.openTableTab,
@@ -164,7 +190,6 @@ function App() {
       openFkTab: handleOpenFkTab,
     },
 
-    nullText: effectiveSettings?.nullText ?? 'NULL',
   }
 
   return (
@@ -173,36 +198,16 @@ function App() {
       style={{
         '--cell-height': effectiveSettings?.rowDensity === 'compact' ? '26px'
           : effectiveSettings?.rowDensity === 'comfortable' ? '42px' : '34px',
-        '--cell-font-size': effectiveSettings?.fontSize ? `${effectiveSettings.fontSize}px` : '13px',
         '--sidebar-width': `${sidebarWidth}px`,
       } as CSSProperties}
     >
       <div className="sidebar-wrapper">
-        <Sidebar
-          savedConnections={db.savedConnections}
-          connections={db.connections}
-          activeConnectionID={db.activeConnectionID}
-          objects={db.objects}
-          expandedConnections={db.expandedConnections}
-          expandedSchemas={db.expandedSchemas}
-          filter={db.filter}
-          isConnecting={db.isConnecting}
-          showSettings={showSettings}
-          onNewConnection={() => setShowConnectForm(true)}
-          onConnectionClick={db.toggleConnection}
-          onReconnect={db.reconnect}
-          onDisconnect={db.disconnect}
-          onDeleteSaved={db.deleteSaved}
-          onEditSaved={handleEditSaved}
-          onSchemaToggle={db.toggleSchema}
-          onFilterChange={db.setFilter}
-          onRefresh={db.refreshObjects}
-          onTableOpen={(schema, table) => { tableTabs.openTableTab(schema, table); setShowSettings(false) }}
-          onTableOpenNewTab={(schema, table) => { tableTabs.openTableTab(schema, table); setShowSettings(false) }}
-          onTableOpenSchema={(schema, table) => { tableTabs.openSchemaTab(schema, table); setShowSettings(false) }}
-          onGroupOpen={(schema, kind) => { tableTabs.openGroupTab(schema, kind); setShowSettings(false) }}
-          onSettingsToggle={() => setShowSettings((v) => !v)}
-        />
+        <ConnectionProvider value={connectionSession}>
+          <Sidebar
+            showSettings={showSettings}
+            onSettingsToggle={() => setShowSettings((v) => !v)}
+          />
+        </ConnectionProvider>
         <div className="resize-handle resize-handle--h" onMouseDown={e => startSidebarDrag(e, 'x')} />
       </div>
 

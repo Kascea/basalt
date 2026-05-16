@@ -16,6 +16,7 @@ export interface WorkspaceSession {
     activeWorksheetState: WorksheetTabState | null
     setActive: (id: string) => void
     close: (id: string) => void
+    closeAll: () => void
     togglePin: (id: string) => void
     rename: (id: string, name: string) => void
     openTable: (schema: string, table: string) => void
@@ -56,7 +57,6 @@ export interface WorkspaceSession {
     openFkTab: () => void
   }
 
-  nullText: string
 }
 
 const WorkspaceContext = createContext<WorkspaceSession | null>(null)

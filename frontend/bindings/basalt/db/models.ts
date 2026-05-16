@@ -124,6 +124,47 @@ export class ColumnInfo {
     }
 }
 
+export class CommitPayload {
+    "inserts": RowInsert[];
+    "edits": RowEdit[];
+    "deletes": RowDelete[];
+
+    /** Creates a new CommitPayload instance. */
+    constructor($$source: Partial<CommitPayload> = {}) {
+        if (!("inserts" in $$source)) {
+            this["inserts"] = [];
+        }
+        if (!("edits" in $$source)) {
+            this["edits"] = [];
+        }
+        if (!("deletes" in $$source)) {
+            this["deletes"] = [];
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new CommitPayload instance from a string or object.
+     */
+    static createFrom($$source: any = {}): CommitPayload {
+        const $$createField0_0 = $$createType1;
+        const $$createField1_0 = $$createType3;
+        const $$createField2_0 = $$createType5;
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("inserts" in $$parsedSource) {
+            $$parsedSource["inserts"] = $$createField0_0($$parsedSource["inserts"]);
+        }
+        if ("edits" in $$parsedSource) {
+            $$parsedSource["edits"] = $$createField1_0($$parsedSource["edits"]);
+        }
+        if ("deletes" in $$parsedSource) {
+            $$parsedSource["deletes"] = $$createField2_0($$parsedSource["deletes"]);
+        }
+        return new CommitPayload($$parsedSource as Partial<CommitPayload>);
+    }
+}
+
 export class ConnectRequest {
     "name": string;
     "driver": string;
@@ -319,7 +360,7 @@ export class CreateTableRequest {
      * Creates a new CreateTableRequest instance from a string or object.
      */
     static createFrom($$source: any = {}): CreateTableRequest {
-        const $$createField2_0 = $$createType1;
+        const $$createField2_0 = $$createType7;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("columns" in $$parsedSource) {
             $$parsedSource["columns"] = $$createField2_0($$parsedSource["columns"]);
@@ -362,6 +403,40 @@ export class ExecutionPlanStep {
     static createFrom($$source: any = {}): ExecutionPlanStep {
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         return new ExecutionPlanStep($$parsedSource as Partial<ExecutionPlanStep>);
+    }
+}
+
+/**
+ * FKViolation is returned by CommitTableEdits when a foreign-key constraint is
+ * violated. The transaction is rolled back; callers should display this rather
+ * than treating it as an unexpected error.
+ */
+export class FKViolation {
+    "column": string;
+    "value": string;
+    "referencedTable": string;
+
+    /** Creates a new FKViolation instance. */
+    constructor($$source: Partial<FKViolation> = {}) {
+        if (!("column" in $$source)) {
+            this["column"] = "";
+        }
+        if (!("value" in $$source)) {
+            this["value"] = "";
+        }
+        if (!("referencedTable" in $$source)) {
+            this["referencedTable"] = "";
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new FKViolation instance from a string or object.
+     */
+    static createFrom($$source: any = {}): FKViolation {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new FKViolation($$parsedSource as Partial<FKViolation>);
     }
 }
 
@@ -503,12 +578,12 @@ export class QueryResult {
      * Creates a new QueryResult instance from a string or object.
      */
     static createFrom($$source: any = {}): QueryResult {
-        const $$createField0_0 = $$createType2;
-        const $$createField1_0 = $$createType2;
-        const $$createField2_0 = $$createType4;
-        const $$createField3_0 = $$createType2;
-        const $$createField6_0 = $$createType6;
-        const $$createField7_0 = $$createType8;
+        const $$createField0_0 = $$createType8;
+        const $$createField1_0 = $$createType8;
+        const $$createField2_0 = $$createType10;
+        const $$createField3_0 = $$createType8;
+        const $$createField6_0 = $$createType12;
+        const $$createField7_0 = $$createType14;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("columns" in $$parsedSource) {
             $$parsedSource["columns"] = $$createField0_0($$parsedSource["columns"]);
@@ -589,7 +664,7 @@ export class RowEdit {
      * Creates a new RowEdit instance from a string or object.
      */
     static createFrom($$source: any = {}): RowEdit {
-        const $$createField3_0 = $$createType3;
+        const $$createField3_0 = $$createType9;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("changes" in $$parsedSource) {
             $$parsedSource["changes"] = $$createField3_0($$parsedSource["changes"]);
@@ -622,7 +697,7 @@ export class RowInsert {
      * Creates a new RowInsert instance from a string or object.
      */
     static createFrom($$source: any = {}): RowInsert {
-        const $$createField2_0 = $$createType3;
+        const $$createField2_0 = $$createType9;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("values" in $$parsedSource) {
             $$parsedSource["values"] = $$createField2_0($$parsedSource["values"]);
@@ -783,7 +858,7 @@ export class TypeGroup {
      * Creates a new TypeGroup instance from a string or object.
      */
     static createFrom($$source: any = {}): TypeGroup {
-        const $$createField1_0 = $$createType10;
+        const $$createField1_0 = $$createType16;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("types" in $$parsedSource) {
             $$parsedSource["types"] = $$createField1_0($$parsedSource["types"]);
@@ -793,14 +868,20 @@ export class TypeGroup {
 }
 
 // Private type creation functions
-const $$createType0 = ColumnDef.createFrom;
+const $$createType0 = RowInsert.createFrom;
 const $$createType1 = $Create.Array($$createType0);
-const $$createType2 = $Create.Array($Create.Any);
-const $$createType3 = $Create.Map($Create.Any, $Create.Any);
-const $$createType4 = $Create.Array($$createType3);
-const $$createType5 = ExecutionPlanStep.createFrom;
-const $$createType6 = $Create.Array($$createType5);
-const $$createType7 = SchemaObjectSummary.createFrom;
-const $$createType8 = $Create.Array($$createType7);
-const $$createType9 = TypeEntry.createFrom;
+const $$createType2 = RowEdit.createFrom;
+const $$createType3 = $Create.Array($$createType2);
+const $$createType4 = RowDelete.createFrom;
+const $$createType5 = $Create.Array($$createType4);
+const $$createType6 = ColumnDef.createFrom;
+const $$createType7 = $Create.Array($$createType6);
+const $$createType8 = $Create.Array($Create.Any);
+const $$createType9 = $Create.Map($Create.Any, $Create.Any);
 const $$createType10 = $Create.Array($$createType9);
+const $$createType11 = ExecutionPlanStep.createFrom;
+const $$createType12 = $Create.Array($$createType11);
+const $$createType13 = SchemaObjectSummary.createFrom;
+const $$createType14 = $Create.Array($$createType13);
+const $$createType15 = TypeEntry.createFrom;
+const $$createType16 = $Create.Array($$createType15);
