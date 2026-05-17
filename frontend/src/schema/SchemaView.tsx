@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, RotateCcw, AlertCircle } from 'lucide-react'
 import { DatabaseService, type ColumnInfo } from '../../bindings/basalt/db'
-import { GridToolbar } from './GridToolbar'
-import { TypeSelect, useColumnTypes } from './TypeSelect'
+import { GridToolbar } from '../table/GridToolbar'
+import { TypeSelect, useColumnTypes } from '../ui/TypeSelect'
 
 interface Props {
   connectionID: string

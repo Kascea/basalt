@@ -1,5 +1,5 @@
-import type { TableState, RowRecord, DirtyCells, FKError } from './types'
-import type { DatabaseClient } from './db/client'
+import type { TableState, RowRecord, DirtyCells, FKError } from '../types'
+import type { DatabaseClient } from '../db/client'
 
 // EditBuffer — the accumulated, uncommitted edits for a table tab.
 // Separating this type from TableState's async-status fields makes the

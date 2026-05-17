@@ -5,7 +5,7 @@ import { type TableTarget, type RowRecord, type DirtyCells, type SortDirection }
 import { GridToolbar } from './GridToolbar'
 import { FilterBar } from './FilterBar'
 import { DataGrid } from './DataGrid'
-import { useFilterExpr } from '../hooks/useFilterExpr'
+import { useFilterExpr } from './useFilterExpr'
 
 interface Props {
   target: TableTarget

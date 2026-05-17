@@ -6,14 +6,14 @@
 
 import { createContext, useContext } from 'react'
 import type { Connection, SchemaObject } from '../../bindings/basalt/db'
-import type { TabSession } from './TabContext'
-import type { TableEditorSession } from './TableEditorContext'
-import type { WorksheetSession } from './WorksheetContext'
+import type { TabSession } from '../tabs/TabContext'
+import type { TableEditorSession } from '../table/TableEditorContext'
+import type { WorksheetSession } from '../sql/WorksheetContext'
 import type { StatusSession } from './StatusContext'
 
-export type { TabSession } from './TabContext'
-export type { TableEditorSession } from './TableEditorContext'
-export type { WorksheetSession } from './WorksheetContext'
+export type { TabSession } from '../tabs/TabContext'
+export type { TableEditorSession } from '../table/TableEditorContext'
+export type { WorksheetSession } from '../sql/WorksheetContext'
 export type { StatusSession } from './StatusContext'
 
 export interface WorkspaceSession {

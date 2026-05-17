@@ -1,6 +1,6 @@
 import { DatabaseService, type ForeignKeyInfo, type AddForeignKeyRequest } from '../../bindings/basalt/db'
-import { Modal } from './Modal'
-import { useSchemaObjects } from '../hooks/useSchemaObjects'
+import { Modal } from '../ui/Modal'
+import { useSchemaObjects } from '../connection/useSchemaObjects'
 
 interface Props {
   connectionID: string

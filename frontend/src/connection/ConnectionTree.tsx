@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { type SchemaObject } from '../../bindings/basalt/db'
-import { useConnectionSession } from '../context/ConnectionContext'
-import { DeleteConfirmModal } from './DeleteConfirmModal'
+import { useConnectionSession } from './ConnectionContext'
+import { DeleteConfirmModal } from '../ui/DeleteConfirmModal'
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 
@@ -323,7 +323,7 @@ export function ConnectionTree() {
       {savedConnections.map((saved) => {
         const liveConn = connections.find((c) => c.id === saved.id)
         const isConnected = !!liveConn
-        const isActive = saved.id === activeTabConnectionID
+        const isActive = saved.id === activeTabConnectionID && isConnected
         const connExpanded = expandedConnections.has(saved.id)
         const connecting = isConnecting === saved.id
 

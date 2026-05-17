@@ -1,5 +1,5 @@
-import type { Connection } from '../../../bindings/basalt/db'
-import type { SavedConnection } from '../../../bindings/basalt/localdb/models'
+import type { Connection } from '../../bindings/basalt/db'
+import type { SavedConnection } from '../../bindings/basalt/localdb/models'
 
 interface Props {
   savedConnections: SavedConnection[]

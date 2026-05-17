@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import * as PlanetScaleService from '../../../bindings/basalt/planetscale/service'
-import type { SavedConnection } from '../../../bindings/basalt/localdb/models'
-import type { User as PSUser } from '../../../bindings/basalt/planetscale/models'
-import { DeleteConfirmModal } from '../DeleteConfirmModal'
-import { ConfirmModal } from '../ConfirmModal'
+import * as PlanetScaleService from '../../bindings/basalt/planetscale/service'
+import type { SavedConnection } from '../../bindings/basalt/localdb/models'
+import type { User as PSUser } from '../../bindings/basalt/planetscale/models'
+import { DeleteConfirmModal } from '../ui/DeleteConfirmModal'
+import { ConfirmModal } from '../ui/ConfirmModal'
 
 interface Props {
   savedConnections: SavedConnection[]

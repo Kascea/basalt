@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useResizeDrag } from '../hooks/useResizeDrag'
+import { useResizeDrag } from '../workspace/useResizeDrag'
 import { type QueryResult, type SchemaObject } from '../../bindings/basalt/db'
 import { type RowRecord, type DirtyCells } from '../types'
-import { DataGrid } from './DataGrid'
+import { DataGrid } from '../table/DataGrid'
 import { SqlEditor } from './SqlEditor'
 
 type ResultTab = 'data' | 'structure' | 'plan'

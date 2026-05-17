@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Paintbrush, Terminal, Settings, Link } from 'lucide-react'
 import type { AppSettings, SavedConnection } from '../../bindings/basalt/localdb/models'
-import { SettingsAppearance } from './settings/SettingsAppearance'
-import { SettingsQuery } from './settings/SettingsQuery'
-import { SettingsGeneral } from './settings/SettingsGeneral'
-import { SettingsConnectedAccounts } from './settings/SettingsConnectedAccounts'
+import { SettingsAppearance } from './SettingsAppearance'
+import { SettingsQuery } from './SettingsQuery'
+import { SettingsGeneral } from './SettingsGeneral'
+import { SettingsConnectedAccounts } from './SettingsConnectedAccounts'
 
 type Section = 'appearance' | 'query' | 'general' | 'connected-accounts'
 

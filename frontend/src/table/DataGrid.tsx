@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { type RowRecord, type DirtyCells, type SortDirection, cellKey } from '../types'
-import { colCategory, isKeyAllowed } from '../columnCategory'
+import { colCategory, isKeyAllowed } from './columnCategory'
 
 // ── TypedCell ─────────────────────────────────────────────────────────────────
 

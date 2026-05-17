@@ -1,7 +1,7 @@
 import { Window } from '@wailsio/runtime'
 import { DatabaseIcon, Plus } from 'lucide-react'
 import { ConnectionTree } from './ConnectionTree'
-import { useConnectionSession } from '../context/ConnectionContext'
+import { useConnectionSession } from './ConnectionContext'
 
 interface Props {
   showSettings: boolean

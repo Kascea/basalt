@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
-import { useTabManager } from './useTabManager'
+import { useTabManager } from '../tabs/useTabManager'
 import { useTableSession } from './useTableSession'
-import { useWorksheetSession } from './useWorksheetSession'
+import { useWorksheetSession } from '../sql/useWorksheetSession'
 import type { Tab } from '../types'
 
 export function useTableTabs(setStatus: (msg: string, isSuccess?: boolean) => void) {

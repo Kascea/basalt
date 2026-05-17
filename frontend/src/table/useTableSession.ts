@@ -3,7 +3,7 @@ import { type Tab, type TableState, type RowRecord } from '../types'
 import {
   applyUpdateCell, applyUpdateNewCell, applyAddNewRow, applyRemoveNewRow,
   applyMarkForDelete, applyDiscard, buildCommitPayload, commitEdits,
-} from '../editBuffer'
+} from './editBuffer'
 import { DatabaseClient } from '../db/client'
 
 function emptyTableState(): TableState {

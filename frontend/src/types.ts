@@ -59,4 +59,4 @@ export interface LogEntry {
 }
 
 // cellKey lives in editBuffer.ts; re-exported here so existing imports keep working.
-export { cellKey } from './editBuffer'
+export { cellKey } from './table/editBuffer'
