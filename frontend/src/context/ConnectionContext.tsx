@@ -2,14 +2,14 @@ import { createContext, useContext } from 'react'
 import type { Connection, SchemaObject } from '../../bindings/basalt/db'
 import type { SavedConnection } from '../../bindings/basalt/localdb/models'
 
+// ConnectionSession carries only what the sidebar needs from the outside:
+// connection data + action callbacks. UI state (expanded nodes, filter)
+// lives inside ConnectionTree itself.
 export interface ConnectionSession {
   savedConnections: SavedConnection[]
   connections: Connection[]
-  activeConnectionID: string
+  activeTabConnectionID: string
   objectsByConnection: Record<string, SchemaObject[]>
-  expandedConnections: Set<string>
-  expandedSchemas: Set<string>
-  filter: string
   isConnecting: string | null
   onNewConnection: () => void
   onConnectionClick: (id: string) => void
@@ -17,13 +17,11 @@ export interface ConnectionSession {
   onDisconnect: (id: string) => void
   onDeleteSaved: (id: string) => void
   onEditSaved: (conn: SavedConnection) => void
-  onSchemaToggle: (schema: string) => void
-  onFilterChange: (value: string) => void
   onRefresh: () => void
-  onTableOpen: (schema: string, table: string) => void
-  onTableOpenNewTab: (schema: string, table: string) => void
-  onTableOpenSchema: (schema: string, table: string) => void
-  onGroupOpen?: (schema: string, kind: 'sequences' | 'indexes') => void
+  onTableOpen: (connectionID: string, schema: string, table: string) => void
+  onTableOpenNewTab: (connectionID: string, schema: string, table: string) => void
+  onTableOpenSchema: (connectionID: string, schema: string, table: string) => void
+  onGroupOpen?: (connectionID: string, schema: string, kind: 'sequences' | 'indexes') => void
 }
 
 const ConnectionContext = createContext<ConnectionSession | null>(null)

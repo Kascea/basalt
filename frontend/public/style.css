@@ -643,12 +643,13 @@ td input:focus {
 }
 
 .conn-node.is-active {
-    background: var(--bg-active);
-    color: #d8dde2;
+    background: rgba(59, 130, 246, 0.15);
+    color: #93c5fd;
+    border-left: 2px solid rgba(59, 130, 246, 0.7);
 }
 
 .conn-node.is-active:hover {
-    background: var(--bg-active);
+    background: rgba(59, 130, 246, 0.2);
 }
 
 .conn-node.is-disconnected {
@@ -1028,6 +1029,23 @@ td input:focus {
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
+}
+
+.worksheet-connection-select {
+    height: 30px;
+    padding: 0 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 12px;
+    cursor: pointer;
+    max-width: 200px;
+}
+
+.worksheet-connection-select:focus {
+    outline: none;
+    border-color: var(--teal);
 }
 
 .run-btn {
@@ -3708,6 +3726,27 @@ tr:hover .icon-btn {
     color: var(--text-primary);
     border-color: rgba(200, 80, 80, 0.5);
     background: rgba(200, 80, 80, 0.08);
+}
+
+.connected-account-connect {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.connected-account-connect:hover {
+    color: var(--text-primary);
+    border-color: var(--accent);
+    background: rgba(var(--accent-rgb, 80, 140, 200), 0.08);
+}
+
+.connected-account-connect:disabled {
+    opacity: 0.5;
+    cursor: default;
 }
 
 .connected-account-user {

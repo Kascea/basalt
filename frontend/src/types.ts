@@ -58,5 +58,5 @@ export interface LogEntry {
   isSuccess?: boolean
 }
 
-// cellKey lives in rowEdits.ts; re-exported here so existing imports keep working.
-export { cellKey } from './rowEdits'
+// cellKey lives in editBuffer.ts; re-exported here so existing imports keep working.
+export { cellKey } from './editBuffer'

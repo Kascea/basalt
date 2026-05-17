@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { type SchemaObject } from '../../bindings/basalt/db'
 import { useConnectionSession } from '../context/ConnectionContext'
 import { DeleteConfirmModal } from './DeleteConfirmModal'
@@ -221,6 +221,7 @@ interface TableContextMenu {
   kind: 'table'
   x: number
   y: number
+  connectionID: string
   schema: string
   name: string
 }
@@ -242,16 +243,41 @@ const GROUP_TAB_KIND: Record<string, 'sequences' | 'indexes'> = {
 
 export function ConnectionTree() {
   const {
-    savedConnections, connections, activeConnectionID, objectsByConnection,
-    expandedConnections, expandedSchemas, filter, isConnecting,
+    savedConnections, connections, activeTabConnectionID, objectsByConnection,
+    isConnecting,
     onConnectionClick, onReconnect, onDisconnect, onDeleteSaved, onEditSaved,
-    onSchemaToggle, onFilterChange, onRefresh, onTableOpen, onTableOpenNewTab,
+    onRefresh, onTableOpen, onTableOpenNewTab,
     onTableOpenSchema, onGroupOpen,
   } = useConnectionSession()
+
+  // UI state lives here — not in the data hook or context
+  const [expandedConnections, setExpandedConnections] = useState<Set<string>>(new Set())
+  const [expandedSchemas, setExpandedSchemas] = useState<Set<string>>(new Set())
+  const [filter, setFilter] = useState('')
   const [activeSchema, setActiveSchema] = useState<string | null>(null)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+
+  // Auto-expand newly connected connections
+  const autoExpandedConnsRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    const newIds = connections.filter(c => !autoExpandedConnsRef.current.has(c.id)).map(c => c.id)
+    if (newIds.length === 0) return
+    setExpandedConnections(prev => new Set([...prev, ...newIds]))
+    newIds.forEach(id => autoExpandedConnsRef.current.add(id))
+  }, [connections])
+
+  // Auto-expand first schema when objects load for a connection
+  const autoExpandedSchemaRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    for (const [connID, objs] of Object.entries(objectsByConnection)) {
+      if (objs.length > 0 && !autoExpandedSchemaRef.current.has(connID)) {
+        setExpandedSchemas(prev => new Set([...prev, objs[0].schema]))
+        autoExpandedSchemaRef.current.add(connID)
+      }
+    }
+  }, [objectsByConnection])
 
   useEffect(() => {
     if (!contextMenu) return
@@ -261,6 +287,15 @@ export function ConnectionTree() {
   }, [contextMenu])
 
   const q = filter.trim().toLowerCase()
+
+  const toggleConnection = (id: string) => {
+    setExpandedConnections(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+    onConnectionClick(id)
+  }
 
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) => {
@@ -272,7 +307,11 @@ export function ConnectionTree() {
 
   const handleSchemaClick = (schema: string) => {
     setActiveSchema(schema)
-    onSchemaToggle(schema)
+    setExpandedSchemas(prev => {
+      const next = new Set(prev)
+      next.has(schema) ? next.delete(schema) : next.add(schema)
+      return next
+    })
   }
 
   if (savedConnections.length === 0) {
@@ -284,7 +323,7 @@ export function ConnectionTree() {
       {savedConnections.map((saved) => {
         const liveConn = connections.find((c) => c.id === saved.id)
         const isConnected = !!liveConn
-        const isActive = saved.id === activeConnectionID
+        const isActive = saved.id === activeTabConnectionID
         const connExpanded = expandedConnections.has(saved.id)
         const connecting = isConnecting === saved.id
 
@@ -296,7 +335,7 @@ export function ConnectionTree() {
 
         const handleConnClick = () => {
           if (isConnected) {
-            onConnectionClick(saved.id)
+            toggleConnection(saved.id)
           } else {
             onReconnect(saved.id)
           }
@@ -325,7 +364,7 @@ export function ConnectionTree() {
                 <input
                   className="tree-filter"
                   value={filter}
-                  onChange={(e) => onFilterChange(e.target.value)}
+                  onChange={(e) => setFilter(e.target.value)}
                   placeholder="Filter…"
                 />
 
@@ -365,7 +404,7 @@ export function ConnectionTree() {
                                 <button
                                   className="tree-node type-group-node"
                                   onClick={() => {
-                                    if (tabKind && onGroupOpen) onGroupOpen(schema, tabKind)
+                                    if (tabKind && onGroupOpen) onGroupOpen(saved.id, schema, tabKind)
                                     else toggleGroup(groupKey)
                                   }}
                                 >
@@ -382,12 +421,12 @@ export function ConnectionTree() {
                                         key={`${obj.schema}.${obj.name}`}
                                         className={`tree-node obj-leaf-node${isOpenable ? ' openable' : ''}`}
                                         onClick={() => {
-                                          if (isOpenable) onTableOpen(obj.schema, obj.name)
+                                          if (isOpenable) onTableOpen(saved.id, obj.schema, obj.name)
                                         }}
                                         onContextMenu={(e) => {
                                           if (!isOpenable) return
                                           e.preventDefault()
-                                          setContextMenu({ kind: 'table', x: e.clientX, y: e.clientY, schema: obj.schema, name: obj.name })
+                                          setContextMenu({ kind: 'table', x: e.clientX, y: e.clientY, connectionID: saved.id, schema: obj.schema, name: obj.name })
                                         }}
                                         title={obj.name}
                                       >
@@ -417,13 +456,13 @@ export function ConnectionTree() {
           style={{ left: contextMenu.x, top: contextMenu.y }}
           onClick={(e) => e.stopPropagation()}
         >
-          <button onClick={() => { onTableOpen(contextMenu.schema, contextMenu.name); setContextMenu(null) }}>
+          <button onClick={() => { onTableOpen(contextMenu.connectionID, contextMenu.schema, contextMenu.name); setContextMenu(null) }}>
             <IconOpen /> Open
           </button>
-          <button onClick={() => { onTableOpenNewTab(contextMenu.schema, contextMenu.name); setContextMenu(null) }}>
+          <button onClick={() => { onTableOpenNewTab(contextMenu.connectionID, contextMenu.schema, contextMenu.name); setContextMenu(null) }}>
             <IconOpenNewTab /> Open in New Tab
           </button>
-          <button onClick={() => { onTableOpenSchema(contextMenu.schema, contextMenu.name); setContextMenu(null) }}>
+          <button onClick={() => { onTableOpenSchema(contextMenu.connectionID, contextMenu.schema, contextMenu.name); setContextMenu(null) }}>
             <IconOpenSchema /> Open Schema
           </button>
         </div>

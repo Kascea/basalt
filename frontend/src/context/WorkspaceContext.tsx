@@ -1,63 +1,31 @@
+// WorkspaceSession is now composed of four focused contexts, each memoized
+// independently so changes to one don't force re-renders across unrelated consumers.
+//
+// Consumers that need everything (e.g. Workspace.tsx) can import WorkspaceSession
+// from here; components that only need one slice can import that context directly.
+
 import { createContext, useContext } from 'react'
-import type { Connection, QueryResult, SchemaObject } from '../../bindings/basalt/db'
-import type { Tab, TableState, WorksheetTabState, RowRecord, DirtyCells, FKError, LogEntry } from '../types'
+import type { Connection, SchemaObject } from '../../bindings/basalt/db'
+import type { TabSession } from './TabContext'
+import type { TableEditorSession } from './TableEditorContext'
+import type { WorksheetSession } from './WorksheetContext'
+import type { StatusSession } from './StatusContext'
+
+export type { TabSession } from './TabContext'
+export type { TableEditorSession } from './TableEditorContext'
+export type { WorksheetSession } from './WorksheetContext'
+export type { StatusSession } from './StatusContext'
 
 export interface WorkspaceSession {
   connection: {
+    connections: Connection[]
     active: Connection | undefined
     objects: SchemaObject[]
   }
-
-  tabs: {
-    list: Tab[]
-    activeId: string
-    active: Tab
-    activeTableState: TableState | null
-    activeWorksheetState: WorksheetTabState | null
-    setActive: (id: string) => void
-    close: (id: string) => void
-    closeAll: () => void
-    togglePin: (id: string) => void
-    rename: (id: string, name: string) => void
-    openTable: (schema: string, table: string) => void
-    openTableWithPrefill: (schema: string, table: string, prefill: Record<string, string>) => void
-    openSchema: (schema: string, table: string) => void
-    openGroup: (schema: string, kind: 'sequences' | 'indexes' | 'foreignkeys') => void
-    openWorksheet: () => void
-    reorder: (fromIdx: number, toIdx: number) => void
-  }
-
-  tableEditor: {
-    updateCell: (rowIndex: number, col: string, value: string) => void
-    updateNewCell: (rowIndex: number, col: string, value: string) => void
-    addRow: () => void
-    removeRow: (i: number) => void
-    markForDelete: (i: number) => void
-    discard: () => void
-    commit: () => void
-    refresh: () => void
-    setFilter: (expr: string) => void
-  }
-
-  worksheet: {
-    isRunning: boolean
-    result: QueryResult | null
-    rows: RowRecord[]
-    dirtyCells: DirtyCells
-    sql: string
-    setSql: (sql: string) => void
-    run: () => void
-    updateCell: (rowIndex: number, col: string, value: string) => void
-    discard: () => void
-  }
-
-  status: {
-    log: LogEntry[]
-    set: (msg: string) => void
-    activeFkError: FKError | null
-    openFkTab: () => void
-  }
-
+  tabs: TabSession
+  tableEditor: TableEditorSession
+  worksheet: WorksheetSession
+  status: StatusSession
 }
 
 const WorkspaceContext = createContext<WorkspaceSession | null>(null)

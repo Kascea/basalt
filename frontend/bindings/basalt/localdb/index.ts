@@ -8,5 +8,6 @@ export {
 
 export {
     AppSettings,
-    SavedConnection
+    SavedConnection,
+    SavedTab
 } from "./models.js";

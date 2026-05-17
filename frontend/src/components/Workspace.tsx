@@ -11,7 +11,7 @@ import { SchemaView } from './SchemaView'
 import { StatusBar } from './StatusBar'
 import { TabContextMenu } from './TabContextMenu'
 import { useWorkspaceSession } from '../context/WorkspaceContext'
-import { DatabaseService } from '../../bindings/basalt/db'
+import { DatabaseClient } from '../db/client'
 import type { Tab } from '../types'
 
 function tabLabel(tab: Tab): string {
@@ -76,12 +76,12 @@ interface Props { onCommit: () => void }
 export function Workspace({ onCommit }: Props) {
   const session = useWorkspaceSession()
   const { connection, tabs: tabsNs, tableEditor, worksheet, status } = session
-  const { active: activeConnection, objects } = connection
+  const { connections, active: activeConnection, objects } = connection
   const {
     list: tabs, activeId: activeTabId, active: activeTab, activeTableState,
     setActive: setActiveTab, close: closeTab, closeAll, togglePin: togglePinTab,
     rename: renameTab, openWorksheet: openWorksheetTab, openSchema: openSchemaTab,
-    reorder: reorderTabs,
+    setTabConnectionID, reorder: reorderTabs,
   } = tabsNs
   const {
     updateCell, updateNewCell, addRow: addNewRow, removeRow: removeNewRow,
@@ -146,7 +146,7 @@ export function Workspace({ onCommit }: Props) {
     })
     if (!path) return
     try {
-      await DatabaseService.WriteFile(path, sql)
+      await DatabaseClient.writeFile(path, sql)
       const filename = path.split(/[\\/]/).pop()?.replace(/\.sql$/i, '') ?? path
       renameTab(activeTabId, filename)
       setStatus(`Saved to ${path}`)
@@ -173,7 +173,7 @@ export function Workspace({ onCommit }: Props) {
           }) as string
           if (!path) return
           try {
-            const content = await DatabaseService.ReadFile(path)
+            const content = await DatabaseClient.readFile(path)
             const filename = path.split(/[\\/]/).pop()?.replace(/\.sql$/i, '') ?? path
             setSql(content)
             renameTab(tabId, filename)
@@ -210,7 +210,7 @@ export function Workspace({ onCommit }: Props) {
       <section className="workspace workspace-empty">
         <header className="topbar">
           <div className="topbar-tabs">
-            <button className="tab-new-worksheet" aria-label="New worksheet" title="New worksheet" onClick={openWorksheetTab}>+</button>
+            <button className="tab-new-worksheet" aria-label="New worksheet" title="New worksheet" onClick={() => openWorksheetTab()}>+</button>
           </div>
         </header>
         <div className="empty-state-screen">
@@ -282,7 +282,7 @@ export function Workspace({ onCommit }: Props) {
             className="tab-new-worksheet"
             aria-label="New worksheet"
             title="New worksheet"
-            onClick={openWorksheetTab}
+            onClick={() => openWorksheetTab()}
           >
             +
           </button>
@@ -293,8 +293,18 @@ export function Workspace({ onCommit }: Props) {
         <div className="topbar-actions">
           {activeTab.kind === 'worksheet' && (
             <>
+              <select
+                className="worksheet-connection-select"
+                value={activeTab.connectionID}
+                onChange={e => setTabConnectionID(activeTab.id, e.target.value)}
+              >
+                <option value="">— Select database —</option>
+                {connections.map(c => (
+                  <option key={c.id} value={c.id}>{c.name || c.host || c.id}</option>
+                ))}
+              </select>
               <button className="compact-btn" onClick={handleSaveFile}><Save size={13} />Save…</button>
-              <button className="run-btn" onClick={runQuery} disabled={isRunning || !activeConnection}>
+              <button className="run-btn" onClick={runQuery} disabled={isRunning || !activeTab.connectionID}>
                 ▶ {isRunning ? 'Running…' : 'Run'}
               </button>
             </>
@@ -340,7 +350,7 @@ export function Workspace({ onCommit }: Props) {
             onFilterChange={setFilterExpr}
             onDiscard={discardEdits}
             onCommit={onCommit}
-            onEditSchema={() => openSchemaTab(activeTab.schema, activeTab.table!)}
+            onEditSchema={() => openSchemaTab(activeTab.connectionID, activeTab.schema, activeTab.table!)}
           />
         )}
 

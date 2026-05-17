@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, type CSSProperties } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties } from 'react'
 import { Events } from '@wailsio/runtime'
 import { Sidebar } from './components/Sidebar'
 import { Workspace } from './components/Workspace'
@@ -12,8 +12,26 @@ import { useSettings } from './hooks/useSettings'
 import { WorkspaceProvider } from './context/WorkspaceContext'
 import { ConnectionProvider } from './context/ConnectionContext'
 import type { AppSettings, SavedConnection } from '../bindings/basalt/localdb/models'
-import type { LogEntry } from './types'
+import type { LogEntry, Tab } from './types'
 import { useResizeDrag } from './hooks/useResizeDrag'
+
+const TAB_STORAGE_KEY = 'basalt:tabs'
+
+interface PersistedTabs {
+  tabs: Tab[]
+  activeTabId: string
+  worksheetSQL: Record<string, string>
+}
+
+function loadPersistedTabs(): PersistedTabs | null {
+  try {
+    const raw = localStorage.getItem(TAB_STORAGE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as PersistedTabs
+  } catch {
+    return null
+  }
+}
 
 function App() {
   const [sidebarWidth, startSidebarDrag] = useResizeDrag(260, 160, 520)
@@ -36,6 +54,7 @@ function App() {
       isSuccess,
     }])
   }, [])
+
   const [showConnectForm, setShowConnectForm] = useState(false)
   const [editingConnection, setEditingConnection] = useState<SavedConnection | null>(null)
   const [showSettings, setShowSettings] = useState(false)
@@ -43,16 +62,73 @@ function App() {
 
   const db = useDatabase(addStatus)
   const { settings, saveSettings } = useSettings()
-  const tableTabs = useTableTabs(db.activeConnectionID, addStatus)
+  const tableTabs = useTableTabs(addStatus)
+
+  // Derived: which connection the current tab belongs to
+  const activeConnectionID = tableTabs.activeTab.connectionID
+  const activeConnection = db.connections.find(c => c.id === activeConnectionID)
 
   const [settingsDraft, setSettingsDraft] = useState<AppSettings | null>(null)
   const effectiveSettings = settingsDraft ?? settings
+
+  // ── Tab persistence ───────────────────────────────────────────────────────
+
+  // Restore tabs once on mount (before first render of saved connections)
+  const restoredRef = useRef(false)
+  useEffect(() => {
+    if (restoredRef.current) return
+    restoredRef.current = true
+    const persisted = loadPersistedTabs()
+    if (!persisted || persisted.tabs.length === 0) return
+    tableTabs.restoreTabs(persisted.tabs, persisted.activeTabId, persisted.worksheetSQL)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Debounced save on every tab/SQL change
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => {
+      const worksheetSQL: Record<string, string> = {}
+      for (const [id, state] of Object.entries(tableTabs.worksheetStates)) {
+        if (state.sql) worksheetSQL[id] = state.sql
+      }
+      const data: PersistedTabs = {
+        tabs: tableTabs.tabs,
+        activeTabId: tableTabs.activeTabId,
+        worksheetSQL,
+      }
+      localStorage.setItem(TAB_STORAGE_KEY, JSON.stringify(data))
+    }, 500)
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
+  }, [tableTabs.tabs, tableTabs.activeTabId, tableTabs.worksheetStates])
+
+  // ── Lazy tab loading ──────────────────────────────────────────────────────
+
+  // When the active tab changes or connections change, load the table if needed
+  useEffect(() => {
+    const tab = tableTabs.activeTab
+    if (tab.kind !== 'table' || !tab.table) return
+    const state = tableTabs.tableStates[tab.id]
+    if (state?.result !== null || state?.isLoading) return
+
+    const isLive = db.connections.some(c => c.id === tab.connectionID)
+    if (isLive) {
+      tableTabs.loadActiveTab(tab.connectionID, tab.schema, tab.table)
+    } else {
+      db.reconnect(tab.connectionID, () => {
+        tableTabs.loadActiveTab(tab.connectionID, tab.schema, tab.table!)
+      })
+    }
+  }, [tableTabs.activeTabId, db.connections]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── FK tab handler ────────────────────────────────────────────────────────
 
   const activeFkError = tableTabs.activeTableState?.commitError ?? null
 
   const handleOpenFkTab = () => {
     if (!activeFkError) return
     tableTabs.openTableTabWithPrefill(
+      tableTabs.activeTab.connectionID,
       tableTabs.activeTab.schema,
       activeFkError.referencedTable,
       { [activeFkError.column]: activeFkError.value },
@@ -80,21 +156,23 @@ function App() {
     saveSettings(s).then(() => setSettingsDraft(null))
   }
 
+  // ── Menu events ───────────────────────────────────────────────────────────
+
   const menuRef = useRef({
     openNewConnection: () => setShowConnectForm(true),
     openSettings: () => setShowSettings(true),
-    refreshSchema: () => db.refreshObjects(),
+    refreshSchema: () => db.refreshObjects(activeConnectionID),
     runQuery: () => tableTabs.runQuery(),
     connectSaved: (id: string) => db.reconnect(id),
-    closeConnection: () => { if (db.activeConnectionID) db.disconnect(db.activeConnectionID) },
+    closeConnection: () => { if (activeConnectionID) db.disconnect(activeConnectionID) },
   })
   menuRef.current = {
     openNewConnection: () => setShowConnectForm(true),
     openSettings: () => setShowSettings(true),
-    refreshSchema: () => db.refreshObjects(),
+    refreshSchema: () => db.refreshObjects(activeConnectionID),
     runQuery: () => tableTabs.runQuery(),
     connectSaved: (id: string) => db.reconnect(id),
-    closeConnection: () => { if (db.activeConnectionID) db.disconnect(db.activeConnectionID) },
+    closeConnection: () => { if (activeConnectionID) db.disconnect(activeConnectionID) },
   }
 
   useEffect(() => {
@@ -109,89 +187,91 @@ function App() {
     return () => offs.forEach((off) => off())
   }, [])
 
+  // ── Context values ────────────────────────────────────────────────────────
+
   const activeWS = tableTabs.activeWorksheetState
 
-  const connectionSession = {
+  const connectionSession = useMemo(() => ({
     savedConnections: db.savedConnections,
     connections: db.connections,
-    activeConnectionID: db.activeConnectionID,
+    activeTabConnectionID: activeConnectionID,
     objectsByConnection: db.objectsByConnection,
-    expandedConnections: db.expandedConnections,
-    expandedSchemas: db.expandedSchemas,
-    filter: db.filter,
     isConnecting: db.isConnecting,
     onNewConnection: () => setShowConnectForm(true),
-    onConnectionClick: db.toggleConnection,
+    onConnectionClick: () => {}, // expand/collapse handled locally in ConnectionTree
     onReconnect: db.reconnect,
     onDisconnect: db.disconnect,
     onDeleteSaved: db.deleteSaved,
     onEditSaved: handleEditSaved,
-    onSchemaToggle: db.toggleSchema,
-    onFilterChange: db.setFilter,
-    onRefresh: db.refreshObjects,
-    onTableOpen: (schema: string, table: string) => { tableTabs.openTableTab(schema, table); setShowSettings(false) },
-    onTableOpenNewTab: (schema: string, table: string) => { tableTabs.openTableTab(schema, table); setShowSettings(false) },
-    onTableOpenSchema: (schema: string, table: string) => { tableTabs.openSchemaTab(schema, table); setShowSettings(false) },
-    onGroupOpen: (schema: string, kind: 'sequences' | 'indexes') => { tableTabs.openGroupTab(schema, kind); setShowSettings(false) },
-  }
+    onRefresh: () => db.refreshObjects(activeConnectionID),
+    onTableOpen: (connectionID: string, schema: string, table: string) => { tableTabs.openTableTab(connectionID, schema, table); setShowSettings(false) },
+    onTableOpenNewTab: (connectionID: string, schema: string, table: string) => { tableTabs.openTableTab(connectionID, schema, table); setShowSettings(false) },
+    onTableOpenSchema: (connectionID: string, schema: string, table: string) => { tableTabs.openSchemaTab(connectionID, schema, table); setShowSettings(false) },
+    onGroupOpen: (connectionID: string, schema: string, kind: 'sequences' | 'indexes') => { tableTabs.openGroupTab(connectionID, schema, kind); setShowSettings(false) },
+  }), [db.savedConnections, db.connections, db.objectsByConnection, db.isConnecting, activeConnectionID]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const session = {
+  const tabsValue = useMemo(() => ({
+    list: tableTabs.tabs,
+    activeId: tableTabs.activeTabId,
+    active: tableTabs.activeTab,
+    activeTableState: tableTabs.activeTableState,
+    activeWorksheetState: tableTabs.activeWorksheetState,
+    setActive: tableTabs.setActiveTab,
+    close: tableTabs.closeTab,
+    closeAll: tableTabs.closeAllTabs,
+    togglePin: tableTabs.togglePinTab,
+    rename: tableTabs.renameTab,
+    openTable: tableTabs.openTableTab,
+    openTableWithPrefill: tableTabs.openTableTabWithPrefill,
+    openSchema: tableTabs.openSchemaTab,
+    openGroup: tableTabs.openGroupTab,
+    openWorksheet: tableTabs.openWorksheetTab,
+    setTabConnectionID: tableTabs.setTabConnectionID,
+    reorder: tableTabs.reorderTabs,
+  }), [tableTabs.tabs, tableTabs.activeTabId, tableTabs.activeTab, tableTabs.activeTableState, tableTabs.activeWorksheetState]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const tableEditorValue = useMemo(() => ({
+    updateCell: tableTabs.updateCell,
+    updateNewCell: tableTabs.updateNewCell,
+    addRow: tableTabs.addNewRow,
+    removeRow: tableTabs.removeNewRow,
+    markForDelete: tableTabs.markForDelete,
+    discard: tableTabs.discardEdits,
+    commit: tableTabs.commitEdits,
+    refresh: tableTabs.refreshActiveTable,
+    setFilter: tableTabs.setFilterExpr,
+  }), [tableTabs.activeTabId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const worksheetValue = useMemo(() => ({
+    isRunning: activeWS?.isRunning ?? false,
+    result: activeWS?.result ?? null,
+    rows: activeWS?.rows ?? [],
+    dirtyCells: activeWS?.dirtyCells ?? {},
+    sql: activeWS?.sql ?? '',
+    setSql: tableTabs.setSql,
+    run: tableTabs.runQuery,
+    updateCell: tableTabs.updateQueryCell,
+    discard: tableTabs.discardQueryEdits,
+  }), [activeWS]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const statusValue = useMemo(() => ({
+    log: statusLog,
+    set: addStatus,
+    activeFkError,
+    openFkTab: handleOpenFkTab,
+  }), [statusLog, activeFkError]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const session = useMemo(() => ({
     connection: {
-      active: db.activeConnection,
-      objects: db.objectsByConnection[db.activeConnectionID] ?? [],
+      connections: db.connections,
+      active: activeConnection,
+      objects: db.objectsByConnection[activeConnectionID] ?? [],
     },
-
-    tabs: {
-      list: tableTabs.tabs,
-      activeId: tableTabs.activeTabId,
-      active: tableTabs.activeTab,
-      activeTableState: tableTabs.activeTableState,
-      activeWorksheetState: tableTabs.activeWorksheetState,
-      setActive: tableTabs.setActiveTab,
-      close: tableTabs.closeTab,
-      closeAll: tableTabs.closeAllTabs,
-      togglePin: tableTabs.togglePinTab,
-      rename: tableTabs.renameTab,
-      openTable: tableTabs.openTableTab,
-      openTableWithPrefill: tableTabs.openTableTabWithPrefill,
-      openSchema: tableTabs.openSchemaTab,
-      openGroup: tableTabs.openGroupTab,
-      openWorksheet: tableTabs.openWorksheetTab,
-      reorder: tableTabs.reorderTabs,
-    },
-
-    tableEditor: {
-      updateCell: tableTabs.updateCell,
-      updateNewCell: tableTabs.updateNewCell,
-      addRow: tableTabs.addNewRow,
-      removeRow: tableTabs.removeNewRow,
-      markForDelete: tableTabs.markForDelete,
-      discard: tableTabs.discardEdits,
-      commit: tableTabs.commitEdits,
-      refresh: tableTabs.refreshActiveTable,
-      setFilter: tableTabs.setFilterExpr,
-    },
-
-    worksheet: {
-      isRunning: activeWS?.isRunning ?? false,
-      result: activeWS?.result ?? null,
-      rows: activeWS?.rows ?? [],
-      dirtyCells: activeWS?.dirtyCells ?? {},
-      sql: activeWS?.sql ?? '',
-      setSql: tableTabs.setSql,
-      run: tableTabs.runQuery,
-      updateCell: tableTabs.updateQueryCell,
-      discard: tableTabs.discardQueryEdits,
-    },
-
-    status: {
-      log: statusLog,
-      set: addStatus,
-      activeFkError,
-      openFkTab: handleOpenFkTab,
-    },
-
-  }
+    tabs: tabsValue,
+    tableEditor: tableEditorValue,
+    worksheet: worksheetValue,
+    status: statusValue,
+  }), [db.connections, activeConnection, db.objectsByConnection, activeConnectionID, tabsValue, tableEditorValue, worksheetValue, statusValue])
 
   return (
     <main

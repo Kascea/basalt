@@ -3,6 +3,7 @@ import * as PlanetScaleService from '../../../bindings/basalt/planetscale/servic
 import type { SavedConnection } from '../../../bindings/basalt/localdb/models'
 import type { User as PSUser } from '../../../bindings/basalt/planetscale/models'
 import { DeleteConfirmModal } from '../DeleteConfirmModal'
+import { ConfirmModal } from '../ConfirmModal'
 
 interface Props {
   savedConnections: SavedConnection[]
@@ -33,23 +34,45 @@ export function SettingsConnectedAccounts({ savedConnections, onDeleteSaved }: P
 
 function PlanetScaleAccount({ savedConnections, onDeleteSaved }: Props) {
   const [user, setUser] = useState<PSUser | null>(null)
+  const [isSignedIn, setIsSignedIn] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [connecting, setConnecting] = useState(false)
+  const [connectError, setConnectError] = useState<string | null>(null)
   const [signingOut, setSigningOut] = useState(false)
+  const [confirmSignOut, setConfirmSignOut] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const psConnections = savedConnections.filter(s => s.planetscaleKey && s.planetscaleKey !== '')
 
+  const loadAccountState = () => {
+    return Promise.all([
+      PlanetScaleService.GetUser().then(u => setUser(u)).catch(() => setUser(null)),
+      PlanetScaleService.IsSignedIn().then(setIsSignedIn).catch(() => setIsSignedIn(false)),
+    ])
+  }
+
   useEffect(() => {
-    PlanetScaleService.GetUser()
-      .then(u => setUser(u))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false))
+    loadAccountState().finally(() => setLoading(false))
   }, [])
+
+  const handleConnect = () => {
+    setConnecting(true)
+    setConnectError(null)
+    PlanetScaleService.StartAuth()
+      .then(() => loadAccountState())
+      .catch(err => setConnectError(String(err)))
+      .finally(() => setConnecting(false))
+  }
 
   const handleSignOut = () => {
     setSigningOut(true)
+    setConfirmSignOut(false)
     PlanetScaleService.SignOut()
-      .then(() => setUser(null))
+      .then(() => {
+        setUser(null)
+        setIsSignedIn(false)
+        psConnections.forEach(conn => onDeleteSaved(conn.id))
+      })
       .finally(() => setSigningOut(false))
   }
 
@@ -75,16 +98,22 @@ function PlanetScaleAccount({ savedConnections, onDeleteSaved }: Props) {
 
           {loading ? (
             <span className="connected-account-status">Loading…</span>
-          ) : user ? (
+          ) : isSignedIn ? (
             <button
               className="connected-account-signout"
-              onClick={handleSignOut}
+              onClick={() => setConfirmSignOut(true)}
               disabled={signingOut}
             >
               {signingOut ? 'Signing out…' : 'Sign out'}
             </button>
           ) : (
-            <span className="connected-account-status is-disconnected">Not connected</span>
+            <button
+              className="connected-account-connect"
+              onClick={handleConnect}
+              disabled={connecting}
+            >
+              {connecting ? 'Connecting…' : 'Connect'}
+            </button>
           )}
         </div>
 
@@ -95,7 +124,13 @@ function PlanetScaleAccount({ savedConnections, onDeleteSaved }: Props) {
           </div>
         )}
 
-        {user && (
+        {!loading && !isSignedIn && (
+          <p className="connected-account-empty">
+            {connectError ?? 'Not connected. Click Connect to sign in with PlanetScale.'}
+          </p>
+        )}
+
+        {isSignedIn && (
           <div className="connected-account-dbs">
             <div className="connected-account-dbs-label">Connected databases</div>
             {psConnections.length === 0 ? (
@@ -125,6 +160,15 @@ function PlanetScaleAccount({ savedConnections, onDeleteSaved }: Props) {
           </div>
         )}
       </div>
+
+      {confirmSignOut && (
+        <ConfirmModal
+          message="Are you sure you want to sign out of PlanetScale? This will disconnect all databases currently using this account."
+          confirmLabel="Sign out"
+          onConfirm={handleSignOut}
+          onCancel={() => setConfirmSignOut(false)}
+        />
+      )}
 
       {confirmDeleteId && pendingConn && (() => {
         const { db } = formatPSKey(pendingConn.planetscaleKey!)

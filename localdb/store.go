@@ -53,6 +53,21 @@ type connectedAccount struct {
 
 func (connectedAccount) TableName() string { return "connected_accounts" }
 
+type openTab struct {
+	ID           string `gorm:"primarykey"`
+	Kind         string
+	ConnectionID string
+	SchemaName   string
+	TabTable     string `gorm:"column:table_name"`
+	Name         string
+	Pinned       bool
+	SortOrder    int
+	SQLContent   string
+	IsActive     bool
+}
+
+func (openTab) TableName() string { return "open_tabs" }
+
 // --- Open ---
 
 // Open opens (or creates) the SQLite database at
@@ -88,7 +103,7 @@ func Open() (*Store, error) {
 	}
 	sqlDB.SetMaxOpenConns(1)
 
-	if err := gormDB.AutoMigrate(&settingsRow{}, &connectionRow{}, &connectedAccount{}); err != nil {
+	if err := gormDB.AutoMigrate(&settingsRow{}, &connectionRow{}, &connectedAccount{}, &openTab{}); err != nil {
 		return nil, err
 	}
 
@@ -341,4 +356,56 @@ func (s *Store) SetConnectedAccount(provider string, acc ConnectedAccount) error
 		DisplayName: acc.DisplayName,
 		Email:       acc.Email,
 	}).Error
+}
+
+// --- Open tabs ---
+
+func (s *Store) SaveTabs(tabs []SavedTab) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Delete(&openTab{}, "1=1").Error; err != nil {
+			return err
+		}
+		if len(tabs) == 0 {
+			return nil
+		}
+		rows := make([]openTab, len(tabs))
+		for i, t := range tabs {
+			rows[i] = openTab{
+				ID:           t.ID,
+				Kind:         t.Kind,
+				ConnectionID: t.ConnectionID,
+				SchemaName:   t.SchemaName,
+				TabTable:     t.TableName,
+				Name:         t.Name,
+				Pinned:       t.Pinned,
+				SortOrder:    i,
+				SQLContent:   t.SQLContent,
+				IsActive:     t.IsActive,
+			}
+		}
+		return tx.Create(&rows).Error
+	})
+}
+
+func (s *Store) LoadTabs() ([]SavedTab, error) {
+	var rows []openTab
+	if err := s.db.Order("sort_order").Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	tabs := make([]SavedTab, len(rows))
+	for i, r := range rows {
+		tabs[i] = SavedTab{
+			ID:           r.ID,
+			Kind:         r.Kind,
+			ConnectionID: r.ConnectionID,
+			SchemaName:   r.SchemaName,
+			TableName:    r.TabTable,
+			Name:         r.Name,
+			Pinned:       r.Pinned,
+			SortOrder:    r.SortOrder,
+			SQLContent:   r.SQLContent,
+			IsActive:     r.IsActive,
+		}
+	}
+	return tabs, nil
 }

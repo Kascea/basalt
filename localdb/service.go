@@ -47,6 +47,16 @@ func (s *Service) UpdateSavedConnection(conn SavedConnection) error {
 	return s.store.UpsertConnection(conn)
 }
 
+// --- Open tabs ---
+
+func (s *Service) SaveTabs(tabs []SavedTab) error {
+	return s.store.SaveTabs(tabs)
+}
+
+func (s *Service) LoadTabs() ([]SavedTab, error) {
+	return s.store.LoadTabs()
+}
+
 func (s *Service) notifyConnectionsChanged() {
 	if s.OnConnectionsChanged != nil {
 		go s.OnConnectionsChanged()

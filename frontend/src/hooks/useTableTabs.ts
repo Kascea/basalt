@@ -1,42 +1,54 @@
-import { useRef } from 'react'
+import { useEffect } from 'react'
 import { useTabManager } from './useTabManager'
 import { useTableSession } from './useTableSession'
 import { useWorksheetSession } from './useWorksheetSession'
+import type { Tab } from '../types'
 
-export function useTableTabs(connectionID: string, setStatus: (msg: string, isSuccess?: boolean) => void) {
-  // Refs let useTabManager call back into session hooks without circular deps.
-  // The ref values are updated each render, so they are always current.
-  const loadTableRef = useRef<(id: string, schema: string, table: string, prefill?: Record<string, string>) => void>(() => {})
-  const createWorksheetRef = useRef<(id: string) => void>(() => {})
-  const cleanupTabRef = useRef<(id: string) => void>(() => {})
-
-  const tabManager = useTabManager({
-    connectionID,
-    onLoadTable: (id, schema, table, prefill) => loadTableRef.current(id, schema, table, prefill),
-    onCreateWorksheet: (id) => createWorksheetRef.current(id),
-    onCleanupTab: (id) => cleanupTabRef.current(id),
-  })
+export function useTableTabs(setStatus: (msg: string, isSuccess?: boolean) => void) {
+  const tabManager = useTabManager()
+  const { lastTabEvent, clearTabEvent } = tabManager
 
   const tableSession = useTableSession({
-    connectionID,
     activeTabId: tabManager.activeTabId,
     activeTab: tabManager.activeTab,
     setStatus,
   })
 
   const worksheetSession = useWorksheetSession({
-    connectionID,
     activeTabId: tabManager.activeTabId,
     activeTab: tabManager.activeTab,
     setStatus,
   })
 
-  // Wire refs after all hooks have been called
-  loadTableRef.current = tableSession.loadTable
-  createWorksheetRef.current = worksheetSession.createWorksheet
-  cleanupTabRef.current = (id) => {
-    tableSession.removeState(id)
-    worksheetSession.removeState(id)
+  // Drain tab lifecycle events. The coordinator reacts here rather than
+  // receiving callbacks — keeping the lifecycle protocol typed and explicit.
+  useEffect(() => {
+    if (!lastTabEvent) return
+    switch (lastTabEvent.type) {
+      case 'load-table':
+        tableSession.loadTable(
+          lastTabEvent.id, lastTabEvent.connID,
+          lastTabEvent.schema, lastTabEvent.table,
+          lastTabEvent.prefill,
+        )
+        break
+      case 'create-worksheet':
+        worksheetSession.createWorksheet(lastTabEvent.id)
+        break
+      case 'cleanup-tab':
+        tableSession.removeState(lastTabEvent.id)
+        worksheetSession.removeState(lastTabEvent.id)
+        break
+    }
+    clearTabEvent()
+  }, [lastTabEvent]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Restore tabs from persistence without triggering loads (App.tsx drives lazy loading)
+  const restoreTabs = (tabs: Tab[], activeTabId: string, worksheetSQL: Record<string, string>) => {
+    tabManager.restoreTabs(tabs, activeTabId)
+    for (const [id, sql] of Object.entries(worksheetSQL)) {
+      worksheetSession.initWorksheetState(id, sql)
+    }
   }
 
   return {
@@ -50,11 +62,20 @@ export function useTableTabs(connectionID: string, setStatus: (msg: string, isSu
     openSchemaTab: tabManager.openSchemaTab,
     openGroupTab: tabManager.openGroupTab,
     openWorksheetTab: tabManager.openWorksheetTab,
+    setTabConnectionID: tabManager.setTabConnectionID,
     togglePinTab: tabManager.togglePinTab,
     renameTab: tabManager.renameTab,
     closeTab: tabManager.closeTab,
     closeAllTabs: tabManager.closeAllTabs,
     reorderTabs: tabManager.reorderTabs,
+    restoreTabs,
+
+    // State access for persistence
+    tableStates: tableSession.tableStates,
+    worksheetStates: worksheetSession.worksheetStates,
+
+    // Lazy loading
+    loadActiveTab: tableSession.loadActiveTab,
 
     // Table editing
     activeTableState: tableSession.activeTableState,

@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { DatabaseService } from '../../bindings/basalt/db'
 import { type Tab, type WorksheetTabState, type RowRecord, cellKey } from '../types'
+import { DatabaseClient } from '../db/client'
 
 function emptyWorksheetState(): WorksheetTabState {
   return { sql: '', result: null, rows: [], dirtyCells: {}, isRunning: false }
@@ -9,13 +9,12 @@ function emptyWorksheetState(): WorksheetTabState {
 const INITIAL_WORKSHEET_ID = 'worksheet'
 
 interface UseWorksheetSessionOptions {
-  connectionID: string
   activeTabId: string
   activeTab: Tab
   setStatus: (msg: string, isSuccess?: boolean) => void
 }
 
-export function useWorksheetSession({ connectionID, activeTabId, activeTab, setStatus }: UseWorksheetSessionOptions) {
+export function useWorksheetSession({ activeTabId, activeTab, setStatus }: UseWorksheetSessionOptions) {
   const [worksheetStates, setWorksheetStates] = useState<Record<string, WorksheetTabState>>({
     [INITIAL_WORKSHEET_ID]: emptyWorksheetState(),
   })
@@ -43,11 +42,11 @@ export function useWorksheetSession({ connectionID, activeTabId, activeTab, setS
 
   const runQuery = () => {
     if (activeTab.kind !== 'worksheet') return
-    if (!connectionID) { setStatus('Connect to a database before running SQL.'); return }
+    if (!activeTab.connectionID) { setStatus('Select a database connection before running SQL.'); return }
     const id = activeTabId
     const sql = worksheetStates[id]?.sql ?? ''
     patchWorksheetState(id, { isRunning: true })
-    DatabaseService.ExecuteQuery(connectionID, sql)
+    DatabaseClient.executeQuery(activeTab.connectionID, sql)
       .then(res => {
         patchWorksheetState(id, { result: res, rows: res.rows as RowRecord[], dirtyCells: {}, isRunning: false })
         const rows = res.rows.length
@@ -87,10 +86,15 @@ export function useWorksheetSession({ connectionID, activeTabId, activeTab, setS
     })
   }
 
+  const initWorksheetState = (id: string, sql: string) => {
+    setWorksheetStates(prev => ({ ...prev, [id]: { ...emptyWorksheetState(), sql } }))
+  }
+
   return {
     worksheetStates,
     activeWorksheetState,
     createWorksheet,
+    initWorksheetState,
     removeState,
     setSql,
     runQuery,

@@ -82,3 +82,67 @@ export class SavedConnection {
         return new SavedConnection($$parsedSource as Partial<SavedConnection>);
     }
 }
+
+/**
+ * SavedTab represents a persisted tab entry in the open_tabs table.
+ */
+export class SavedTab {
+    "id": string;
+
+    /**
+     * worksheet | table | schema | sequences | indexes | foreignkeys
+     */
+    "kind": string;
+    "connectionID": string;
+    "schemaName": string;
+    "tableName": string;
+    "name": string;
+    "pinned": boolean;
+    "sortOrder": number;
+    "sqlContent": string;
+    "isActive": boolean;
+
+    /** Creates a new SavedTab instance. */
+    constructor($$source: Partial<SavedTab> = {}) {
+        if (!("id" in $$source)) {
+            this["id"] = "";
+        }
+        if (!("kind" in $$source)) {
+            this["kind"] = "";
+        }
+        if (!("connectionID" in $$source)) {
+            this["connectionID"] = "";
+        }
+        if (!("schemaName" in $$source)) {
+            this["schemaName"] = "";
+        }
+        if (!("tableName" in $$source)) {
+            this["tableName"] = "";
+        }
+        if (!("name" in $$source)) {
+            this["name"] = "";
+        }
+        if (!("pinned" in $$source)) {
+            this["pinned"] = false;
+        }
+        if (!("sortOrder" in $$source)) {
+            this["sortOrder"] = 0;
+        }
+        if (!("sqlContent" in $$source)) {
+            this["sqlContent"] = "";
+        }
+        if (!("isActive" in $$source)) {
+            this["isActive"] = false;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new SavedTab instance from a string or object.
+     */
+    static createFrom($$source: any = {}): SavedTab {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new SavedTab($$parsedSource as Partial<SavedTab>);
+    }
+}
