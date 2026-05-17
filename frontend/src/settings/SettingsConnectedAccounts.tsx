@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import * as PlanetScaleService from '../../bindings/basalt/planetscale/service'
 import type { SavedConnection } from '../../bindings/basalt/localdb/models'
-import type { User as PSUser } from '../../bindings/basalt/planetscale/models'
+import type { User as PSUser, Database as PSDatabase } from '../../bindings/basalt/planetscale/models'
 import { DeleteConfirmModal } from '../ui/DeleteConfirmModal'
 import { ConfirmModal } from '../ui/ConfirmModal'
 
 interface Props {
   savedConnections: SavedConnection[]
   onDeleteSaved: (id: string) => void
+  onConnect: (name: string, driver: string, connectionString: string, planetscaleKey?: string) => Promise<void>
 }
 
 function PSLogo({ size = 18 }: { size?: number }) {
@@ -19,20 +20,20 @@ function PSLogo({ size = 18 }: { size?: number }) {
   )
 }
 
-export function SettingsConnectedAccounts({ savedConnections, onDeleteSaved }: Props) {
+export function SettingsConnectedAccounts({ savedConnections, onDeleteSaved, onConnect }: Props) {
   return (
     <div className="settings-section">
       <h2 className="settings-section-title">Connected Accounts</h2>
       <p className="settings-section-desc">Manage third-party database providers connected to Basalt.</p>
 
       <div className="settings-fields">
-        <PlanetScaleAccount savedConnections={savedConnections} onDeleteSaved={onDeleteSaved} />
+        <PlanetScaleAccount savedConnections={savedConnections} onDeleteSaved={onDeleteSaved} onConnect={onConnect} />
       </div>
     </div>
   )
 }
 
-function PlanetScaleAccount({ savedConnections, onDeleteSaved }: Props) {
+function PlanetScaleAccount({ savedConnections, onDeleteSaved, onConnect }: Props) {
   const [user, setUser] = useState<PSUser | null>(null)
   const [isSignedIn, setIsSignedIn] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -41,13 +42,35 @@ function PlanetScaleAccount({ savedConnections, onDeleteSaved }: Props) {
   const [signingOut, setSigningOut] = useState(false)
   const [confirmSignOut, setConfirmSignOut] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [psDatabases, setPSDatabases] = useState<PSDatabase[]>([])
+  const [loadingDbs, setLoadingDbs] = useState(false)
+  const [connectingDb, setConnectingDb] = useState<string | null>(null)
+  const [dbConnectError, setDbConnectError] = useState<string | null>(null)
 
   const psConnections = savedConnections.filter(s => s.planetscaleKey && s.planetscaleKey !== '')
+
+  const savedKeyFor = (db: PSDatabase) =>
+    psConnections.find(c => c.planetscaleKey === `${db.Org}/${db.Name}/${db.Branch}`)
+
+  const loadDatabases = async () => {
+    setLoadingDbs(true)
+    try {
+      const dbs = await PlanetScaleService.ListDatabases()
+      setPSDatabases(dbs ?? [])
+    } catch {
+      setPSDatabases([])
+    } finally {
+      setLoadingDbs(false)
+    }
+  }
 
   const loadAccountState = () => {
     return Promise.all([
       PlanetScaleService.GetUser().then(u => setUser(u)).catch(() => setUser(null)),
-      PlanetScaleService.IsSignedIn().then(setIsSignedIn).catch(() => setIsSignedIn(false)),
+      PlanetScaleService.IsSignedIn().then(async (signedIn) => {
+        setIsSignedIn(signedIn)
+        if (signedIn) await loadDatabases()
+      }).catch(() => setIsSignedIn(false)),
     ])
   }
 
@@ -71,9 +94,24 @@ function PlanetScaleAccount({ savedConnections, onDeleteSaved }: Props) {
       .then(() => {
         setUser(null)
         setIsSignedIn(false)
+        setPSDatabases([])
         psConnections.forEach(conn => onDeleteSaved(conn.id))
       })
       .finally(() => setSigningOut(false))
+  }
+
+  const handleConnectDb = async (db: PSDatabase) => {
+    const key = `${db.Org}/${db.Name}/${db.Branch}`
+    setConnectingDb(key)
+    setDbConnectError(null)
+    try {
+      const cs = await PlanetScaleService.GetConnectionString(db.Org, db.Name, db.Branch, db.Kind)
+      await onConnect(db.Name, 'postgres', cs, key)
+    } catch (err) {
+      setDbConnectError(String(err).replace(/^Error:\s*/, ''))
+    } finally {
+      setConnectingDb(null)
+    }
   }
 
   const formatPSKey = (key: string) => {
@@ -132,31 +170,52 @@ function PlanetScaleAccount({ savedConnections, onDeleteSaved }: Props) {
 
         {isSignedIn && (
           <div className="connected-account-dbs">
-            <div className="connected-account-dbs-label">Connected databases</div>
-            {psConnections.length === 0 ? (
-              <p className="connected-account-empty">No databases connected yet. Use the connect form to add one.</p>
+            <div className="connected-account-dbs-label">Databases</div>
+
+            {loadingDbs ? (
+              <p className="connected-account-empty">Loading databases…</p>
+            ) : psDatabases.length === 0 ? (
+              <p className="connected-account-empty">No databases found in your PlanetScale account.</p>
             ) : (
               <ul className="connected-account-db-list">
-                {psConnections.map(conn => {
-                  const { org, db, branch } = formatPSKey(conn.planetscaleKey!)
+                {psDatabases.map(db => {
+                  const saved = savedKeyFor(db)
+                  const key = `${db.Org}/${db.Name}/${db.Branch}`
+                  const isConnecting = connectingDb === key
+
                   return (
-                    <li key={conn.id} className="connected-account-db-row">
+                    <li key={key} className="connected-account-db-row">
                       <div className="connected-account-db-info">
-                        <span className="connected-account-db-name">{db}</span>
-                        <span className="connected-account-db-meta">{org} · {branch}</span>
+                        <span className="connected-account-db-name">{db.Name}</span>
+                        <span className="connected-account-db-meta">{db.Org} · {db.Branch}</span>
                       </div>
-                      <button
-                        className="connected-account-db-remove"
-                        onClick={() => setConfirmDeleteId(conn.id)}
-                        title="Remove connection"
-                      >
-                        ✕
-                      </button>
+                      {saved ? (
+                        <div className="connected-account-db-actions">
+                          <span className="conn-badge conn-badge--on">Connected</span>
+                          <button
+                            className="connected-account-db-remove"
+                            onClick={() => setConfirmDeleteId(saved.id)}
+                            title="Remove connection"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          className="settings-action-btn settings-action-btn--primary"
+                          onClick={() => handleConnectDb(db)}
+                          disabled={isConnecting || !!connectingDb}
+                        >
+                          {isConnecting ? 'Connecting…' : 'Connect'}
+                        </button>
+                      )}
                     </li>
                   )
                 })}
               </ul>
             )}
+
+            {dbConnectError && <div className="connect-error">{dbConnectError}</div>}
           </div>
         )}
       </div>

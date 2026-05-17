@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties } from 'react'
-import { Events } from '@wailsio/runtime'
-import { Sidebar } from './connection/Sidebar'
+import { Window, Events } from '@wailsio/runtime'
+import { Paintbrush, Terminal, Settings, Link, Database, DatabaseIcon, Plus } from 'lucide-react'
+import { ConnectionTree } from './connection/ConnectionTree'
 import { Workspace } from './workspace/Workspace'
-import { SettingsView } from './settings/SettingsView'
+import { SettingsView, type Section as SettingsSection } from './settings/SettingsView'
 import { Modal } from './ui/Modal'
 import { ConfirmModal } from './ui/ConfirmModal'
 import { ConnectForm } from './connection/ConnectForm'
@@ -14,6 +15,16 @@ import { ConnectionProvider } from './connection/ConnectionContext'
 import type { AppSettings, SavedConnection } from '../bindings/basalt/localdb/models'
 import type { LogEntry, Tab } from './types'
 import { useResizeDrag } from './workspace/useResizeDrag'
+
+type AppView = 'main' | 'settings'
+
+const SETTINGS_NAV: Array<{ id: SettingsSection; label: string; icon: React.ReactNode }> = [
+  { id: 'appearance', label: 'Appearance',        icon: <Paintbrush size={15} /> },
+  { id: 'query',      label: 'Query',             icon: <Terminal size={15} /> },
+  { id: 'general',    label: 'General',           icon: <Settings size={15} /> },
+  { id: 'connections', label: 'Connections',      icon: <Database size={15} /> },
+  { id: 'accounts',   label: 'Connected Accounts', icon: <Link size={15} /> },
+]
 
 const TAB_STORAGE_KEY = 'basalt:tabs'
 
@@ -55,16 +66,19 @@ function App() {
     }])
   }, [])
 
-  const [showConnectForm, setShowConnectForm] = useState(false)
+  const [currentView, setCurrentView] = useState<AppView>('main')
+  const [settingsSection, setSettingsSection] = useState<SettingsSection>('appearance')
   const [editingConnection, setEditingConnection] = useState<SavedConnection | null>(null)
-  const [showSettings, setShowSettings] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<{ count: number } | null>(null)
 
   const db = useDatabase(addStatus)
   const { settings, saveSettings } = useSettings()
   const tableTabs = useTableTabs(addStatus)
 
-  // Derived: which connection the current tab belongs to
+  // Always-current ref so memoized callbacks never capture stale tableTabs functions
+  const tableTabsRef = useRef(tableTabs)
+  tableTabsRef.current = tableTabs
+
   const activeConnectionID = tableTabs.activeTab.connectionID
   const activeConnection = db.connections.find(c => c.id === activeConnectionID)
 
@@ -73,7 +87,6 @@ function App() {
 
   // ── Tab persistence ───────────────────────────────────────────────────────
 
-  // Restore tabs once on mount (before first render of saved connections)
   const restoredRef = useRef(false)
   useEffect(() => {
     if (restoredRef.current) return
@@ -83,7 +96,6 @@ function App() {
     tableTabs.restoreTabs(persisted.tabs, persisted.activeTabId, persisted.worksheetSQL)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Debounced save on every tab/SQL change
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
@@ -92,19 +104,17 @@ function App() {
       for (const [id, state] of Object.entries(tableTabs.worksheetStates)) {
         if (state.sql) worksheetSQL[id] = state.sql
       }
-      const data: PersistedTabs = {
+      localStorage.setItem(TAB_STORAGE_KEY, JSON.stringify({
         tabs: tableTabs.tabs,
         activeTabId: tableTabs.activeTabId,
         worksheetSQL,
-      }
-      localStorage.setItem(TAB_STORAGE_KEY, JSON.stringify(data))
+      }))
     }, 500)
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
   }, [tableTabs.tabs, tableTabs.activeTabId, tableTabs.worksheetStates])
 
   // ── Lazy tab loading ──────────────────────────────────────────────────────
 
-  // When the active tab changes or connections change, load the table if needed
   useEffect(() => {
     const tab = tableTabs.activeTab
     if (tab.kind !== 'table' || !tab.table) return
@@ -145,30 +155,35 @@ function App() {
   }
 
   const handleEditSaved = (conn: SavedConnection) => setEditingConnection(conn)
-  const handleCloseModal = () => { setShowConnectForm(false); setEditingConnection(null) }
+  const handleCloseModal = () => setEditingConnection(null)
+
+  const openSettings = (section: SettingsSection = 'appearance') => {
+    setSettingsSection(section)
+    setCurrentView('settings')
+  }
 
   const handleSettingsChange = (patch: Partial<AppSettings>) => {
     const base = settingsDraft ?? settings
     if (base) setSettingsDraft({ ...base, ...patch })
   }
 
-  const handleSettingsSave = (s: AppSettings) => {
-    saveSettings(s).then(() => setSettingsDraft(null))
+  const handleSettingsSave = () => {
+    if (settingsDraft) saveSettings(settingsDraft).then(() => setSettingsDraft(null))
   }
 
   // ── Menu events ───────────────────────────────────────────────────────────
 
   const menuRef = useRef({
-    openNewConnection: () => setShowConnectForm(true),
-    openSettings: () => setShowSettings(true),
+    openNewConnection: () => openSettings('connections'),
+    openSettings: () => openSettings(),
     refreshSchema: () => db.refreshObjects(activeConnectionID),
     runQuery: () => tableTabs.runQuery(),
     connectSaved: (id: string) => db.reconnect(id),
     closeConnection: () => { if (activeConnectionID) db.disconnect(activeConnectionID) },
   })
   menuRef.current = {
-    openNewConnection: () => setShowConnectForm(true),
-    openSettings: () => setShowSettings(true),
+    openNewConnection: () => openSettings('connections'),
+    openSettings: () => openSettings(),
     refreshSchema: () => db.refreshObjects(activeConnectionID),
     runQuery: () => tableTabs.runQuery(),
     connectSaved: (id: string) => db.reconnect(id),
@@ -197,17 +212,17 @@ function App() {
     activeTabConnectionID: activeConnectionID,
     objectsByConnection: db.objectsByConnection,
     isConnecting: db.isConnecting,
-    onNewConnection: () => setShowConnectForm(true),
-    onConnectionClick: () => {}, // expand/collapse handled locally in ConnectionTree
+    onNewConnection: () => openSettings('connections'),
+    onConnectionClick: () => {},
     onReconnect: db.reconnect,
     onDisconnect: db.disconnect,
     onDeleteSaved: db.deleteSaved,
     onEditSaved: handleEditSaved,
     onRefresh: () => db.refreshObjects(activeConnectionID),
-    onTableOpen: (connectionID: string, schema: string, table: string) => { tableTabs.openTableTab(connectionID, schema, table); setShowSettings(false) },
-    onTableOpenNewTab: (connectionID: string, schema: string, table: string) => { tableTabs.openTableTab(connectionID, schema, table); setShowSettings(false) },
-    onTableOpenSchema: (connectionID: string, schema: string, table: string) => { tableTabs.openSchemaTab(connectionID, schema, table); setShowSettings(false) },
-    onGroupOpen: (connectionID: string, schema: string, kind: 'sequences' | 'indexes') => { tableTabs.openGroupTab(connectionID, schema, kind); setShowSettings(false) },
+    onTableOpen: (connectionID: string, schema: string, table: string) => { tableTabsRef.current.openTableTab(connectionID, schema, table); setCurrentView('main') },
+    onTableOpenNewTab: (connectionID: string, schema: string, table: string) => { tableTabsRef.current.openTableTab(connectionID, schema, table); setCurrentView('main') },
+    onTableOpenSchema: (connectionID: string, schema: string, table: string) => { tableTabsRef.current.openSchemaTab(connectionID, schema, table); setCurrentView('main') },
+    onGroupOpen: (connectionID: string, schema: string, kind: 'sequences' | 'indexes') => { tableTabsRef.current.openGroupTab(connectionID, schema, kind); setCurrentView('main') },
   }), [db.savedConnections, db.connections, db.objectsByConnection, db.isConnecting, activeConnectionID]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const tabsValue = useMemo(() => ({
@@ -252,7 +267,7 @@ function App() {
     run: tableTabs.runQuery,
     updateCell: tableTabs.updateQueryCell,
     discard: tableTabs.discardQueryEdits,
-  }), [activeWS]) // eslint-disable-line react-hooks/exhaustive-deps
+  }), [activeWS, tableTabs.activeTab.connectionID]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const statusValue = useMemo(() => ({
     log: statusLog,
@@ -282,40 +297,89 @@ function App() {
         '--sidebar-width': `${sidebarWidth}px`,
       } as CSSProperties}
     >
+      {/* ── Persistent sidebar — always visible, content swaps by view ── */}
       <div className="sidebar-wrapper">
-        <ConnectionProvider value={connectionSession}>
-          <Sidebar
-            showSettings={showSettings}
-            onSettingsToggle={() => setShowSettings((v) => !v)}
-          />
-        </ConnectionProvider>
+        <aside className="sidebar">
+          <div className="brand-row" onDoubleClick={() => Window.ToggleMaximise()}>
+            <img className="brand-mark" src="/logo-64.png" alt="basalt" />
+            <span className="brand-name">basalt</span>
+          </div>
+
+          {currentView === 'main' ? (
+            <ConnectionProvider value={connectionSession}>
+              <div className="tree-root">
+                <ConnectionTree />
+                <button
+                  className="tree-node conn-node new-connection-row"
+                  onClick={() => openSettings('connections')}
+                >
+                  <span className="chevron" />
+                  <span className="node-icon"><DatabaseIcon size={13} /></span>
+                  <span className="node-label">New Connection</span>
+                  <Plus size={11} strokeWidth={2.5} className="new-connection-plus" />
+                </button>
+              </div>
+            </ConnectionProvider>
+          ) : (
+            <nav className="settings-nav">
+              <div className="settings-nav-header">Settings</div>
+              {SETTINGS_NAV.map(item => (
+                <button
+                  key={item.id}
+                  className={`settings-nav-item${settingsSection === item.id ? ' is-active' : ''}`}
+                  onClick={() => setSettingsSection(item.id)}
+                >
+                  <span className="settings-nav-icon">{item.icon}</span>
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          )}
+
+          <div className="sidebar-footer">
+            {currentView === 'main' ? (
+              <button className="sidebar-footer-btn" onClick={() => openSettings()}>
+                ⚙ Settings
+              </button>
+            ) : (
+              <>
+                <button className="sidebar-footer-btn" onClick={() => setCurrentView('main')}>
+                  ← Back
+                </button>
+                {settingsDraft && (
+                  <button className="sidebar-footer-btn sidebar-footer-btn--save" onClick={handleSettingsSave}>
+                    Save Changes
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </aside>
+
         <div className="resize-handle resize-handle--h" onMouseDown={e => startSidebarDrag(e, 'x')} />
       </div>
 
-      {showSettings && effectiveSettings ? (
-        <SettingsView
-          settings={effectiveSettings}
-          savedConnections={db.savedConnections}
-          onClose={() => setShowSettings(false)}
-          onSettingsChange={handleSettingsChange}
-          onSettingsSave={handleSettingsSave}
-          onDeleteSaved={(id) => db.deleteSaved(id)}
-        />
-      ) : (
+      {/* ── Main content area — swaps by view ── */}
+      {currentView === 'main' && (
         <WorkspaceProvider value={session}>
           <Workspace onCommit={handleTableCommit} />
         </WorkspaceProvider>
       )}
 
-      {showConnectForm && (
-        <Modal title="New Connection" onClose={handleCloseModal}>
-          <ConnectForm
-            isConnecting={db.isConnecting === 'new'}
-            onConnect={(name, driver, connectionString, planetscaleKey) =>
-              db.connect(name, driver, connectionString, handleCloseModal, planetscaleKey)
-            }
-          />
-        </Modal>
+      {currentView === 'settings' && effectiveSettings && (
+        <SettingsView
+          settings={effectiveSettings}
+          savedConnections={db.savedConnections}
+          connections={db.connections}
+          isConnecting={db.isConnecting}
+          onSettingsChange={handleSettingsChange}
+          onDeleteSaved={(id) => db.deleteSaved(id)}
+          onReconnect={db.reconnect}
+          onDisconnect={db.disconnect}
+          onEditSaved={handleEditSaved}
+          onConnect={(name, driver, cs, psKey) => db.connect(name, driver, cs, undefined, psKey)}
+          activeSection={settingsSection}
+        />
       )}
 
       {editingConnection && (

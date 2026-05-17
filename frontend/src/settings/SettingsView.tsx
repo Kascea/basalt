@@ -1,87 +1,71 @@
-import { useState } from 'react'
-import { Paintbrush, Terminal, Settings, Link } from 'lucide-react'
+import type { Connection } from '../../bindings/basalt/db'
 import type { AppSettings, SavedConnection } from '../../bindings/basalt/localdb/models'
 import { SettingsAppearance } from './SettingsAppearance'
 import { SettingsQuery } from './SettingsQuery'
 import { SettingsGeneral } from './SettingsGeneral'
 import { SettingsConnectedAccounts } from './SettingsConnectedAccounts'
+import { SettingsConnections } from './SettingsConnections'
 
-type Section = 'appearance' | 'query' | 'general' | 'connected-accounts'
-
-const NAV_ITEMS: Array<{ id: Section; label: string; icon: React.ReactNode }> = [
-  { id: 'appearance',         label: 'Appearance',         icon: <Paintbrush size={15} /> },
-  { id: 'query',              label: 'Query',              icon: <Terminal size={15} /> },
-  { id: 'general',            label: 'General',            icon: <Settings size={15} /> },
-  { id: 'connected-accounts', label: 'Connected Accounts', icon: <Link size={15} /> },
-]
+export type Section = 'appearance' | 'query' | 'general' | 'connections' | 'accounts'
 
 interface Props {
   settings: AppSettings
   savedConnections: SavedConnection[]
-  onClose: () => void
+  connections: Connection[]
+  isConnecting: string | null
+  activeSection: Section
   onSettingsChange: (patch: Partial<AppSettings>) => void
-  onSettingsSave: (s: AppSettings) => void
   onDeleteSaved: (id: string) => void
-  initialSection?: Section
+  onReconnect: (id: string) => void
+  onDisconnect: (id: string) => void
+  onEditSaved: (conn: SavedConnection) => void
+  onConnect: (name: string, driver: string, connectionString: string, planetscaleKey?: string) => Promise<void>
 }
 
 export function SettingsView({
   settings,
   savedConnections,
-  onClose, onSettingsChange, onSettingsSave, onDeleteSaved,
-  initialSection = 'appearance',
+  connections,
+  isConnecting,
+  activeSection,
+  onSettingsChange,
+  onDeleteSaved,
+  onReconnect,
+  onDisconnect,
+  onEditSaved,
+  onConnect,
 }: Props) {
-  const [activeSection, setActiveSection] = useState<Section>(initialSection)
-  const [dirty, setDirty] = useState(false)
-
-  const handleChange = (patch: Partial<AppSettings>) => {
-    onSettingsChange(patch)
-    setDirty(true)
-  }
-
-  const handleSave = () => {
-    onSettingsSave(settings)
-    setDirty(false)
-  }
-
   return (
     <div className="settings-view">
-      <div className="settings-topbar">
-        <button className="settings-back-btn" onClick={onClose}>← Back</button>
-        {dirty && (
-          <button className="settings-save-btn" onClick={handleSave}>Save Changes</button>
+      <div className="settings-body">
+        {activeSection === 'appearance' && (
+          <SettingsAppearance settings={settings} onChange={onSettingsChange} />
         )}
-      </div>
-
-      <div className="settings-nav">
-        <div className="settings-nav-header">Settings</div>
-        {NAV_ITEMS.map((item) => (
-          <button
-            key={item.id}
-            className={`settings-nav-item${activeSection === item.id ? ' is-active' : ''}`}
-            onClick={() => setActiveSection(item.id)}
-          >
-            <span className="settings-nav-icon">{item.icon}</span>
-            {item.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="settings-content">
-        <div className="settings-body">
-          {activeSection === 'appearance' && (
-            <SettingsAppearance settings={settings} onChange={handleChange} />
-          )}
-          {activeSection === 'query' && (
-            <SettingsQuery settings={settings} onChange={handleChange} />
-          )}
-          {activeSection === 'general' && (
-            <SettingsGeneral settings={settings} onChange={handleChange} />
-          )}
-          {activeSection === 'connected-accounts' && (
-            <SettingsConnectedAccounts savedConnections={savedConnections} onDeleteSaved={onDeleteSaved} />
-          )}
-        </div>
+        {activeSection === 'query' && (
+          <SettingsQuery settings={settings} onChange={onSettingsChange} />
+        )}
+        {activeSection === 'general' && (
+          <SettingsGeneral settings={settings} onChange={onSettingsChange} />
+        )}
+        {activeSection === 'connections' && (
+          <SettingsConnections
+            savedConnections={savedConnections}
+            connections={connections}
+            isConnecting={isConnecting}
+            onConnect={onConnect}
+            onReconnect={onReconnect}
+            onDisconnect={onDisconnect}
+            onEdit={onEditSaved}
+            onDelete={onDeleteSaved}
+          />
+        )}
+        {activeSection === 'accounts' && (
+          <SettingsConnectedAccounts
+            savedConnections={savedConnections}
+            onDeleteSaved={onDeleteSaved}
+            onConnect={onConnect}
+          />
+        )}
       </div>
     </div>
   )

@@ -1,11 +1,8 @@
 import { useState } from 'react'
 import type { SavedConnection } from '../../bindings/basalt/localdb/models'
 import { DatabaseService } from '../../bindings/basalt/db'
-import * as PlanetScaleService from '../../bindings/basalt/planetscale/service'
-import type { Database as PlanetScaleDatabase } from '../../bindings/basalt/planetscale/models'
 
 type ConnectionMode = 'url' | 'fields'
-type PSState = 'idle' | 'signing-in' | 'listing' | 'ready' | 'connecting'
 
 interface FieldsState {
   host: string
@@ -53,11 +50,6 @@ export function ConnectForm({ isConnecting, initialValues, onConnect, onSaveOnly
   })
   const [error, setError] = useState<string | null>(null)
 
-  // PlanetScale state
-  const [psState, setPSState] = useState<PSState>('idle')
-  const [psDatabases, setPSDatabases] = useState<PlanetScaleDatabase[]>([])
-  const [psError, setPSError] = useState<string | null>(null)
-
   const isEditing = !!initialValues
 
   const handleDriverChange = (d: string) => {
@@ -98,42 +90,8 @@ export function ConnectForm({ isConnecting, initialValues, onConnect, onSaveOnly
     onSaveOnly({ ...initialValues, name, driver, connectionString: buildConnectionString() })
   }
 
-  const handlePSSignIn = async () => {
-    setPSError(null)
-    setPSState('signing-in')
-    try {
-      await PlanetScaleService.StartAuth()
-      setPSState('listing')
-      const dbs = await PlanetScaleService.ListDatabases()
-      setPSDatabases(dbs ?? [])
-      setPSState('ready')
-    } catch (err: unknown) {
-      setPSError(extractErrorMessage(err))
-      setPSState('idle')
-    }
-  }
-
-  const handlePSConnect = async (db: PlanetScaleDatabase) => {
-    setPSError(null)
-    setPSState('connecting')
-    try {
-      const cs = await PlanetScaleService.GetConnectionString(db.Org, db.Name, db.Branch, db.Kind)
-      await onConnect(db.Name, 'postgres', cs, `${db.Org}/${db.Name}/${db.Branch}`)
-    } catch (err: unknown) {
-      setPSError(extractErrorMessage(err))
-      setPSState('ready')
-    }
-  }
-
-  const handlePSSignOut = () => {
-    setPSState('idle')
-    setPSDatabases([])
-    setPSError(null)
-  }
-
   return (
     <form className="connect-form" onSubmit={handleSubmit}>
-      {/* ── Manual connection ── */}
       <label>
         <span>Name</span>
         <input
@@ -241,73 +199,6 @@ export function ConnectForm({ isConnecting, initialValues, onConnect, onSaveOnly
           {isConnecting ? 'Connecting…' : isEditing ? 'Save & Connect' : 'Connect'}
         </button>
       </div>
-
-      {/* ── PlanetScale OAuth ── */}
-      {!isEditing && (
-        <>
-          <div className="connect-divider"><span>or</span></div>
-
-          <div className="ps-section">
-            {psState === 'idle' && (
-              <button type="button" className="ps-signin-btn" onClick={handlePSSignIn}>
-                <PSLogo />
-                Sign in with PlanetScale
-              </button>
-            )}
-
-            {(psState === 'signing-in' || psState === 'listing') && (
-              <div className="ps-status">
-                <span className="ps-spinner" />
-                {psState === 'signing-in' ? 'Waiting for browser authorization…' : 'Loading databases…'}
-              </div>
-            )}
-
-            {(psState === 'ready' || psState === 'connecting') && (
-              <>
-                <div className="ps-header">
-                  <span className="ps-header-label">PlanetScale databases</span>
-                  <button type="button" className="ps-signout-btn" onClick={handlePSSignOut}>
-                    Sign out
-                  </button>
-                </div>
-                {psDatabases.length === 0 ? (
-                  <p className="ps-empty">No databases found.</p>
-                ) : (
-                  <ul className="ps-db-list">
-                    {psDatabases.map((db) => (
-                      <li key={`${db.Org}/${db.Name}`} className="ps-db-item">
-                        <div className="ps-db-info">
-                          <span className="ps-db-name">{db.Name}</span>
-                          <span className="ps-db-meta">{db.Org} · {db.Branch}</span>
-                        </div>
-                        <button
-                          type="button"
-                          className="ps-connect-btn"
-                          disabled={psState === 'connecting'}
-                          onClick={() => handlePSConnect(db)}
-                        >
-                          {psState === 'connecting' ? '…' : 'Connect'}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
-            )}
-
-            {psError && <div className="connect-error">{psError}</div>}
-          </div>
-        </>
-      )}
     </form>
-  )
-}
-
-function PSLogo({ size = 18 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M-0.0981445 16C-0.0981438 7.16344 7.0653 -7.52254e-07 15.9019 0C22.399 5.67998e-07 27.9917 3.87258 30.4975 9.43544L9.3373 30.5956C8.42926 30.1866 7.56625 29.6953 6.75778 29.1313L19.8891 16H15.9019L4.58815 27.3137C1.69272 24.4183 -0.0981449 20.4183 -0.0981445 16Z" fill="white" />
-      <path d="M31.9019 16.0055L15.9074 32C24.7396 31.997 31.8989 24.8377 31.9019 16.0055Z" fill="white" />
-    </svg>
   )
 }

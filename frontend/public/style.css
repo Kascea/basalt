@@ -3009,26 +3009,33 @@ tr.new-row:hover td.row-index {
     color: var(--accent);
 }
 
+.sidebar-footer-btn--save {
+    color: var(--teal);
+    font-weight: 700;
+}
+
+.sidebar-footer-btn--save:hover {
+    color: var(--teal-hover);
+    background: rgba(42, 143, 110, 0.12);
+}
+
 /* ── Settings view ── */
 
 .settings-view {
     flex: 1;
     min-width: 0;
-    display: grid;
-    grid-template-columns: 210px 1fr;
-    grid-template-rows: var(--chrome-height) 1fr;
+    display: flex;
+    flex-direction: column;
     height: 100%;
     overflow: hidden;
     background: var(--bg-base);
 }
 
+/* settings-nav now lives inside .sidebar; strip the old grid/panel styles */
 .settings-nav {
-    grid-row: 2;
-    grid-column: 1;
+    flex: 1;
     display: block;
     padding: 12px 0 0;
-    border-right: 1px solid var(--border);
-    background: var(--bg-sidebar);
     overflow-y: auto;
 }
 
@@ -3085,52 +3092,9 @@ tr.new-row:hover td.row-index {
 }
 
 .settings-content {
-    grid-row: 2;
-    grid-column: 2;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-}
-
-.settings-topbar {
-    grid-column: 1 / -1;
-    grid-row: 1;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 0 20px;
-    border-bottom: 1px solid var(--border);
-}
-
-.settings-back-btn {
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 13px;
-    font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 5px;
-    transition: background 0.1s, color 0.1s;
-}
-
-.settings-back-btn:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-}
-
-.settings-save-btn {
-    margin-left: auto;
-    height: 28px;
-    padding: 0 14px;
-    border-radius: 6px;
-    background: var(--teal);
-    color: #fff;
-    font-size: 12px;
-    font-weight: 700;
-    transition: background 0.15s;
-}
-
-.settings-save-btn:hover {
-    background: var(--teal-hover);
 }
 
 .settings-body {
@@ -3185,6 +3149,32 @@ tr.new-row:hover td.row-index {
     color: var(--text-muted);
     font-size: 13px;
     padding: 12px 0;
+}
+
+/* ── Settings inline connection form ── */
+
+.settings-ps-available {
+    margin-bottom: 8px;
+}
+
+.settings-ps-available-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    padding: 0 0 8px;
+}
+
+.settings-inline-form {
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background: rgba(255,255,255,0.02);
 }
 
 /* ── Settings connection list ── */
@@ -3820,6 +3810,12 @@ tr:hover .icon-btn {
 .connected-account-db-meta {
     font-size: 11px;
     color: var(--text-secondary);
+}
+
+.connected-account-db-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .connected-account-db-remove {
