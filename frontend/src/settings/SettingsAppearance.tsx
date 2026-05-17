@@ -1,4 +1,5 @@
 import type { AppSettings } from '../../bindings/basalt/localdb/models'
+import styles from './settings.module.css'
 
 interface Props {
   settings: AppSettings
@@ -13,16 +14,19 @@ const DENSITY_OPTIONS = [
 
 export function SettingsAppearance({ settings, onChange }: Props) {
   return (
-    <div className="settings-section">
-      <h2 className="settings-section-title">Appearance</h2>
-      <p className="settings-section-desc">Adjust how data is presented in the grid.</p>
+    <div className={styles.section}>
+      <h2 className={styles.sectionTitle}>Appearance</h2>
+      <p className={styles.sectionDesc}>Adjust how data is presented in the grid.</p>
 
-      <div className="settings-fields">
-        <div className="settings-field">
-          <label className="settings-label">Row density</label>
-          <div className="settings-radio-group">
+      <div className={styles.fields}>
+        <div className={styles.field}>
+          <label className={styles.label}>Row density</label>
+          <div className={styles.radioGroup}>
             {DENSITY_OPTIONS.map((opt) => (
-              <label key={opt.value} className={`settings-radio-card${settings.rowDensity === opt.value ? ' is-selected' : ''}`}>
+              <label
+                key={opt.value}
+                className={`${styles.radioCard}${settings.rowDensity === opt.value ? ` ${styles.radioCardSelected}` : ''}`}
+              >
                 <input
                   type="radio"
                   name="rowDensity"
@@ -30,8 +34,8 @@ export function SettingsAppearance({ settings, onChange }: Props) {
                   checked={settings.rowDensity === opt.value}
                   onChange={() => onChange({ rowDensity: opt.value })}
                 />
-                <span className="settings-radio-label">{opt.label}</span>
-                <span className="settings-radio-desc">{opt.desc}</span>
+                <span className={styles.radioLabel}>{opt.label}</span>
+                <span className={styles.radioDesc}>{opt.desc}</span>
               </label>
             ))}
           </div>

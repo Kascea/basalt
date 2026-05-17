@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, RotateCcw, AlertCircle } from 'lucide-react'
+import { Plus, Trash2, RotateCcw, AlertCircle, X } from 'lucide-react'
 import { DatabaseService, type ColumnInfo } from '../../bindings/basalt/db'
 import { GridToolbar } from '../table/GridToolbar'
 import { TypeSelect, useColumnTypes } from '../ui/TypeSelect'
@@ -154,7 +154,7 @@ export function SchemaView({ connectionID, schema, table, onTableRefresh }: Prop
         <div className="schema-error-banner">
           <AlertCircle size={14} className="schema-error-icon" />
           <pre className="schema-error-text">{error}</pre>
-          <button type="button" className="schema-error-dismiss" onClick={() => setError('')} title="Dismiss">✕</button>
+          <button type="button" className="schema-error-dismiss" onClick={() => setError('')} title="Dismiss"><X size={14} /></button>
         </div>
       )}
 

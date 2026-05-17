@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
+import { MoreHorizontal } from 'lucide-react'
 import type { Connection } from '../../bindings/basalt/db'
 import type { SavedConnection } from '../../bindings/basalt/localdb/models'
 import type { Database as PSDatabase } from '../../bindings/basalt/planetscale/models'
 import * as PlanetScaleService from '../../bindings/basalt/planetscale/service'
 import { ConnectForm } from '../connection/ConnectForm'
+import { DeleteConfirmModal } from '../ui/DeleteConfirmModal'
+import styles from './settings.module.css'
 
 interface Props {
   savedConnections: SavedConnection[]
@@ -14,25 +17,35 @@ interface Props {
   onDisconnect: (id: string) => void
   onEdit: (conn: SavedConnection) => void
   onDelete: (id: string) => void
+  onOpen: (id: string) => void
 }
 
 export function SettingsConnections({
   savedConnections, connections, isConnecting,
-  onConnect, onReconnect, onDisconnect, onEdit, onDelete,
+  onConnect, onReconnect, onDisconnect, onEdit, onDelete, onOpen,
 }: Props) {
   const [showForm, setShowForm] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!openMenuId) return
+    const close = () => setOpenMenuId(null)
+    document.addEventListener('pointerdown', close)
+    return () => document.removeEventListener('pointerdown', close)
+  }, [openMenuId])
 
   const handleConnect = (name: string, driver: string, connectionString: string, planetscaleKey?: string) =>
     onConnect(name, driver, connectionString, planetscaleKey).then(() => setShowForm(false))
 
   return (
-    <div className="settings-section">
-      <div className="settings-section-header">
+    <div className={styles.section}>
+      <div className={styles.sectionHeader}>
         <div>
-          <h2 className="settings-section-title">Connections</h2>
-          <p className="settings-section-desc">Manage your saved database connections.</p>
+          <h2 className={styles.sectionTitle}>Connections</h2>
+          <p className={styles.sectionDesc}>Manage your saved database connections.</p>
         </div>
-        <button className="settings-new-btn" onClick={() => setShowForm(v => !v)}>
+        <button className={styles.newBtn} onClick={() => setShowForm(v => !v)}>
           {showForm ? 'Cancel' : '+ Manual Connection'}
         </button>
       </div>
@@ -41,7 +54,7 @@ export function SettingsConnections({
       <AvailablePSConnections savedConnections={savedConnections} onConnect={handleConnect} />
 
       {showForm && (
-        <div className="settings-inline-form">
+        <div className={styles.inlineForm}>
           <ConnectForm
             isConnecting={isConnecting === 'new'}
             onConnect={handleConnect}
@@ -50,50 +63,87 @@ export function SettingsConnections({
       )}
 
       {savedConnections.length === 0 && !showForm ? (
-        <p className="settings-empty">No connections saved yet.</p>
+        <p className={styles.empty}>No connections saved yet.</p>
       ) : (
-        <div className="settings-conn-list">
+        <div className={styles.connList}>
           {savedConnections.map((saved) => {
             const live = connections.find((c) => c.id === saved.id)
             const isConnected = !!live
             const loading = isConnecting === saved.id
+            const menuOpen = openMenuId === saved.id
 
             return (
-              <div key={saved.id} className="settings-conn-row">
-                <span className={`settings-conn-icon${!isConnected ? ' settings-conn-icon--off' : ''}`}>⬡</span>
-                <div className="settings-conn-info">
-                  <span className="settings-conn-name">{live?.name ?? saved.name}</span>
+              <div key={saved.id} className={styles.connRow}>
+                <span className={`${styles.connIcon}${!isConnected ? ` ${styles.connIconOff}` : ''}`}>⬡</span>
+                <div className={styles.connInfo}>
+                  <span className={styles.connName}>{live?.name ?? saved.name}</span>
                   {live && (
-                    <span className="settings-conn-meta">
+                    <span className={styles.connMeta}>
                       {[live.user, live.host, live.database].filter(Boolean).join(' · ')}
                     </span>
                   )}
-                  <span className="settings-conn-driver">{saved.driver}</span>
+                  <span className={styles.connDriver}>{saved.driver}</span>
                 </div>
-                <div className="settings-conn-status">
+                <div className={styles.connStatus}>
                   {isConnected ? (
-                    <span className="conn-badge conn-badge--on">Connected</span>
+                    <span className={`${styles.badge} ${styles.badgeOn}`}>Connected</span>
                   ) : loading ? (
-                    <span className="conn-badge conn-badge--loading">Connecting…</span>
+                    <span className={`${styles.badge} ${styles.badgeLoading}`}>Connecting…</span>
                   ) : (
-                    <span className="conn-badge conn-badge--off">Disconnected</span>
+                    <span className={`${styles.badge} ${styles.badgeOff}`}>Disconnected</span>
                   )}
                 </div>
-                <div className="settings-conn-actions">
-                  {isConnected ? (
-                    <button className="settings-action-btn" onClick={() => onDisconnect(saved.id)}>Disconnect</button>
-                  ) : (
-                    <button className="settings-action-btn settings-action-btn--primary" onClick={() => onReconnect(saved.id)} disabled={!!loading}>
-                      Connect
+                <div className={styles.connActions}>
+                  <button className={`${styles.actionBtn} ${styles.actionBtnPrimary}`} onClick={() => onOpen(saved.id)}>
+                    Open
+                  </button>
+                  <div className={styles.connMenu} onPointerDown={e => e.stopPropagation()}>
+                    <button
+                      className={`${styles.actionBtn} ${styles.menuBtn}${menuOpen ? ` ${styles.menuBtnActive}` : ''}`}
+                      onClick={() => setOpenMenuId(menuOpen ? null : saved.id)}
+                      aria-label="More actions"
+                    >
+                      <MoreHorizontal size={16} />
                     </button>
-                  )}
-                  <button className="settings-action-btn" onClick={() => onEdit(saved)}>Edit</button>
-                  <button className="settings-action-btn settings-action-btn--danger" onClick={() => onDelete(saved.id)}>Delete</button>
+                    {menuOpen && (
+                      <div className={styles.dropdown}>
+                        {isConnected ? (
+                          <button className={styles.dropdownItem} onClick={() => { onDisconnect(saved.id); setOpenMenuId(null) }}>
+                            Disconnect
+                          </button>
+                        ) : (
+                          <button className={styles.dropdownItem} disabled={!!loading} onClick={() => { onReconnect(saved.id); setOpenMenuId(null) }}>
+                            {loading ? 'Connecting…' : 'Connect'}
+                          </button>
+                        )}
+                        <button className={styles.dropdownItem} onClick={() => { onEdit(saved); setOpenMenuId(null) }}>
+                          Edit
+                        </button>
+                        <div className={styles.dropdownDivider} />
+                        <button
+                          className={`${styles.dropdownItem} ${styles.dropdownItemDanger}`}
+                          onClick={() => { setPendingDelete({ id: saved.id, name: saved.name }); setOpenMenuId(null) }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             )
           })}
         </div>
+      )}
+
+      {pendingDelete && (
+        <DeleteConfirmModal
+          message={`Remove "${pendingDelete.name}"? The saved credentials will be deleted.`}
+          confirmText={pendingDelete.name}
+          confirmLabel="Delete"
+          onConfirm={() => { onDelete(pendingDelete.id); setPendingDelete(null) }}
+          onCancel={() => setPendingDelete(null)}
+        />
       )}
     </div>
   )
@@ -155,27 +205,27 @@ function AvailablePSConnections({ savedConnections, onConnect }: AvailablePSProp
   }
 
   return (
-    <div className="settings-ps-available">
-      <div className="settings-ps-available-label">
+    <div className={styles.psAvailable}>
+      <div className={styles.psAvailableLabel}>
         <PSLogo />
         PlanetScale
       </div>
-      <div className="settings-conn-list">
+      <div className={styles.connList}>
         {availableDbs.map(db => {
           const key = `${db.Org}/${db.Name}/${db.Branch}`
           return (
-            <div key={key} className="settings-conn-row">
-              <span className="settings-conn-icon settings-conn-icon--off">⬡</span>
-              <div className="settings-conn-info">
-                <span className="settings-conn-name">{db.Name}</span>
-                <span className="settings-conn-meta">{db.Org} · {db.Branch}</span>
+            <div key={key} className={styles.connRow}>
+              <span className={`${styles.connIcon} ${styles.connIconOff}`}>⬡</span>
+              <div className={styles.connInfo}>
+                <span className={styles.connName}>{db.Name}</span>
+                <span className={styles.connMeta}>{db.Org} · {db.Branch}</span>
               </div>
-              <div className="settings-conn-status">
-                <span className="conn-badge conn-badge--off">Not connected</span>
+              <div className={styles.connStatus}>
+                <span className={`${styles.badge} ${styles.badgeOff}`}>Not connected</span>
               </div>
-              <div className="settings-conn-actions">
+              <div className={styles.connActions}>
                 <button
-                  className="settings-action-btn settings-action-btn--primary"
+                  className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
                   onClick={() => handleConnect(db)}
                   disabled={!!connectingKey}
                 >

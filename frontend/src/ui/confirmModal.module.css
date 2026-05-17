@@ -1,0 +1,77 @@
+.modal {
+    min-width: 320px;
+    max-width: 420px;
+}
+
+.body {
+    padding: 24px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.message {
+    font-size: 14px;
+    color: var(--text-primary);
+    line-height: 1.5;
+    margin: 0;
+}
+
+.actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.dangerBtn {
+    padding: 6px 14px;
+    border: none;
+    border-radius: 4px;
+    background: #c0392b;
+    color: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.dangerBtn:hover:not(:disabled) {
+    background: #e74c3c;
+}
+
+.dangerBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.inputWrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.inputLabel {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.inputLabel strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 7px 10px;
+    background: var(--bg-input, #1a1d1f);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+}
+
+.input:focus {
+    border-color: var(--accent, #4a9eff);
+}

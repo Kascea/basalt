@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties } from 'react'
+import navStyles from './settings/settings.module.css'
 import { Window, Events } from '@wailsio/runtime'
-import { Paintbrush, Terminal, Settings, Link, Database, DatabaseIcon, Plus } from 'lucide-react'
+import { Paintbrush, Terminal, Settings, Link, Database, DatabaseIcon, Plus, ArrowLeft } from 'lucide-react'
 import { ConnectionTree } from './connection/ConnectionTree'
 import { Workspace } from './workspace/Workspace'
 import { SettingsView, type Section as SettingsSection } from './settings/SettingsView'
@@ -19,11 +20,11 @@ import { useResizeDrag } from './workspace/useResizeDrag'
 type AppView = 'main' | 'settings'
 
 const SETTINGS_NAV: Array<{ id: SettingsSection; label: string; icon: React.ReactNode }> = [
-  { id: 'appearance', label: 'Appearance',        icon: <Paintbrush size={15} /> },
-  { id: 'query',      label: 'Query',             icon: <Terminal size={15} /> },
-  { id: 'general',    label: 'General',           icon: <Settings size={15} /> },
-  { id: 'connections', label: 'Connections',      icon: <Database size={15} /> },
-  { id: 'accounts',   label: 'Connected Accounts', icon: <Link size={15} /> },
+  { id: 'appearance', label: 'Appearance',        icon: <Paintbrush size={17} /> },
+  { id: 'query',      label: 'Query',             icon: <Terminal size={17} /> },
+  { id: 'general',    label: 'General',           icon: <Settings size={17} /> },
+  { id: 'connections', label: 'Connections',      icon: <Database size={17} /> },
+  { id: 'accounts',   label: 'Connected Accounts', icon: <Link size={17} /> },
 ]
 
 const TAB_STORAGE_KEY = 'basalt:tabs'
@@ -157,6 +158,19 @@ function App() {
   const handleEditSaved = (conn: SavedConnection) => setEditingConnection(conn)
   const handleCloseModal = () => setEditingConnection(null)
 
+  const handleOpenConnection = (id: string) => {
+    const isConnected = db.connections.some(c => c.id === id)
+    const openWorksheet = () => {
+      tableTabs.openWorksheetTab(id)
+      setCurrentView('main')
+    }
+    if (isConnected) {
+      openWorksheet()
+    } else {
+      db.reconnect(id, openWorksheet)
+    }
+  }
+
   const openSettings = (section: SettingsSection = 'appearance') => {
     setSettingsSection(section)
     setCurrentView('settings')
@@ -267,7 +281,7 @@ function App() {
     run: tableTabs.runQuery,
     updateCell: tableTabs.updateQueryCell,
     discard: tableTabs.discardQueryEdits,
-  }), [activeWS, tableTabs.activeTab.connectionID]) // eslint-disable-line react-hooks/exhaustive-deps
+  }), [activeWS]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const statusValue = useMemo(() => ({
     log: statusLog,
@@ -321,15 +335,15 @@ function App() {
               </div>
             </ConnectionProvider>
           ) : (
-            <nav className="settings-nav">
-              <div className="settings-nav-header">Settings</div>
+            <nav className={navStyles.nav}>
+              <div className={navStyles.navHeader}>Settings</div>
               {SETTINGS_NAV.map(item => (
                 <button
                   key={item.id}
-                  className={`settings-nav-item${settingsSection === item.id ? ' is-active' : ''}`}
+                  className={`${navStyles.navItem}${settingsSection === item.id ? ` ${navStyles.navItemActive}` : ''}`}
                   onClick={() => setSettingsSection(item.id)}
                 >
-                  <span className="settings-nav-icon">{item.icon}</span>
+                  <span className={navStyles.navIcon}>{item.icon}</span>
                   {item.label}
                 </button>
               ))}
@@ -339,12 +353,12 @@ function App() {
           <div className="sidebar-footer">
             {currentView === 'main' ? (
               <button className="sidebar-footer-btn" onClick={() => openSettings()}>
-                ⚙ Settings
+                <Settings size={14} strokeWidth={2} /> Settings
               </button>
             ) : (
               <>
                 <button className="sidebar-footer-btn" onClick={() => setCurrentView('main')}>
-                  ← Back
+                  <ArrowLeft size={14} strokeWidth={2} /> Back
                 </button>
                 {settingsDraft && (
                   <button className="sidebar-footer-btn sidebar-footer-btn--save" onClick={handleSettingsSave}>
@@ -378,6 +392,7 @@ function App() {
           onDisconnect={db.disconnect}
           onEditSaved={handleEditSaved}
           onConnect={(name, driver, cs, psKey) => db.connect(name, driver, cs, undefined, psKey)}
+          onOpenConnection={handleOpenConnection}
           activeSection={settingsSection}
         />
       )}

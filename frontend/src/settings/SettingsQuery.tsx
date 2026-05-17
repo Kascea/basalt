@@ -1,4 +1,5 @@
 import type { AppSettings } from '../../bindings/basalt/localdb/models'
+import styles from './settings.module.css'
 
 interface Props {
   settings: AppSettings
@@ -22,19 +23,19 @@ const TIMEOUT_OPTIONS = [
 
 export function SettingsQuery({ settings, onChange }: Props) {
   return (
-    <div className="settings-section">
-      <h2 className="settings-section-title">Query</h2>
-      <p className="settings-section-desc">Control how queries are executed and how many rows are returned.</p>
+    <div className={styles.section}>
+      <h2 className={styles.sectionTitle}>Query</h2>
+      <p className={styles.sectionDesc}>Control how queries are executed and how many rows are returned.</p>
 
-      <div className="settings-fields">
-        <div className="settings-field">
-          <label className="settings-label">Default row limit</label>
-          <p className="settings-hint">Maximum rows fetched when browsing a table. "Unlimited" loads all rows.</p>
-          <div className="settings-segment">
+      <div className={styles.fields}>
+        <div className={styles.field}>
+          <label className={styles.label}>Default row limit</label>
+          <p className={styles.hint}>Maximum rows fetched when browsing a table. "Unlimited" loads all rows.</p>
+          <div className={styles.segment}>
             {ROW_LIMIT_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
-                className={`settings-segment-btn${settings.defaultRowLimit === opt.value ? ' is-active' : ''}`}
+                className={`${styles.segmentBtn}${settings.defaultRowLimit === opt.value ? ` ${styles.segmentBtnActive}` : ''}`}
                 onClick={() => onChange({ defaultRowLimit: opt.value })}
               >
                 {opt.label}
@@ -43,14 +44,14 @@ export function SettingsQuery({ settings, onChange }: Props) {
           </div>
         </div>
 
-        <div className="settings-field">
-          <label className="settings-label">Query timeout</label>
-          <p className="settings-hint">Queries that exceed this duration are cancelled.</p>
-          <div className="settings-segment">
+        <div className={styles.field}>
+          <label className={styles.label}>Query timeout</label>
+          <p className={styles.hint}>Queries that exceed this duration are cancelled.</p>
+          <div className={styles.segment}>
             {TIMEOUT_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
-                className={`settings-segment-btn${settings.queryTimeoutSec === opt.value ? ' is-active' : ''}`}
+                className={`${styles.segmentBtn}${settings.queryTimeoutSec === opt.value ? ` ${styles.segmentBtnActive}` : ''}`}
                 onClick={() => onChange({ queryTimeoutSec: opt.value })}
               >
                 {opt.label}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { ArrowUp, ArrowDown, ArrowUpDown, X } from 'lucide-react'
 import { type RowRecord, type DirtyCells, type SortDirection, cellKey } from '../types'
 import { colCategory, isKeyAllowed } from './columnCategory'
 
@@ -146,7 +147,7 @@ export function DataGrid({
                 >
                   {col}
                   <span className={`sort-indicator${isSorted ? ' sort-active' : ''}`}>
-                    {isSorted ? (sortDirection === 'asc' ? '↑' : '↓') : '⇅'}
+                    {isSorted ? (sortDirection === 'asc' ? <ArrowUp size={11} /> : <ArrowDown size={11} />) : <ArrowUpDown size={11} />}
                   </span>
                   {menuOpen && (
                     <div className="col-menu" onClick={e => e.stopPropagation()}>
@@ -154,13 +155,13 @@ export function DataGrid({
                         className={`col-menu-item${isSorted && sortDirection === 'asc' ? ' col-menu-item-active' : ''}`}
                         onClick={() => { onSortChange?.(col, 'asc'); closeMenu() }}
                       >
-                        <span className="col-menu-icon">↑</span> Sort Ascending
+                        <ArrowUp size={12} className="col-menu-icon" /> Sort Ascending
                       </button>
                       <button
                         className={`col-menu-item${isSorted && sortDirection === 'desc' ? ' col-menu-item-active' : ''}`}
                         onClick={() => { onSortChange?.(col, 'desc'); closeMenu() }}
                       >
-                        <span className="col-menu-icon">↓</span> Sort Descending
+                        <ArrowDown size={12} className="col-menu-icon" /> Sort Descending
                       </button>
                       {isSorted && (
                         <>
@@ -169,7 +170,7 @@ export function DataGrid({
                             className="col-menu-item col-menu-item-muted"
                             onClick={() => { onSortChange?.(col, null); closeMenu() }}
                           >
-                            <span className="col-menu-icon">✕</span> Clear sort
+                            <X size={12} className="col-menu-icon" /> Clear sort
                           </button>
                         </>
                       )}
@@ -206,7 +207,7 @@ export function DataGrid({
                       title={isPendingDelete ? 'Undo delete' : 'Delete row'}
                       onClick={() => onDeleteRow(originalIndex)}
                     >
-                      ✕
+                      <X size={12} />
                     </button>
                   ) : (
                     originalIndex + 1

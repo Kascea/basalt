@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { X } from 'lucide-react'
 import { DatabaseService, type ColumnDef, type CreateSequenceRequest, type CreateIndexRequest } from '../../bindings/basalt/db'
 import { Modal } from './Modal'
 
@@ -113,7 +114,7 @@ function TableForm({ connectionID, schema, onClose, onCreated }: Omit<Props, 'ki
               disabled={columns.length === 1}
               title="Remove column"
             >
-              ✕
+              <X size={14} />
             </button>
           </div>
         ))}

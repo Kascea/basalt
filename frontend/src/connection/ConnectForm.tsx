@@ -60,8 +60,23 @@ export function ConnectForm({ isConnecting, initialValues, onConnect, onSaveOnly
   const setField = (key: keyof FieldsState) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setFields(prev => ({ ...prev, [key]: e.target.value }))
 
+  const sanitizeConnectionUrl = (url: string): string => {
+    // Encode special URL characters in the credentials (user:password) portion.
+    // Passwords with chars like ?, #, @ break URL parsers if not percent-encoded.
+    const match = url.match(/^(\w+:\/\/)([^@]+)@(.+)$/)
+    if (!match) return url
+    const [, scheme, credentials, rest] = match
+    const colonIdx = credentials.indexOf(':')
+    if (colonIdx === -1) return `${scheme}${encodeURIComponent(credentials)}@${rest}`
+    const user = credentials.substring(0, colonIdx)
+    const password = credentials.substring(colonIdx + 1)
+    const hasUnencoded = /[^A-Za-z0-9\-._~!$&'()*+,;=%]/.test(password)
+    if (!hasUnencoded) return url
+    return `${scheme}${encodeURIComponent(user)}:${encodeURIComponent(password)}@${rest}`
+  }
+
   const buildConnectionString = (): string => {
-    if (mode === 'url') return connectionString
+    if (mode === 'url') return sanitizeConnectionUrl(connectionString)
     if (driver === 'sqlite') return fields.database
     const proto = driver === 'mysql' ? 'mysql' : 'postgres'
     const userPart = fields.username

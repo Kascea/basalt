@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
+import { X } from 'lucide-react'
 import * as PlanetScaleService from '../../bindings/basalt/planetscale/service'
 import type { SavedConnection } from '../../bindings/basalt/localdb/models'
 import type { User as PSUser, Database as PSDatabase } from '../../bindings/basalt/planetscale/models'
 import { DeleteConfirmModal } from '../ui/DeleteConfirmModal'
 import { ConfirmModal } from '../ui/ConfirmModal'
+import styles from './settings.module.css'
 
 interface Props {
   savedConnections: SavedConnection[]
@@ -22,11 +24,11 @@ function PSLogo({ size = 18 }: { size?: number }) {
 
 export function SettingsConnectedAccounts({ savedConnections, onDeleteSaved, onConnect }: Props) {
   return (
-    <div className="settings-section">
-      <h2 className="settings-section-title">Connected Accounts</h2>
-      <p className="settings-section-desc">Manage third-party database providers connected to Basalt.</p>
+    <div className={styles.section}>
+      <h2 className={styles.sectionTitle}>Connected Accounts</h2>
+      <p className={styles.sectionDesc}>Manage third-party database providers connected to Basalt.</p>
 
-      <div className="settings-fields">
+      <div className={styles.fields}>
         <PlanetScaleAccount savedConnections={savedConnections} onDeleteSaved={onDeleteSaved} onConnect={onConnect} />
       </div>
     </div>
@@ -125,20 +127,20 @@ function PlanetScaleAccount({ savedConnections, onDeleteSaved, onConnect }: Prop
 
   return (
     <>
-      <div className="connected-account-card">
-        <div className="connected-account-header">
-          <div className="connected-account-identity">
-            <span className="connected-account-logo">
+      <div className={styles.card}>
+        <div className={styles.header}>
+          <div className={styles.identity}>
+            <span className={styles.logo}>
               <PSLogo size={16} />
             </span>
-            <span className="connected-account-name">PlanetScale</span>
+            <span>PlanetScale</span>
           </div>
 
           {loading ? (
-            <span className="connected-account-status">Loading…</span>
+            <span className={styles.status}>Loading…</span>
           ) : isSignedIn ? (
             <button
-              className="connected-account-signout"
+              className={styles.signout}
               onClick={() => setConfirmSignOut(true)}
               disabled={signingOut}
             >
@@ -146,7 +148,7 @@ function PlanetScaleAccount({ savedConnections, onDeleteSaved, onConnect }: Prop
             </button>
           ) : (
             <button
-              className="connected-account-connect"
+              className={styles.connect}
               onClick={handleConnect}
               disabled={connecting}
             >
@@ -156,53 +158,53 @@ function PlanetScaleAccount({ savedConnections, onDeleteSaved, onConnect }: Prop
         </div>
 
         {user && (
-          <div className="connected-account-user">
-            <span className="connected-account-user-name">{user.DisplayName}</span>
-            <span className="connected-account-user-email">{user.Email}</span>
+          <div className={styles.user}>
+            <span className={styles.userName}>{user.DisplayName}</span>
+            <span className={styles.userEmail}>{user.Email}</span>
           </div>
         )}
 
         {!loading && !isSignedIn && (
-          <p className="connected-account-empty">
+          <p className={styles.acctEmpty}>
             {connectError ?? 'Not connected. Click Connect to sign in with PlanetScale.'}
           </p>
         )}
 
         {isSignedIn && (
-          <div className="connected-account-dbs">
-            <div className="connected-account-dbs-label">Databases</div>
+          <div className={styles.dbs}>
+            <div className={styles.dbsLabel}>Databases</div>
 
             {loadingDbs ? (
-              <p className="connected-account-empty">Loading databases…</p>
+              <p className={styles.acctEmpty}>Loading databases…</p>
             ) : psDatabases.length === 0 ? (
-              <p className="connected-account-empty">No databases found in your PlanetScale account.</p>
+              <p className={styles.acctEmpty}>No databases found in your PlanetScale account.</p>
             ) : (
-              <ul className="connected-account-db-list">
+              <ul className={styles.dbList}>
                 {psDatabases.map(db => {
                   const saved = savedKeyFor(db)
                   const key = `${db.Org}/${db.Name}/${db.Branch}`
                   const isConnecting = connectingDb === key
 
                   return (
-                    <li key={key} className="connected-account-db-row">
-                      <div className="connected-account-db-info">
-                        <span className="connected-account-db-name">{db.Name}</span>
-                        <span className="connected-account-db-meta">{db.Org} · {db.Branch}</span>
+                    <li key={key} className={styles.dbRow}>
+                      <div className={styles.dbInfo}>
+                        <span className={styles.dbName}>{db.Name}</span>
+                        <span className={styles.dbMeta}>{db.Org} · {db.Branch}</span>
                       </div>
                       {saved ? (
-                        <div className="connected-account-db-actions">
-                          <span className="conn-badge conn-badge--on">Connected</span>
+                        <div className={styles.dbActions}>
+                          <span className={`${styles.badge} ${styles.badgeOn}`}>Connected</span>
                           <button
-                            className="connected-account-db-remove"
+                            className={styles.dbRemove}
                             onClick={() => setConfirmDeleteId(saved.id)}
                             title="Remove connection"
                           >
-                            ✕
+                            <X size={14} />
                           </button>
                         </div>
                       ) : (
                         <button
-                          className="settings-action-btn settings-action-btn--primary"
+                          className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
                           onClick={() => handleConnectDb(db)}
                           disabled={isConnecting || !!connectingDb}
                         >

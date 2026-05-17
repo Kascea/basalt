@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useResizeDrag } from './useResizeDrag'
 import { Dialogs } from '@wailsio/runtime'
-import { Pin, X, Save } from 'lucide-react'
+import { Pin, X, Save, Play } from 'lucide-react'
 import { SqlWorksheet } from '../sql/SqlWorksheet'
 import { TableView } from '../table/TableView'
 import { SequenceView } from '../schema/SequenceView'
@@ -305,7 +305,7 @@ export function Workspace({ onCommit }: Props) {
               </select>
               <button className="compact-btn" onClick={handleSaveFile}><Save size={13} />Save…</button>
               <button className="run-btn" onClick={runQuery} disabled={isRunning || !activeTab.connectionID}>
-                ▶ {isRunning ? 'Running…' : 'Run'}
+                <Play size={12} /> {isRunning ? 'Running…' : 'Run'}
               </button>
             </>
           )}

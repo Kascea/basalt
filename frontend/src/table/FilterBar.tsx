@@ -1,4 +1,5 @@
 import { type KeyboardEvent } from 'react'
+import { X, CornerDownLeft } from 'lucide-react'
 
 interface Props {
   expr: string
@@ -33,10 +34,10 @@ export function FilterBar({ expr, draft, hasError, onChange, onCommit }: Props) 
         spellCheck={false}
       />
       {isDirty && (
-        <span className="filter-enter-hint" title="Press Enter to apply">↵</span>
+        <span className="filter-enter-hint" title="Press Enter to apply"><CornerDownLeft size={12} /></span>
       )}
       {(draft || expr) && (
-        <button className="filter-remove-btn" onClick={handleClear} title="Clear filter">×</button>
+        <button className="filter-remove-btn" onClick={handleClear} title="Clear filter"><X size={12} /></button>
       )}
     </div>
   )

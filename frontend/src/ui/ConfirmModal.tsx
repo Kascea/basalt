@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import styles from './confirmModal.module.css'
 
 interface Props {
   message: string
@@ -19,12 +20,12 @@ export function ConfirmModal({ message, confirmLabel = 'Confirm', onConfirm, onC
 
   return (
     <div className="modal-overlay" onClick={onCancel}>
-      <div className="modal confirm-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-body confirm-modal-body">
-          <p className="confirm-modal-message">{message}</p>
-          <div className="confirm-modal-actions">
+      <div className={`modal ${styles.modal}`} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.body}>
+          <p className={styles.message}>{message}</p>
+          <div className={styles.actions}>
             <button className="connect-button--secondary" onClick={onCancel}>Cancel</button>
-            <button className="confirm-modal-danger-btn" onClick={onConfirm}>{confirmLabel}</button>
+            <button className={styles.dangerBtn} onClick={onConfirm}>{confirmLabel}</button>
           </div>
         </div>
       </div>

@@ -1,0 +1,672 @@
+/* ── Shared primitives ── */
+
+.section {
+    max-width: 620px;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.sectionTitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 4px;
+}
+
+.sectionDesc {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.newBtn {
+    flex-shrink: 0;
+    height: 30px;
+    padding: 0 12px;
+    border-radius: 6px;
+    background: var(--teal);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+
+.newBtn:hover {
+    background: var(--teal-hover);
+}
+
+.empty {
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 12px 0;
+}
+
+.fields {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    margin-top: 20px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.label {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.actionBtn {
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 5px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    transition: background 0.1s, color 0.1s;
+}
+
+.actionBtn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.actionBtnPrimary {
+    background: transparent;
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.actionBtnPrimary:hover {
+    background: var(--accent-dim);
+    color: var(--accent-hover);
+}
+
+.actionBtnDanger:hover {
+    background: rgba(224, 92, 92, 0.15);
+    border-color: #e05c5c;
+    color: #ef7070;
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.badgeOn {
+    background: rgba(42, 143, 110, 0.2);
+    color: var(--teal-hover);
+}
+
+.badgeOff {
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+}
+
+.badgeLoading {
+    background: var(--accent-dim);
+    color: var(--accent);
+}
+
+/* ── Settings view + nav ── */
+
+.view {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-base);
+}
+
+.body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 32px;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.nav {
+    flex: 1;
+    display: block;
+    padding: 12px 0 0;
+    overflow-y: auto;
+}
+
+.navHeader {
+    padding: 4px 14px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+}
+
+.navItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 0;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    width: 100%;
+    white-space: nowrap;
+    box-sizing: border-box;
+    transition: background 0.1s, color 0.1s;
+}
+
+.navItem:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.navItemActive {
+    background: var(--bg-active);
+    color: #d8dde2;
+}
+
+.navItemActive .navIcon {
+    color: var(--accent);
+}
+
+.navIcon {
+    font-size: 18px;
+    width: 22px;
+    text-align: center;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ── Connections list ── */
+
+.psAvailable {
+    margin-bottom: 8px;
+}
+
+.psAvailableLabel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    padding: 0 0 8px;
+}
+
+.inlineForm {
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.connList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.connRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-panel);
+}
+
+.connIcon {
+    font-size: 18px;
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.connIconOff {
+    color: var(--text-muted);
+}
+
+.connInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+}
+
+.connName {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.connMeta {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-family: var(--mono);
+}
+
+.connDriver {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+}
+
+.connStatus {
+    flex-shrink: 0;
+}
+
+.connActions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.connMenu {
+    position: relative;
+}
+
+.menuBtn {
+    width: 30px;
+    padding: 0;
+    letter-spacing: 1px;
+    font-size: 10px;
+}
+
+.menuBtnActive {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 200;
+    min-width: 148px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-light);
+    border-radius: 7px;
+    padding: 4px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.dropdownItem {
+    display: block;
+    width: 100%;
+    padding: 6px 10px;
+    border-radius: 4px;
+    text-align: left;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: transparent;
+    transition: background 0.1s, color 0.1s;
+}
+
+.dropdownItem:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.dropdownItem:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.dropdownItemDanger {
+    color: #e05c5c;
+}
+
+.dropdownItemDanger:hover {
+    background: rgba(224, 92, 92, 0.12);
+    color: #ef7070;
+}
+
+.dropdownDivider {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 6px;
+}
+
+/* ── Connected accounts ── */
+
+.card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid var(--border);
+}
+
+.identity {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    color: var(--text-secondary);
+}
+
+.status {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.statusDisconnected {
+    color: #888;
+}
+
+.signout {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.signout:hover {
+    color: var(--text-primary);
+    border-color: rgba(200, 80, 80, 0.5);
+    background: rgba(200, 80, 80, 0.08);
+}
+
+.connect {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.connect:hover {
+    color: var(--text-primary);
+    border-color: var(--accent);
+    background: rgba(var(--accent-rgb, 80, 140, 200), 0.08);
+}
+
+.connect:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.user {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.userName {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.userEmail {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.dbs {
+    padding: 12px 16px;
+}
+
+.dbsLabel {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+.acctEmpty {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.dbList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dbRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-light);
+}
+
+.dbInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dbName {
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.dbMeta {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.dbActions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dbRemove {
+    font-size: 11px;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.dbRemove:hover {
+    color: #e06060;
+    border-color: rgba(210, 60, 60, 0.4);
+    background: rgba(210, 60, 60, 0.1);
+}
+
+/* ── Radio cards (Appearance) ── */
+
+.radioGroup {
+    display: flex;
+    gap: 8px;
+}
+
+.radioCard {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--bg-panel);
+    cursor: pointer;
+    transition: border-color 0.1s, background 0.1s;
+}
+
+.radioCard input[type="radio"] {
+    display: none;
+}
+
+.radioCardSelected {
+    border-color: var(--accent);
+    background: var(--bg-elevated);
+}
+
+.radioLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.radioDesc {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* ── Segmented control (Query) ── */
+
+.segment {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    width: fit-content;
+}
+
+.segmentBtn {
+    height: 30px;
+    padding: 0 14px;
+    background: var(--bg-panel);
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    border-right: 1px solid var(--border);
+    transition: background 0.1s, color 0.1s;
+}
+
+.segmentBtn:last-child {
+    border-right: none;
+}
+
+.segmentBtn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.segmentBtnActive {
+    background: var(--bg-elevated);
+    color: var(--accent);
+}
+
+/* ── Toggle switch (General) ── */
+
+.toggleRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.toggleRow:last-child {
+    border-bottom: none;
+}
+
+.toggle {
+    flex-shrink: 0;
+    width: 38px;
+    height: 22px;
+    border-radius: 11px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.toggleOn {
+    background: var(--teal);
+    border-color: var(--teal);
+}
+
+.toggleKnob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--text-muted);
+    transition: transform 0.2s, background 0.2s;
+}
+
+.toggleOn .toggleKnob {
+    transform: translateX(16px);
+    background: #fff;
+}

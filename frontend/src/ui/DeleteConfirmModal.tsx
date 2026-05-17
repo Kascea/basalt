@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import styles from './confirmModal.module.css'
 
 interface Props {
   message: string
-  confirmText: string // user must type this exactly
+  confirmText: string
   confirmLabel?: string
   onConfirm: () => void
   onCancel: () => void
@@ -14,15 +15,15 @@ export function DeleteConfirmModal({ message, confirmText, confirmLabel = 'Remov
 
   return (
     <div className="modal-overlay" onClick={onCancel}>
-      <div className="modal confirm-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-body confirm-modal-body">
-          <p className="confirm-modal-message">{message}</p>
-          <div className="confirm-modal-input-wrap">
-            <label className="confirm-modal-input-label">
+      <div className={`modal ${styles.modal}`} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.body}>
+          <p className={styles.message}>{message}</p>
+          <div className={styles.inputWrap}>
+            <label className={styles.inputLabel}>
               Type <strong>{confirmText}</strong> to confirm
             </label>
             <input
-              className="confirm-modal-input"
+              className={styles.input}
               autoFocus
               value={typed}
               onChange={e => setTyped(e.target.value)}
@@ -30,9 +31,9 @@ export function DeleteConfirmModal({ message, confirmText, confirmLabel = 'Remov
               spellCheck={false}
             />
           </div>
-          <div className="confirm-modal-actions">
+          <div className={styles.actions}>
             <button className="connect-button--secondary" onClick={onCancel}>Cancel</button>
-            <button className="confirm-modal-danger-btn" onClick={onConfirm} disabled={!canConfirm}>
+            <button className={styles.dangerBtn} onClick={onConfirm} disabled={!canConfirm}>
               {confirmLabel}
             </button>
           </div>
