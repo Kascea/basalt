@@ -175,6 +175,11 @@ export class ConnectRequest {
      */
     "planetscaleKey"?: string;
 
+    /**
+     * set by Supabase flow to tag the saved connection
+     */
+    "supabaseKey"?: string;
+
     /** Creates a new ConnectRequest instance. */
     constructor($$source: Partial<ConnectRequest> = {}) {
         if (!("name" in $$source)) {

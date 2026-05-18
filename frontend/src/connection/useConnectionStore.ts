@@ -16,6 +16,7 @@ export interface ConnectionStore {
   disconnect: (id: string) => void
   deleteSaved: (id: string) => void
   updateSaved: (conn: SavedConnection) => void
+  reorderSaved: (ids: string[]) => void
 }
 
 export function useConnectionStore(
@@ -94,6 +95,14 @@ export function useConnectionStore(
       .catch(err => setStatus(String(err)))
   }
 
+  const reorderSaved = (ids: string[]) => {
+    setSavedConnections(prev => {
+      const map = new Map(prev.map(s => [s.id, s]))
+      return ids.map(id => map.get(id)).filter(Boolean) as SavedConnection[]
+    })
+    LocaldbService.ReorderConnections(ids).catch(err => setStatus(String(err)))
+  }
+
   return {
     savedConnections,
     connections,
@@ -103,5 +112,6 @@ export function useConnectionStore(
     disconnect,
     deleteSaved,
     updateSaved,
+    reorderSaved,
   }
 }

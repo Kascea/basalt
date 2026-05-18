@@ -232,6 +232,7 @@ function App() {
     onDisconnect: db.disconnect,
     onDeleteSaved: db.deleteSaved,
     onEditSaved: handleEditSaved,
+    onReorderSaved: db.reorderSaved,
     onRefresh: () => db.refreshObjects(activeConnectionID),
     onTableOpen: (connectionID: string, schema: string, table: string) => { tableTabsRef.current.openTableTab(connectionID, schema, table); setCurrentView('main') },
     onTableOpenNewTab: (connectionID: string, schema: string, table: string) => { tableTabsRef.current.openTableTab(connectionID, schema, table); setCurrentView('main') },

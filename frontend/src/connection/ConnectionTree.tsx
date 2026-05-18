@@ -165,6 +165,26 @@ function IconPlanetScale() {
   )
 }
 
+function IconSupabase() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 109 113" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M63.708 110.284c-2.86 3.601-8.658 1.628-8.727-2.97l-1.007-67.251h45.22c8.19 0 12.758 9.46 7.665 15.874l-43.151 54.347Z" fill="url(#sa)" />
+      <path d="M63.708 110.284c-2.86 3.601-8.658 1.628-8.727-2.97l-1.007-67.251h45.22c8.19 0 12.758 9.46 7.665 15.874l-43.151 54.347Z" fill="url(#sb)" fillOpacity=".2" />
+      <path d="M45.317 2.071C48.177-1.53 53.976.443 54.044 5.041l.562 67.252H9.386c-8.19 0-12.758-9.46-7.665-15.875L45.317 2.071Z" fill="#3ECF8E" />
+      <defs>
+        <linearGradient id="sa" x1="53.974" y1="40.063" x2="94.163" y2="52.409" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#249361" />
+          <stop offset="1" stopColor="#3ECF8E" />
+        </linearGradient>
+        <linearGradient id="sb" x1="36.156" y1="30.578" x2="54.484" y2="65.081" gradientUnits="userSpaceOnUse">
+          <stop />
+          <stop offset="1" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+    </svg>
+  )
+}
+
 // ── Type metadata ────────────────────────────────────────────────────────────
 
 const TYPE_TO_GROUP: Record<string, string> = {
@@ -246,6 +266,7 @@ export function ConnectionTree() {
     savedConnections, connections, activeTabConnectionID, objectsByConnection,
     isConnecting,
     onConnectionClick, onReconnect, onDisconnect, onDeleteSaved, onEditSaved,
+    onReorderSaved,
     onRefresh, onTableOpen, onTableOpenNewTab,
     onTableOpenSchema, onGroupOpen,
   } = useConnectionSession()
@@ -258,6 +279,8 @@ export function ConnectionTree() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [dragOverId, setDragOverId] = useState<string | null>(null)
+  const dragIdRef = useRef<string | null>(null)
 
   // Auto-expand newly connected connections
   const autoExpandedConnsRef = useRef<Set<string>>(new Set())
@@ -314,6 +337,37 @@ export function ConnectionTree() {
     })
   }
 
+  const handleDragStart = (id: string) => {
+    dragIdRef.current = id
+  }
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault()
+    setDragOverId(id)
+  }
+
+  const handleDrop = (targetId: string) => {
+    const sourceId = dragIdRef.current
+    if (!sourceId || sourceId === targetId) {
+      dragIdRef.current = null
+      setDragOverId(null)
+      return
+    }
+    const ids = savedConnections.map(s => s.id)
+    const from = ids.indexOf(sourceId)
+    const to = ids.indexOf(targetId)
+    ids.splice(from, 1)
+    ids.splice(to, 0, sourceId)
+    onReorderSaved(ids)
+    dragIdRef.current = null
+    setDragOverId(null)
+  }
+
+  const handleDragEnd = () => {
+    dragIdRef.current = null
+    setDragOverId(null)
+  }
+
   if (savedConnections.length === 0) {
     return <p className="tree-empty">No connections — click + to add one</p>
   }
@@ -342,7 +396,15 @@ export function ConnectionTree() {
         }
 
         return (
-          <div key={saved.id} className="tree-section">
+          <div
+            key={saved.id}
+            className={`tree-section${dragOverId === saved.id ? ' drag-over' : ''}`}
+            draggable
+            onDragStart={() => handleDragStart(saved.id)}
+            onDragOver={(e) => handleDragOver(e, saved.id)}
+            onDrop={() => handleDrop(saved.id)}
+            onDragEnd={handleDragEnd}
+          >
             <button
               className={`tree-node conn-node${isActive ? ' is-active' : ''}${!isConnected ? ' is-disconnected' : ''}`}
               onClick={handleConnClick}
@@ -352,7 +414,7 @@ export function ConnectionTree() {
               }}
             >
               <span className={`chevron${isConnected ? ' expandable' : ''}${connExpanded ? ' open' : ''}`} />
-              <span className={`node-icon conn-icon${!isConnected ? ' conn-icon--off' : ''}`}>{saved.planetscaleKey ? <IconPlanetScale /> : <IconDb />}</span>
+              <span className={`node-icon conn-icon${!isConnected ? ' conn-icon--off' : ''}`}>{saved.planetscaleKey ? <IconPlanetScale /> : saved.supabaseKey ? <IconSupabase /> : <IconDb />}</span>
               <span className="node-label">{liveConn?.name ?? saved.name}</span>
               <span className="driver-badge">{saved.driver}</span>
               {connecting && <span className="conn-spinner" />}

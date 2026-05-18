@@ -20,6 +20,7 @@ type ConnectRequest struct {
 	Driver           string `json:"driver"`
 	ConnectionString string `json:"connectionString"`
 	PlanetScaleKey   string `json:"planetscaleKey,omitempty"` // set by PS flow to tag the saved connection
+	SupabaseKey      string `json:"supabaseKey,omitempty"`    // set by Supabase flow to tag the saved connection
 }
 
 // Connection is a live (or previously live) connection summary shown in the UI.

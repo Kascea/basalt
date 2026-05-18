@@ -50,7 +50,7 @@ func (d *DatabaseService) Connect(request ConnectRequest) (Connection, error) {
 		return Connection{}, err
 	}
 
-	id := d.upsertSaved(request.Name, driver, connectionString, request.PlanetScaleKey)
+	id := d.upsertSaved(request.Name, driver, connectionString, request.PlanetScaleKey, request.SupabaseKey)
 	profile := connectionFromURL(id, request.Name, driver, connectionString)
 
 	d.mu.Lock()
@@ -104,12 +104,15 @@ func (d *DatabaseService) ListConnections() []Connection {
 
 // upsertSaved persists a connection by connection string, creating or updating
 // as needed. Returns the stable ID.
-func (d *DatabaseService) upsertSaved(name string, driver Driver, connectionString, psKey string) string {
+func (d *DatabaseService) upsertSaved(name string, driver Driver, connectionString, psKey, sbKey string) string {
 	existing, err := d.store.FindConnectionByString(connectionString)
 	if err == nil {
 		existing.Name = name
 		if psKey != "" {
 			existing.PlanetScaleKey = psKey
+		}
+		if sbKey != "" {
+			existing.SupabaseKey = sbKey
 		}
 		_ = d.store.UpsertConnection(*existing)
 		d.notifyConnectionsChanged()
@@ -123,6 +126,7 @@ func (d *DatabaseService) upsertSaved(name string, driver Driver, connectionStri
 		Driver:           string(driver),
 		ConnectionString: connectionString,
 		PlanetScaleKey:   psKey,
+		SupabaseKey:      sbKey,
 	})
 	d.notifyConnectionsChanged()
 	return id

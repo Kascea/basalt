@@ -610,6 +610,20 @@ td input:focus {
     margin: 0;
 }
 
+.tree-section[draggable] {
+    cursor: grab;
+}
+
+.tree-section[draggable]:active {
+    cursor: grabbing;
+}
+
+.tree-section.drag-over {
+    outline: 1px solid var(--accent, #6c8ebf);
+    outline-offset: -1px;
+    border-radius: 4px;
+}
+
 /* ── Tree nodes ── */
 
 .tree-node {

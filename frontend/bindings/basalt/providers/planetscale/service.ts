@@ -21,7 +21,7 @@ import * as $models from "./models.js";
  * new credentials and saves them.
  */
 export function GetConnectionString(org: string, database: string, branch: string, kind: string): $CancellablePromise<string> {
-    return $Call.ByID(3161479877, org, database, branch, kind);
+    return $Call.ByID(2617484188, org, database, branch, kind);
 }
 
 /**
@@ -29,7 +29,7 @@ export function GetConnectionString(org: string, database: string, branch: strin
  * by reading from the local store — no network call.
  */
 export function GetUser(): $CancellablePromise<$models.User> {
-    return $Call.ByID(878342871).then(($result: any) => {
+    return $Call.ByID(1936023610).then(($result: any) => {
         return $$createType0($result);
     });
 }
@@ -38,14 +38,14 @@ export function GetUser(): $CancellablePromise<$models.User> {
  * IsSignedIn returns true if a valid PlanetScale token is stored.
  */
 export function IsSignedIn(): $CancellablePromise<boolean> {
-    return $Call.ByID(1194748295);
+    return $Call.ByID(2310907952);
 }
 
 /**
  * ListDatabases returns all PlanetScale database branches accessible to the signed-in user.
  */
 export function ListDatabases(): $CancellablePromise<$models.Database[]> {
-    return $Call.ByID(2809943722).then(($result: any) => {
+    return $Call.ByID(2546131223).then(($result: any) => {
         return $$createType2($result);
     });
 }
@@ -54,11 +54,11 @@ export function ListDatabases(): $CancellablePromise<$models.Database[]> {
  * SignOut clears the stored PlanetScale token and user info.
  */
 export function SignOut(): $CancellablePromise<void> {
-    return $Call.ByID(1100415763);
+    return $Call.ByID(2415969010);
 }
 
 export function StartAuth(): $CancellablePromise<void> {
-    return $Call.ByID(4271875474);
+    return $Call.ByID(3218448795);
 }
 
 // Private type creation functions

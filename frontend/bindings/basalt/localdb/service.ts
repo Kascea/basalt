@@ -43,6 +43,13 @@ export function LoadTabs(): $CancellablePromise<$models.SavedTab[]> {
     });
 }
 
+/**
+ * ReorderConnections persists a new display order for connections.
+ */
+export function ReorderConnections(ids: string[]): $CancellablePromise<void> {
+    return $Call.ByID(1672700251, ids);
+}
+
 export function SaveSettings(settings: $models.AppSettings): $CancellablePromise<void> {
     return $Call.ByID(3401768143, settings);
 }

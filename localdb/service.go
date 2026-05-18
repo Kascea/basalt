@@ -47,6 +47,11 @@ func (s *Service) UpdateSavedConnection(conn SavedConnection) error {
 	return s.store.UpsertConnection(conn)
 }
 
+// ReorderConnections persists a new display order for connections.
+func (s *Service) ReorderConnections(ids []string) error {
+	return s.store.ReorderConnections(ids)
+}
+
 // --- Open tabs ---
 
 func (s *Service) SaveTabs(tabs []SavedTab) error {

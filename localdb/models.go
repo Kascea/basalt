@@ -30,6 +30,7 @@ type SavedConnection struct {
 	Driver           string `json:"driver"`
 	ConnectionString string `json:"connectionString"`
 	PlanetScaleKey   string `json:"planetscaleKey,omitempty"`
+	SupabaseKey      string `json:"supabaseKey,omitempty"`
 }
 
 // SavedTab represents a persisted tab entry in the open_tabs table.
@@ -48,6 +49,9 @@ type SavedTab struct {
 
 // PlanetScaleProvider is the provider key used to look up the PlanetScale OAuth token.
 const PlanetScaleProvider = "planetscale"
+
+// SupabaseProvider is the provider key used to look up the Supabase OAuth token.
+const SupabaseProvider = "supabase"
 
 // LoadEnvValue reads a value from the environment, falling back to a .env file.
 func LoadEnvValue(key string) string {

@@ -24,7 +24,7 @@ export function ConfirmModal({ message, confirmLabel = 'Confirm', onConfirm, onC
         <div className={styles.body}>
           <p className={styles.message}>{message}</p>
           <div className={styles.actions}>
-            <button className="connect-button--secondary" onClick={onCancel}>Cancel</button>
+            <button className={styles.cancelBtn} onClick={onCancel}>Cancel</button>
             <button className={styles.dangerBtn} onClick={onConfirm}>{confirmLabel}</button>
           </div>
         </div>

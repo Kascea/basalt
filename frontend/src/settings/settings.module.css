@@ -213,9 +213,41 @@
     justify-content: center;
 }
 
+/* ── Spinner ── */
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    flex-shrink: 0;
+}
+
+.loadingRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+}
+
+.loadingText {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
 /* ── Connections list ── */
 
 .psAvailable {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-light);
     margin-bottom: 8px;
 }
 
@@ -228,7 +260,17 @@
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--text-secondary);
-    padding: 0 0 8px;
+    padding: 0 0 10px;
+}
+
+.providerSubLabel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding: 8px 0 6px;
 }
 
 .inlineForm {
@@ -525,6 +567,22 @@
     display: flex;
     align-items: center;
     gap: 6px;
+}
+
+.dbPasswordInput {
+    height: 26px;
+    padding: 0 8px;
+    font-size: 12px;
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    background: var(--input-bg);
+    color: var(--text-primary);
+    width: 140px;
+    outline: none;
+}
+
+.dbPasswordInput:focus {
+    border-color: var(--accent-color);
 }
 
 .dbRemove {

@@ -7,7 +7,9 @@ import (
 
 	"basalt/db"
 	"basalt/localdb"
-	"basalt/planetscale"
+	"basalt/providers"
+	"basalt/providers/planetscale"
+	"basalt/providers/supabase"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -27,6 +29,8 @@ func main() {
 	dbSvc := db.NewDatabaseService(store)
 	appSvc := localdb.NewService(store)
 	psSvc := planetscale.NewService(store)
+	sbSvc := supabase.NewService(store)
+	provSvc := providers.NewService(store, psSvc, sbSvc)
 
 	app := application.New(application.Options{
 		Name:        "basalt",
@@ -36,6 +40,8 @@ func main() {
 			application.NewService(dbSvc),
 			application.NewService(appSvc),
 			application.NewService(psSvc),
+			application.NewService(sbSvc),
+			application.NewService(provSvc),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),
@@ -51,6 +57,8 @@ func main() {
 	dbSvc.OnConnectionsChanged = rebuilder
 	appSvc.OnConnectionsChanged = rebuilder
 	psSvc.OnConnectionsChanged = rebuilder
+	sbSvc.OnConnectionsChanged = rebuilder
+	provSvc.OnConnectionsChanged = rebuilder
 
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title: "basalt",

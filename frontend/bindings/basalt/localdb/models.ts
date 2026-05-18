@@ -55,6 +55,7 @@ export class SavedConnection {
     "driver": string;
     "connectionString": string;
     "planetscaleKey"?: string;
+    "supabaseKey"?: string;
 
     /** Creates a new SavedConnection instance. */
     constructor($$source: Partial<SavedConnection> = {}) {

@@ -32,7 +32,7 @@ export function DeleteConfirmModal({ message, confirmText, confirmLabel = 'Remov
             />
           </div>
           <div className={styles.actions}>
-            <button className="connect-button--secondary" onClick={onCancel}>Cancel</button>
+            <button className={styles.cancelBtn} onClick={onCancel}>Cancel</button>
             <button className={styles.dangerBtn} onClick={onConfirm} disabled={!canConfirm}>
               {confirmLabel}
             </button>

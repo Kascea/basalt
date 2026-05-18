@@ -39,16 +39,19 @@ type connectionRow struct {
 	Driver           string
 	ConnectionString string `gorm:"uniqueIndex"`
 	PlanetScaleKey   string `gorm:"index"`
+	SupabaseKey      string `gorm:"index"`
+	SortOrder        int
 }
 
 func (connectionRow) TableName() string { return "connections" }
 
 type connectedAccount struct {
 	gorm.Model
-	Provider    string `gorm:"uniqueIndex"`
-	Token       string
-	DisplayName string
-	Email       string
+	Provider     string `gorm:"uniqueIndex"`
+	Token        string
+	RefreshToken string
+	DisplayName  string
+	Email        string
 }
 
 func (connectedAccount) TableName() string { return "connected_accounts" }
@@ -257,12 +260,13 @@ func rowToConn(r connectionRow) SavedConnection {
 		Driver:           r.Driver,
 		ConnectionString: r.ConnectionString,
 		PlanetScaleKey:   r.PlanetScaleKey,
+		SupabaseKey:      r.SupabaseKey,
 	}
 }
 
 func (s *Store) ListConnections() []SavedConnection {
 	var rows []connectionRow
-	s.db.Find(&rows)
+	s.db.Order("sort_order").Find(&rows)
 	out := make([]SavedConnection, len(rows))
 	for i, r := range rows {
 		out[i] = rowToConn(r)
@@ -298,29 +302,62 @@ func (s *Store) FindConnectionByPlanetScaleKey(key string) (*SavedConnection, er
 }
 
 // UpsertConnection inserts or replaces a connection by ID.
+// For existing rows the SortOrder is preserved; new rows are appended at the end.
 func (s *Store) UpsertConnection(conn SavedConnection) error {
 	if conn.ID == "" {
 		conn.ID = NewID()
 	}
-	return s.db.Save(&connectionRow{
+	row := connectionRow{
 		ID:               conn.ID,
 		Name:             conn.Name,
 		Driver:           conn.Driver,
 		ConnectionString: conn.ConnectionString,
 		PlanetScaleKey:   conn.PlanetScaleKey,
-	}).Error
+		SupabaseKey:      conn.SupabaseKey,
+	}
+	var existing connectionRow
+	if s.db.First(&existing, "id = ?", conn.ID).Error == nil {
+		row.SortOrder = existing.SortOrder
+	} else {
+		var maxOrder int
+		s.db.Model(&connectionRow{}).Select("COALESCE(MAX(sort_order), -1)").Scan(&maxOrder)
+		row.SortOrder = maxOrder + 1
+	}
+	return s.db.Save(&row).Error
+}
+
+func (s *Store) FindConnectionBySupabaseKey(key string) (*SavedConnection, error) {
+	var row connectionRow
+	if err := s.db.First(&row, "supabase_key = ?", key).Error; err != nil {
+		return nil, err
+	}
+	c := rowToConn(row)
+	return &c, nil
 }
 
 func (s *Store) DeleteConnection(id string) error {
 	return s.db.Delete(&connectionRow{}, "id = ?", id).Error
 }
 
+// ReorderConnections sets sort_order on each connection according to the given ID slice.
+func (s *Store) ReorderConnections(ids []string) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		for i, id := range ids {
+			if err := tx.Model(&connectionRow{}).Where("id = ?", id).Update("sort_order", i).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
 // --- Connected accounts (OAuth tokens) ---
 
 type ConnectedAccount struct {
-	Token       string
-	DisplayName string
-	Email       string
+	Token        string
+	RefreshToken string
+	DisplayName  string
+	Email        string
 }
 
 func (s *Store) GetConnectedAccount(provider string) (ConnectedAccount, bool) {
@@ -328,7 +365,7 @@ func (s *Store) GetConnectedAccount(provider string) (ConnectedAccount, bool) {
 	if err := s.db.First(&row, "provider = ?", provider).Error; err != nil {
 		return ConnectedAccount{}, false
 	}
-	return ConnectedAccount{Token: row.Token, DisplayName: row.DisplayName, Email: row.Email}, true
+	return ConnectedAccount{Token: row.Token, RefreshToken: row.RefreshToken, DisplayName: row.DisplayName, Email: row.Email}, true
 }
 
 func (s *Store) GetToken(provider string) string {
@@ -349,12 +386,13 @@ func (s *Store) SetToken(provider, token string) error {
 func (s *Store) SetConnectedAccount(provider string, acc ConnectedAccount) error {
 	return s.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "provider"}},
-		DoUpdates: clause.AssignmentColumns([]string{"token", "display_name", "email"}),
+		DoUpdates: clause.AssignmentColumns([]string{"token", "refresh_token", "display_name", "email"}),
 	}).Create(&connectedAccount{
-		Provider:    provider,
-		Token:       acc.Token,
-		DisplayName: acc.DisplayName,
-		Email:       acc.Email,
+		Provider:     provider,
+		Token:        acc.Token,
+		RefreshToken: acc.RefreshToken,
+		DisplayName:  acc.DisplayName,
+		Email:        acc.Email,
 	}).Error
 }
 
