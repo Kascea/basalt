@@ -83,8 +83,6 @@ function App() {
   const activeConnectionID = tableTabs.activeTab.connectionID
   const activeConnection = db.connections.find(c => c.id === activeConnectionID)
 
-  const [settingsDraft, setSettingsDraft] = useState<AppSettings | null>(null)
-  const effectiveSettings = settingsDraft ?? settings
 
   // ── Tab persistence ───────────────────────────────────────────────────────
 
@@ -148,7 +146,7 @@ function App() {
 
   const handleTableCommit = () => {
     const state = tableTabs.activeTableState
-    if (effectiveSettings?.confirmDeleteRows && state && state.pendingDeletes.size > 0) {
+    if (settings?.confirmDeleteRows && state && state.pendingDeletes.size > 0) {
       setConfirmDelete({ count: state.pendingDeletes.size })
       return
     }
@@ -177,12 +175,7 @@ function App() {
   }
 
   const handleSettingsChange = (patch: Partial<AppSettings>) => {
-    const base = settingsDraft ?? settings
-    if (base) setSettingsDraft({ ...base, ...patch })
-  }
-
-  const handleSettingsSave = () => {
-    if (settingsDraft) saveSettings(settingsDraft).then(() => setSettingsDraft(null))
+    if (settings) saveSettings({ ...settings, ...patch })
   }
 
   // ── Menu events ───────────────────────────────────────────────────────────
@@ -307,8 +300,8 @@ function App() {
     <main
       className="app-shell"
       style={{
-        '--cell-height': effectiveSettings?.rowDensity === 'compact' ? '26px'
-          : effectiveSettings?.rowDensity === 'comfortable' ? '42px' : '34px',
+        '--cell-height': settings?.rowDensity === 'compact' ? '26px'
+          : settings?.rowDensity === 'comfortable' ? '42px' : '34px',
         '--sidebar-width': `${sidebarWidth}px`,
       } as CSSProperties}
     >
@@ -357,16 +350,9 @@ function App() {
                 <Settings size={14} strokeWidth={2} /> Settings
               </button>
             ) : (
-              <>
-                <button className="sidebar-footer-btn" onClick={() => setCurrentView('main')}>
-                  <ArrowLeft size={14} strokeWidth={2} /> Back
-                </button>
-                {settingsDraft && (
-                  <button className="sidebar-footer-btn sidebar-footer-btn--save" onClick={handleSettingsSave}>
-                    Save Changes
-                  </button>
-                )}
-              </>
+              <button className="sidebar-footer-btn" onClick={() => setCurrentView('main')}>
+                <ArrowLeft size={14} strokeWidth={2} /> Back
+              </button>
             )}
           </div>
         </aside>
@@ -381,9 +367,9 @@ function App() {
         </WorkspaceProvider>
       )}
 
-      {currentView === 'settings' && effectiveSettings && (
+      {currentView === 'settings' && settings && (
         <SettingsView
-          settings={effectiveSettings}
+          settings={settings}
           savedConnections={db.savedConnections}
           connections={db.connections}
           isConnecting={db.isConnecting}
