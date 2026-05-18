@@ -3,6 +3,8 @@ package supabase
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net"
 	"net/http"
 	"strings"
 )
@@ -37,8 +39,21 @@ func apiGet(token, path string, dest any) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == http.StatusUnauthorized {
-		return fmt.Errorf("unauthorized: token may have expired")
+	if resp.StatusCode >= 400 {
+		body, _ := io.ReadAll(resp.Body)
+		switch resp.StatusCode {
+		case http.StatusUnauthorized:
+			return fmt.Errorf("session expired — please sign in to Supabase again")
+		case http.StatusForbidden:
+			return fmt.Errorf("access denied to Supabase resource")
+		case http.StatusNotFound:
+			return fmt.Errorf("Supabase resource not found")
+		default:
+			if len(body) > 0 {
+				return fmt.Errorf("Supabase API error (HTTP %d): %s", resp.StatusCode, strings.TrimSpace(string(body)))
+			}
+			return fmt.Errorf("Supabase API error (HTTP %d)", resp.StatusCode)
+		}
 	}
 	return json.NewDecoder(resp.Body).Decode(dest)
 }
@@ -84,27 +99,54 @@ func listProjects(token string) ([]Project, error) {
 	return out, nil
 }
 
-// getSessionPoolerHost fetches the pooler config for the given project ref and
-// returns the session-mode pooler hostname (e.g. aws-1-us-west-1.pooler.supabase.com).
-func getSessionPoolerHost(token, ref string) (string, error) {
+// PoolerConn holds the details needed to build a pooler connection string.
+type PoolerConn struct {
+	Host   string
+	Port   int
+	User   string
+	DbName string
+}
+
+// getPoolerConn returns the best available connection details for a Supabase project.
+//
+// Strategy (in order):
+//  1. Direct host with IPv4 A records → full-featured, no pooler limitations
+//  2. Session pooler derived from the pooler API (same host as transaction, port 5432)
+//  3. Direct host anyway — lets the DB return the real error (wrong password, etc.)
+//     rather than surfacing a misleading "pooler not found" message to the user.
+func getPoolerConn(token, ref string) (*PoolerConn, error) {
+	directHost := fmt.Sprintf("db.%s.supabase.co", ref)
+
+	// 1. Direct connection when IPv4 A records exist.
+	if addrs, err := net.LookupHost(directHost); err == nil {
+		for _, addr := range addrs {
+			if !strings.Contains(addr, ":") { // no colons → IPv4
+				return &PoolerConn{Host: directHost, Port: 5432, User: "postgres", DbName: "postgres"}, nil
+			}
+		}
+	}
+
+	// 2. Session pooler via the Management API. The API only advertises transaction
+	//    mode (port 6543), but session mode runs on the same host at port 5432.
 	var configs []struct {
-		DbHost   string `json:"db_host"`
-		DbPort   int    `json:"db_port"`
-		PoolMode string `json:"pool_mode"`
+		DbHost string `json:"db_host"`
+		DbUser string `json:"db_user"`
+		DbName string `json:"db_name"`
 	}
 	if err := apiGet(token, "/projects/"+ref+"/config/database/pooler", &configs); err != nil {
-		return "", fmt.Errorf("fetching pooler config: %w", err)
+		return nil, err
 	}
-	for _, cfg := range configs {
-		if strings.EqualFold(cfg.PoolMode, "session") && cfg.DbHost != "" {
-			return cfg.DbHost, nil
-		}
-	}
-	// Fall back to any non-empty host if no session entry found.
 	for _, cfg := range configs {
 		if cfg.DbHost != "" {
-			return cfg.DbHost, nil
+			dbName := cfg.DbName
+			if dbName == "" {
+				dbName = "postgres"
+			}
+			return &PoolerConn{Host: cfg.DbHost, Port: 5432, User: cfg.DbUser, DbName: dbName}, nil
 		}
 	}
-	return "", fmt.Errorf("pooler host not found in API response")
+
+	// 3. Last resort: return the direct host anyway so the DB connection attempt
+	//    produces the real error (e.g. wrong password) instead of a misleading message.
+	return &PoolerConn{Host: directHost, Port: 5432, User: "postgres", DbName: "postgres"}, nil
 }

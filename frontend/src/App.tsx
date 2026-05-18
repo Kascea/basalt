@@ -392,7 +392,7 @@ function App() {
           onReconnect={db.reconnect}
           onDisconnect={db.disconnect}
           onEditSaved={handleEditSaved}
-          onConnect={(name, driver, cs, psKey) => db.connect(name, driver, cs, undefined, psKey)}
+          onConnect={(name, driver, cs, psKey, sbKey) => db.connect(name, driver, cs, undefined, psKey, sbKey)}
           onOpenConnection={handleOpenConnection}
           activeSection={settingsSection}
         />

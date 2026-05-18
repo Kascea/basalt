@@ -16,9 +16,9 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 import * as $models from "./models.js";
 
 /**
- * GetConnectionString builds and stores a session-pooler connection string for
- * the given Supabase project. The pooler host is fetched from the Management API
- * so the caller only needs to supply the password.
+ * GetConnectionString builds a connection string for the given Supabase project.
+ * It does NOT save — the caller must pass the returned string and the project ref
+ * (as supabaseKey) to db.Connect, which saves only on successful connection.
  */
 export function GetConnectionString(ref: string, name: string, password: string): $CancellablePromise<string> {
     return $Call.ByID(3825434642, ref, name, password);

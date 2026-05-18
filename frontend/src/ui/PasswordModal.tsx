@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import styles from './confirmModal.module.css'
 import pwStyles from './passwordModal.module.css'
+import { parseError } from '../lib/parseError'
 
 interface Props {
   title: string
@@ -67,7 +68,7 @@ export function PasswordModal({ title, description, error, isConnecting, onConfi
             </div>
           </div>
 
-          {error && <p className={pwStyles.error}>{error}</p>}
+          {error && <p className={pwStyles.error}>{parseError(error)}</p>}
 
           <div className={styles.actions}>
             <button className={styles.cancelBtn} onClick={onCancel} disabled={isConnecting}>

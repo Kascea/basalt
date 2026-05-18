@@ -94,37 +94,27 @@ func (s *Service) ListProjects() ([]Project, error) {
 	return projects, nil
 }
 
-// GetConnectionString builds and stores a session-pooler connection string for
-// the given Supabase project. The pooler host is fetched from the Management API
-// so the caller only needs to supply the password.
+// GetConnectionString builds a connection string for the given Supabase project.
+// It does NOT save — the caller must pass the returned string and the project ref
+// (as supabaseKey) to db.Connect, which saves only on successful connection.
 func (s *Service) GetConnectionString(ref, name, password string) (string, error) {
-	sbKey := ref
-	if saved, err := s.store.FindConnectionBySupabaseKey(sbKey); err == nil {
-		return saved.ConnectionString, nil
-	}
-
 	acc, ok := s.store.GetConnectedAccount(localdb.SupabaseProvider)
 	if !ok || acc.Token == "" {
 		return "", fmt.Errorf("not signed in to Supabase")
 	}
 
-	host, err := getSessionPoolerHost(acc.Token, ref)
+	conn, err := getPoolerConn(acc.Token, ref)
 	if err != nil {
-		return "", fmt.Errorf("could not determine pooler host: %w", err)
+		return "", err
 	}
-
-	cs := fmt.Sprintf("postgresql://postgres.%s:%s@%s:5432/postgres", ref, url.QueryEscape(password), host)
-
-	_ = s.store.UpsertConnection(localdb.SavedConnection{
-		ID:               localdb.NewID(),
-		Name:             name,
-		Driver:           "postgres",
-		ConnectionString: cs,
-		SupabaseKey:      sbKey,
-	})
-	s.notifyConnectionsChanged()
-
-	return cs, nil
+	if conn.User == "" {
+		conn.User = fmt.Sprintf("postgres.%s", ref)
+	}
+	if conn.DbName == "" {
+		conn.DbName = "postgres"
+	}
+	return fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
+		url.QueryEscape(conn.User), url.QueryEscape(password), conn.Host, conn.Port, conn.DbName), nil
 }
 
 func (s *Service) notifyConnectionsChanged() {

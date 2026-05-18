@@ -20,7 +20,7 @@ interface Props {
   onReconnect: (id: string) => void
   onDisconnect: (id: string) => void
   onEditSaved: (conn: SavedConnection) => void
-  onConnect: (name: string, driver: string, connectionString: string, planetscaleKey?: string) => Promise<void>
+  onConnect: (name: string, driver: string, connectionString: string, planetscaleKey?: string, supabaseKey?: string) => Promise<void>
   onOpenConnection: (id: string) => void
 }
 

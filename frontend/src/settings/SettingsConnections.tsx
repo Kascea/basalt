@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { MoreHorizontal } from 'lucide-react'
+import { parseError } from '../lib/parseError'
 import type { Connection } from '../../bindings/basalt/db'
 import type { SavedConnection } from '../../bindings/basalt/localdb/models'
 import type { AvailableConnection } from '../../bindings/basalt/providers/models'
@@ -13,7 +14,7 @@ interface Props {
   savedConnections: SavedConnection[]
   connections: Connection[]
   isConnecting: string | null
-  onConnect: (name: string, driver: string, connectionString: string, planetscaleKey?: string) => Promise<void>
+  onConnect: (name: string, driver: string, connectionString: string, planetscaleKey?: string, supabaseKey?: string) => Promise<void>
   onReconnect: (id: string) => void
   onDisconnect: (id: string) => void
   onEdit: (conn: SavedConnection) => void
@@ -193,7 +194,7 @@ export function SettingsConnections({
 
 interface AvailableProps {
   savedConnections: SavedConnection[]
-  onConnect: (name: string, driver: string, cs: string) => Promise<void>
+  onConnect: (name: string, driver: string, cs: string, planetscaleKey?: string, supabaseKey?: string) => Promise<void>
 }
 
 function AvailableProviderConnections({ savedConnections, onConnect }: AvailableProps) {
@@ -236,11 +237,13 @@ function AvailableProviderConnections({ savedConnections, onConnect }: Available
     setError(null)
     try {
       const cs = await ProvidersService.Connect(ac, pwd)
-      await onConnect(ac.Name, 'postgres', cs)
+      const psKey = ac.Provider === 'planetscale' ? ac.Key : undefined
+      const sbKey = ac.Provider === 'supabase' ? ac.Key : undefined
+      await onConnect(ac.Name, 'postgres', cs, psKey, sbKey)
       setPasswordModal(null)
       setAvailable(prev => prev.filter(a => a.Key !== ac.Key))
     } catch (err) {
-      setError(String(err).replace(/^Error:\s*/, ''))
+      setError(parseError(err))
     } finally {
       setConnectingKey(null)
     }
@@ -297,6 +300,10 @@ function AvailableProviderConnections({ savedConnections, onConnect }: Available
           </div>
         ))}
       </div>
+
+      {error && !passwordModal && (
+        <div className="connect-error">{error}</div>
+      )}
 
       {passwordModal && (
         <PasswordModal

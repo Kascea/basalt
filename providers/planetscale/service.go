@@ -134,20 +134,5 @@ func (s *Service) GetConnectionString(org, database, branch, kind string) (strin
 		dbName,
 	)
 
-	_ = s.store.UpsertConnection(localdb.SavedConnection{
-		ID:               localdb.NewID(),
-		Name:             database,
-		Driver:           "postgres",
-		ConnectionString: cs,
-		PlanetScaleKey:   psKey,
-	})
-	s.notifyConnectionsChanged()
-
 	return cs, nil
-}
-
-func (s *Service) notifyConnectionsChanged() {
-	if s.OnConnectionsChanged != nil {
-		go s.OnConnectionsChanged()
-	}
 }

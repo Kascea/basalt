@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { SavedConnection } from '../../bindings/basalt/localdb/models'
 import { DatabaseService } from '../../bindings/basalt/db'
+import { parseError } from '../lib/parseError'
 
 type ConnectionMode = 'url' | 'fields'
 
@@ -25,16 +26,6 @@ interface Props {
   onSaveOnly?: (conn: SavedConnection) => void
 }
 
-function extractErrorMessage(err: unknown): string {
-  const raw = String(err).replace(/^Error:\s*/, '')
-  try {
-    const parsed = JSON.parse(raw)
-    if (parsed && typeof parsed.message === 'string') return parsed.message
-  } catch {
-    // not JSON, use as-is
-  }
-  return raw
-}
 
 export function ConnectForm({ isConnecting, initialValues, onConnect, onSaveOnly }: Props) {
   const [name, setName] = useState(initialValues?.name ?? '')
@@ -97,7 +88,7 @@ export function ConnectForm({ isConnecting, initialValues, onConnect, onSaveOnly
     e.preventDefault()
     setError(null)
     onConnect(name, driver, buildConnectionString())
-      .catch((err: unknown) => setError(extractErrorMessage(err)))
+      .catch((err: unknown) => setError(parseError(err)))
   }
 
   const handleSaveOnly = () => {

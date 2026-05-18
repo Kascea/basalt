@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { LogEntry, FKError } from '../types'
+import { parseError } from '../lib/parseError'
 
 interface Props {
   entries: LogEntry[]
@@ -9,12 +10,7 @@ interface Props {
 }
 
 function extractErrorText(raw: string): string {
-  const rest = raw.startsWith('Error:') ? raw.slice('Error:'.length).trim() : raw
-  let msg = rest
-  try {
-    const parsed = JSON.parse(rest)
-    if (parsed.message) msg = parsed.message
-  } catch { /* use rest as-is */ }
+  let msg = parseError(raw)
 
   // Locate the db error portion if wrapped in extra context
   const dbIdx = msg.indexOf('ERROR:')

@@ -8,12 +8,13 @@ import type { User as SBUser, Project as SBProject } from '../../bindings/basalt
 import { DeleteConfirmModal } from '../ui/DeleteConfirmModal'
 import { ConfirmModal } from '../ui/ConfirmModal'
 import { PasswordModal } from '../ui/PasswordModal'
+import { parseError } from '../lib/parseError'
 import styles from './settings.module.css'
 
 interface Props {
   savedConnections: SavedConnection[]
   onDeleteSaved: (id: string) => void
-  onConnect: (name: string, driver: string, connectionString: string, planetscaleKey?: string) => Promise<void>
+  onConnect: (name: string, driver: string, connectionString: string, planetscaleKey?: string, supabaseKey?: string) => Promise<void>
 }
 
 function PSLogo({ size = 18 }: { size?: number }) {
@@ -328,10 +329,10 @@ function SupabaseAccount({ savedConnections, onDeleteSaved, onConnect }: Props) 
     setProjectConnectError(null)
     try {
       const cs = await SupabaseService.GetConnectionString(project.Ref, project.Name, pwd)
-      await onConnect(project.Name, 'postgres', cs)
+      await onConnect(project.Name, 'postgres', cs, undefined, project.Ref)
       setPasswordProject(null)
     } catch (err) {
-      setProjectConnectError(String(err).replace(/^Error:\s*/, ''))
+      setProjectConnectError(parseError(err))
     } finally {
       setConnectingProject(null)
     }

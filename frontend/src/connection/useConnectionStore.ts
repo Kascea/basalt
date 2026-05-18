@@ -11,7 +11,7 @@ export interface ConnectionStore {
   savedConnections: SavedConnection[]
   connections: Connection[]
   isConnecting: string | null
-  connect: (name: string, driver: string, connectionString: string, onSuccess?: () => void, planetscaleKey?: string) => Promise<void>
+  connect: (name: string, driver: string, connectionString: string, onSuccess?: () => void, planetscaleKey?: string, supabaseKey?: string) => Promise<void>
   reconnect: (id: string, onSuccess?: () => void) => void
   disconnect: (id: string) => void
   deleteSaved: (id: string) => void
@@ -48,10 +48,10 @@ export function useConnectionStore(
     onConnected(conn)
   }
 
-  const connect = (name: string, driver: string, connectionString: string, onSuccess?: () => void, planetscaleKey?: string): Promise<void> => {
+  const connect = (name: string, driver: string, connectionString: string, onSuccess?: () => void, planetscaleKey?: string, supabaseKey?: string): Promise<void> => {
     setIsConnecting('new')
     setStatus(`Connecting to ${name}…`)
-    return DatabaseClient.connect({ name, driver, connectionString, planetscaleKey: planetscaleKey ?? '' })
+    return DatabaseClient.connect({ name, driver, connectionString, planetscaleKey: planetscaleKey ?? '', supabaseKey: supabaseKey ?? '' })
       .then(conn => afterConnect(conn, onSuccess))
       .catch(err => { setStatus(String(err)); throw err })
       .finally(() => setIsConnecting(null))
