@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { useResizeDrag } from './useResizeDrag'
 import { Dialogs } from '@wailsio/runtime'
 import { Pin, X, Save, Play } from 'lucide-react'
 import { SqlWorksheet } from '../sql/SqlWorksheet'
@@ -90,10 +89,9 @@ export function Workspace({ onCommit }: Props) {
   const {
     isRunning, result: queryResult, rows: queryRows, dirtyCells: queryDirty,
     sql, setSql, run: runQuery, updateCell: updateQueryCell, discard: discardQueryEdits,
+    log: worksheetLog, clearLog: clearWorksheetLog,
   } = worksheet
   const { log: statusLog, set: setStatus, activeFkError, openFkTab } = status
-
-  const [logHeight, startLogDrag] = useResizeDrag(90, 40, 400)
 
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
   const [dragSrcIdx, setDragSrcIdx] = useState<number | null>(null)
@@ -201,9 +199,7 @@ export function Workspace({ onCommit }: Props) {
     ? `${activeConnection.user || 'user'}@${activeConnection.host || 'host'}/${activeConnection.database || 'db'}`
     : 'Not connected'
 
-  const activeDurationMs = activeTab.kind === 'worksheet'
-    ? queryResult?.durationMs
-    : activeTableState?.result?.durationMs
+  const activeDurationMs = activeTableState?.result?.durationMs
 
   if (tabs.length === 0) {
     return (
@@ -319,6 +315,7 @@ export function Workspace({ onCommit }: Props) {
             result={queryResult}
             rows={queryRows}
             dirtyCells={queryDirty}
+            log={worksheetLog}
             objects={objects}
             connectionId={activeConnection?.id}
             driver={activeConnection?.driver}
@@ -326,6 +323,7 @@ export function Workspace({ onCommit }: Props) {
             onSqlChange={setSql}
             onCellChange={updateQueryCell}
             onDiscard={discardQueryEdits}
+            onClearLog={clearWorksheetLog}
           />
         )}
 
@@ -378,15 +376,14 @@ export function Workspace({ onCommit }: Props) {
         )}
       </div>
 
-      <div className="statusbar-container" style={{ height: logHeight }}>
-        <div className="resize-handle resize-handle--v" onMouseDown={e => startLogDrag(e, 'y', true)} />
+      {activeTab.kind !== 'worksheet' && (
         <StatusBar
           entries={statusLog}
           durationMs={activeDurationMs}
           fkError={activeFkError}
           onOpenFkTab={openFkTab}
         />
-      </div>
+      )}
 
       {contextMenu && (
         <TabContextMenu

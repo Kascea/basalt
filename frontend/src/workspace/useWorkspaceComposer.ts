@@ -131,10 +131,12 @@ export function useWorkspaceComposer(
     rows: activeWS?.rows ?? [],
     dirtyCells: activeWS?.dirtyCells ?? {},
     sql: activeWS?.sql ?? '',
+    log: activeWS?.log ?? [],
     setSql: tableTabs.setSql,
     run: tableTabs.runQuery,
     updateCell: tableTabs.updateQueryCell,
     discard: tableTabs.discardQueryEdits,
+    clearLog: tableTabs.clearWorksheetLog,
   }), [activeWS]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const statusValue = useMemo(() => ({

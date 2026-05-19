@@ -95,5 +95,6 @@ export function useTableTabs(setStatus: (msg: string, isSuccess?: boolean) => vo
     runQuery: worksheetSession.runQuery,
     updateQueryCell: worksheetSession.updateQueryCell,
     discardQueryEdits: worksheetSession.discardQueryEdits,
+    clearWorksheetLog: worksheetSession.clearWorksheetLog,
   }
 }

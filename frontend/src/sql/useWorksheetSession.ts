@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import { type Tab, type WorksheetTabState, type RowRecord, cellKey } from '../types'
+import { useState, useRef } from 'react'
+import { type Tab, type WorksheetTabState, type RowRecord, type LogEntry, cellKey } from '../types'
 import { DatabaseClient } from '../db/client'
 
 function emptyWorksheetState(): WorksheetTabState {
-  return { sql: '', result: null, rows: [], dirtyCells: {}, isRunning: false }
+  return { sql: '', result: null, rows: [], dirtyCells: {}, isRunning: false, log: [] }
 }
 
 const INITIAL_WORKSHEET_ID = 'worksheet'
@@ -14,10 +14,11 @@ interface UseWorksheetSessionOptions {
   setStatus: (msg: string, isSuccess?: boolean) => void
 }
 
-export function useWorksheetSession({ activeTabId, activeTab, setStatus }: UseWorksheetSessionOptions) {
+export function useWorksheetSession({ activeTabId, activeTab }: UseWorksheetSessionOptions) {
   const [worksheetStates, setWorksheetStates] = useState<Record<string, WorksheetTabState>>({
     [INITIAL_WORKSHEET_ID]: emptyWorksheetState(),
   })
+  const logIdRef = useRef(1)
 
   const patchWorksheetState = (id: string, patch: Partial<WorksheetTabState>) =>
     setWorksheetStates(prev => ({
@@ -40,24 +41,59 @@ export function useWorksheetSession({ activeTabId, activeTab, setStatus }: UseWo
     patchWorksheetState(activeTabId, { sql })
   }
 
+  const makeLogEntry = (text: string, isError: boolean, isSuccess = false, durationMs?: number): LogEntry => ({
+    id: logIdRef.current++,
+    ts: new Date().toLocaleTimeString('en-US', { hour12: false }),
+    text,
+    isError,
+    isSuccess,
+    durationMs,
+  })
+
   const runQuery = () => {
     if (activeTab.kind !== 'worksheet') return
-    if (!activeTab.connectionID) { setStatus('Select a database connection before running SQL.'); return }
+    if (!activeTab.connectionID) {
+      const id = activeTabId
+      setWorksheetStates(prev => ({
+        ...prev,
+        [id]: {
+          ...(prev[id] ?? emptyWorksheetState()),
+          log: [...(prev[id]?.log ?? []), makeLogEntry('No database connection selected.', true)],
+        },
+      }))
+      return
+    }
     const id = activeTabId
     const sql = worksheetStates[id]?.sql ?? ''
     patchWorksheetState(id, { isRunning: true })
     DatabaseClient.executeQuery(activeTab.connectionID, sql)
       .then(res => {
-        patchWorksheetState(id, { result: res, rows: res.rows as RowRecord[], dirtyCells: {}, isRunning: false })
         const rows = res.rows.length
         const cols = res.columns.length
-        setStatus(cols > 0
+        const msg = cols > 0
           ? `${rows} ${rows === 1 ? 'row' : 'rows'}, ${cols} ${cols === 1 ? 'column' : 'columns'} returned`
-          : 'Query executed — no rows returned')
+          : 'Query executed — no rows returned'
+        setWorksheetStates(prev => ({
+          ...prev,
+          [id]: {
+            ...(prev[id] ?? emptyWorksheetState()),
+            result: res,
+            rows: res.rows as RowRecord[],
+            dirtyCells: {},
+            isRunning: false,
+            log: [...(prev[id]?.log ?? []), makeLogEntry(msg, false, true, res.durationMs)],
+          },
+        }))
       })
       .catch(err => {
-        patchWorksheetState(id, { isRunning: false })
-        setStatus(String(err))
+        setWorksheetStates(prev => ({
+          ...prev,
+          [id]: {
+            ...(prev[id] ?? emptyWorksheetState()),
+            isRunning: false,
+            log: [...(prev[id]?.log ?? []), makeLogEntry(String(err), true)],
+          },
+        }))
       })
   }
 
@@ -86,6 +122,11 @@ export function useWorksheetSession({ activeTabId, activeTab, setStatus }: UseWo
     })
   }
 
+  const clearWorksheetLog = () => {
+    if (activeTab.kind !== 'worksheet') return
+    patchWorksheetState(activeTabId, { log: [] })
+  }
+
   const initWorksheetState = (id: string, sql: string) => {
     setWorksheetStates(prev => ({ ...prev, [id]: { ...emptyWorksheetState(), sql } }))
   }
@@ -100,5 +141,6 @@ export function useWorksheetSession({ activeTabId, activeTab, setStatus }: UseWo
     runQuery,
     updateQueryCell,
     discardQueryEdits,
+    clearWorksheetLog,
   }
 }

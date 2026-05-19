@@ -23,6 +23,7 @@ export interface WorksheetTabState {
   rows: RowRecord[]
   dirtyCells: DirtyCells
   isRunning: boolean
+  log: LogEntry[]
 }
 
 export interface FKError {
@@ -57,6 +58,7 @@ export interface LogEntry {
   text: string
   isError: boolean
   isSuccess?: boolean
+  durationMs?: number
 }
 
 // cellKey lives in editBuffer.ts; re-exported here so existing imports keep working.

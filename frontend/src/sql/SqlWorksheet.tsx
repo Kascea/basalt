@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useResizeDrag } from '../workspace/useResizeDrag'
 import { type QueryResult, type SchemaObject } from '../../bindings/basalt/db'
-import { type RowRecord, type DirtyCells } from '../types'
+import { type RowRecord, type DirtyCells, type LogEntry } from '../types'
 import { DataGrid } from '../table/DataGrid'
 import { SqlEditor } from './SqlEditor'
+import { WorksheetLog } from './WorksheetLog'
 
 type ResultTab = 'data' | 'structure' | 'plan'
 
@@ -12,6 +13,7 @@ interface Props {
   result: QueryResult | null
   rows: RowRecord[]
   dirtyCells: DirtyCells
+  log: LogEntry[]
   objects: SchemaObject[]
   connectionId?: string
   driver?: string
@@ -19,14 +21,16 @@ interface Props {
   onSqlChange: (sql: string) => void
   onCellChange: (rowIndex: number, column: string, value: string) => void
   onDiscard: () => void
+  onClearLog: () => void
 }
 
 export function SqlWorksheet({
-  sql, result, rows, dirtyCells, objects, connectionId, driver, isRunning,
-  onSqlChange, onCellChange, onDiscard,
+  sql, result, rows, dirtyCells, log, objects, connectionId, driver, isRunning,
+  onSqlChange, onCellChange, onDiscard, onClearLog,
 }: Props) {
   const [activeTab, setActiveTab] = useState<ResultTab>('data')
   const [editorHeight, startEditorDrag] = useResizeDrag(280, 80, 800)
+  const [logHeight, startLogDrag] = useResizeDrag(120, 60, 400)
   const dirtyCount = Object.keys(dirtyCells).length
 
   return (
@@ -105,6 +109,11 @@ export function SqlWorksheet({
             {!result && <p className="empty-state centered">Run a query to see the explain plan</p>}
           </div>
         )}
+      </div>
+
+      <div className="resize-handle resize-handle--v" onMouseDown={e => startLogDrag(e, 'y', true)} />
+      <div style={{ height: logHeight, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <WorksheetLog log={log} onClear={onClearLog} />
       </div>
     </div>
   )

@@ -106,13 +106,15 @@ export function useTableSession({ activeTabId, activeTab, setStatus }: UseTableS
     })
 
   const addNewRow = () => {
-    const s = activeTableState
-    if (!s?.result || !activeTab.table) return
-    const columns = s.result.columns
+    if (!activeTab.table) return
     const id = activeTabId
-    const row: RowRecord = {}
-    for (const col of columns) row[col] = ''
-    setTableStates(prev => ({ ...prev, [id]: { ...prev[id], ...applyAddNewRow(prev[id], row) } }))
+    setTableStates(prev => {
+      const s = prev[id]
+      if (!s?.result) return prev
+      const row: RowRecord = {}
+      for (const col of s.result.columns) row[col] = ''
+      return { ...prev, [id]: { ...prev[id], ...applyAddNewRow(prev[id], row) } }
+    })
   }
 
   const removeNewRow = (newRowIndex: number) =>

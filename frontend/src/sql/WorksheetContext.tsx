@@ -1,6 +1,6 @@
 import { createContext, useContext, useMemo } from 'react'
 import type { QueryResult } from '../../bindings/basalt/db'
-import type { RowRecord, DirtyCells } from '../types'
+import type { RowRecord, DirtyCells, LogEntry } from '../types'
 
 export interface WorksheetSession {
   isRunning: boolean
@@ -8,10 +8,12 @@ export interface WorksheetSession {
   rows: RowRecord[]
   dirtyCells: DirtyCells
   sql: string
+  log: LogEntry[]
   setSql: (sql: string) => void
   run: () => void
   updateCell: (rowIndex: number, col: string, value: string) => void
   discard: () => void
+  clearLog: () => void
 }
 
 const WorksheetContext = createContext<WorksheetSession | null>(null)
@@ -27,5 +29,5 @@ export function useWorksheetSession(): WorksheetSession {
 }
 
 export function useWorksheetSessionValue(raw: WorksheetSession): WorksheetSession {
-  return useMemo(() => raw, [raw.isRunning, raw.result, raw.rows, raw.dirtyCells, raw.sql]) // eslint-disable-line react-hooks/exhaustive-deps
+  return useMemo(() => raw, [raw.isRunning, raw.result, raw.rows, raw.dirtyCells, raw.sql, raw.log]) // eslint-disable-line react-hooks/exhaustive-deps
 }

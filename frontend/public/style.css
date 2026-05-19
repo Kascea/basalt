@@ -1645,15 +1645,6 @@ td input {
     padding: 32px;
 }
 
-/* ── Status bar ── */
-
-.statusbar-container {
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-}
-
 /* ── Resize handles ── */
 
 .resize-handle {
@@ -1683,55 +1674,6 @@ td input {
 .resize-handle:active {
     background: var(--accent);
     opacity: 0.5;
-}
-
-.statusbar-log {
-    flex: 1;
-    overflow-y: auto;
-    border-top: 1px solid var(--border);
-    background: var(--bg-panel);
-    font-size: 11px;
-    font-family: var(--mono);
-}
-
-.statusbar-log--error {
-    border-top-color: rgba(200, 50, 50, 0.5);
-}
-
-.statusbar-log-entry {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    padding: 2px 14px;
-    color: var(--text-muted);
-    white-space: pre-wrap;
-    word-break: break-word;
-    line-height: 1.6;
-}
-
-.statusbar-log-entry--error {
-    color: #e07070;
-    background: rgba(200, 50, 50, 0.07);
-}
-
-.statusbar-log-entry--success {
-    color: var(--teal-hover);
-    background: rgba(42, 143, 110, 0.07);
-}
-
-.statusbar-log-ts {
-    flex-shrink: 0;
-    opacity: 0.45;
-    font-size: 10px;
-}
-
-.statusbar-log-text {
-    flex: 1;
-}
-
-.statusbar-log-duration {
-    flex-shrink: 0;
-    color: var(--teal);
 }
 
 /* ── Modal ── */
@@ -2644,23 +2586,6 @@ td input {
 
 .context-menu button:hover {
     background: var(--bg-hover);
-}
-
-/* ── Status bar FK link ── */
-
-.statusbar-fk-link {
-    background: none;
-    border: none;
-    padding: 0;
-    font: inherit;
-    font-weight: 700;
-    color: var(--accent);
-    text-decoration: underline;
-    text-underline-offset: 2px;
-}
-
-.statusbar-fk-link:hover {
-    color: var(--accent-hover);
 }
 
 /* ── Sidebar footer ── */
