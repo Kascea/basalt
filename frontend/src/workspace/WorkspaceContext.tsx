@@ -26,6 +26,7 @@ export interface WorkspaceSession {
   tableEditor: TableEditorSession
   worksheet: WorksheetSession
   status: StatusSession
+  defaultRowLimit: number
 }
 
 const WorkspaceContext = createContext<WorkspaceSession | null>(null)

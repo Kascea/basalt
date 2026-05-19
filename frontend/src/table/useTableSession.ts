@@ -14,6 +14,10 @@ function emptyTableState(): TableState {
     dirtyCells: {},
     pendingDeletes: new Set(),
     filterExpr: '',
+    currentPage: 0,
+    totalRows: 0,
+    pageSize: 0,
+    localPageSize: 0,
     isLoading: true,
     isRefreshing: false,
     isCommitting: false,
@@ -41,14 +45,16 @@ export function useTableSession({ activeTabId, activeTab, setStatus }: UseTableS
     patchState(id, {
       isLoading: true, result: null, rows: [], newRows: [],
       dirtyCells: {}, pendingDeletes: new Set(), commitError: null,
+      currentPage: 0,
     })
     setStatus(`Loading ${schema}.${table}…`)
-    DatabaseClient.fetchTable(connectionID, schema, table, filterExpr)
+    const localPageSize = tableStates[id]?.localPageSize ?? 0
+    DatabaseClient.fetchTable(connectionID, schema, table, filterExpr, 0, localPageSize)
       .then(res => {
         const newRows: RowRecord[] = prefill
           ? [Object.fromEntries(res.columns.map(col => [col, prefill[col] ?? '']))]
           : []
-        patchState(id, { result: res, rows: res.rows as RowRecord[], newRows, isLoading: false })
+        patchState(id, { result: res, rows: res.rows as RowRecord[], newRows, isLoading: false, totalRows: res.totalRows, pageSize: res.pageSize })
         setStatus(res.message)
       })
       .catch(err => {
@@ -65,10 +71,12 @@ export function useTableSession({ activeTabId, activeTab, setStatus }: UseTableS
     const { connectionID: tabConnectionID, schema, table } = activeTab
     const id = activeTabId
     const where = tableStates[id]?.filterExpr ?? ''
+    const page = tableStates[id]?.currentPage ?? 0
+    const localPageSize = tableStates[id]?.localPageSize ?? 0
     patchState(id, { isRefreshing: true })
-    DatabaseClient.fetchTable(tabConnectionID, schema, table, where)
+    DatabaseClient.fetchTable(tabConnectionID, schema, table, where, page, localPageSize)
       .then(res => {
-        patchState(id, { result: res, rows: res.rows as RowRecord[], isRefreshing: false })
+        patchState(id, { result: res, rows: res.rows as RowRecord[], isRefreshing: false, totalRows: res.totalRows, pageSize: res.pageSize })
         setStatus(res.message)
       })
       .catch(err => {
@@ -81,10 +89,46 @@ export function useTableSession({ activeTabId, activeTab, setStatus }: UseTableS
     if (activeTab.kind !== 'table' || !activeTab.table) return
     const id = activeTabId
     const { connectionID: tabConnectionID, schema, table } = activeTab
-    patchState(id, { filterExpr: expr, isRefreshing: true })
-    DatabaseClient.fetchTable(tabConnectionID, schema, table, expr)
+    const localPageSize = tableStates[id]?.localPageSize ?? 0
+    patchState(id, { filterExpr: expr, isRefreshing: true, currentPage: 0 })
+    DatabaseClient.fetchTable(tabConnectionID, schema, table, expr, 0, localPageSize)
       .then(res => {
-        patchState(id, { result: res, rows: res.rows as RowRecord[], isRefreshing: false })
+        patchState(id, { result: res, rows: res.rows as RowRecord[], isRefreshing: false, totalRows: res.totalRows, pageSize: res.pageSize })
+        setStatus(res.message)
+      })
+      .catch(err => {
+        patchState(id, { isRefreshing: false })
+        setStatus(String(err))
+      })
+  }
+
+  const goToPage = (page: number) => {
+    if (activeTab.kind !== 'table' || !activeTab.table) return
+    const id = activeTabId
+    const { connectionID: tabConnectionID, schema, table } = activeTab
+    const where = tableStates[id]?.filterExpr ?? ''
+    const localPageSize = tableStates[id]?.localPageSize ?? 0
+    patchState(id, { isRefreshing: true, currentPage: page })
+    DatabaseClient.fetchTable(tabConnectionID, schema, table, where, page, localPageSize)
+      .then(res => {
+        patchState(id, { result: res, rows: res.rows as RowRecord[], isRefreshing: false, totalRows: res.totalRows, pageSize: res.pageSize })
+        setStatus(res.message)
+      })
+      .catch(err => {
+        patchState(id, { isRefreshing: false })
+        setStatus(String(err))
+      })
+  }
+
+  const setPageSize = (size: number) => {
+    if (activeTab.kind !== 'table' || !activeTab.table) return
+    const id = activeTabId
+    const { connectionID: tabConnectionID, schema, table } = activeTab
+    const where = tableStates[id]?.filterExpr ?? ''
+    patchState(id, { isRefreshing: true, localPageSize: size, currentPage: 0 })
+    DatabaseClient.fetchTable(tabConnectionID, schema, table, where, 0, size)
+      .then(res => {
+        patchState(id, { result: res, rows: res.rows as RowRecord[], isRefreshing: false, totalRows: res.totalRows, pageSize: res.pageSize })
         setStatus(res.message)
       })
       .catch(err => {
@@ -180,6 +224,8 @@ export function useTableSession({ activeTabId, activeTab, setStatus }: UseTableS
     removeState,
     refreshActiveTable,
     setFilterExpr,
+    goToPage,
+    setPageSize,
     updateCell,
     updateNewCell,
     addNewRow,

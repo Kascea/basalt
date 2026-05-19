@@ -8,6 +8,7 @@ import { IndexView } from '../schema/IndexView'
 import { ForeignKeyView } from '../table/ForeignKeyView'
 import { SchemaView } from '../schema/SchemaView'
 import { StatusBar } from './StatusBar'
+import { PaginationBar } from '../table/PaginationBar'
 import { TabContextMenu } from '../tabs/TabContextMenu'
 import { useWorkspaceSession } from './WorkspaceContext'
 import { DatabaseClient } from '../db/client'
@@ -85,7 +86,9 @@ export function Workspace({ onCommit }: Props) {
   const {
     updateCell, updateNewCell, addRow: addNewRow, removeRow: removeNewRow,
     markForDelete, discard: discardEdits, refresh: refreshActiveTable, setFilter: setFilterExpr,
+    goToPage, setPageSize,
   } = tableEditor
+  const { defaultRowLimit } = session
   const {
     isRunning, result: queryResult, rows: queryRows, dirtyCells: queryDirty,
     sql, setSql, run: runQuery, updateCell: updateQueryCell, discard: discardQueryEdits,
@@ -382,6 +385,17 @@ export function Workspace({ onCommit }: Props) {
           durationMs={activeDurationMs}
           fkError={activeFkError}
           onOpenFkTab={openFkTab}
+        />
+      )}
+      {activeTab.kind === 'table' && activeTableState?.result && (
+        <PaginationBar
+          currentPage={activeTableState.currentPage}
+          totalRows={activeTableState.totalRows}
+          pageSize={activeTableState.pageSize}
+          defaultPageSize={defaultRowLimit}
+          isRefreshing={activeTableState.isRefreshing}
+          onGoToPage={goToPage}
+          onSetPageSize={setPageSize}
         />
       )}
 

@@ -554,6 +554,8 @@ export class QueryResult {
     "message": string;
     "plan": ExecutionPlanStep[];
     "objectStats": SchemaObjectSummary[];
+    "totalRows": number;
+    "pageSize": number;
 
     /** Creates a new QueryResult instance. */
     constructor($$source: Partial<QueryResult> = {}) {
@@ -583,6 +585,12 @@ export class QueryResult {
         }
         if (!("objectStats" in $$source)) {
             this["objectStats"] = [];
+        }
+        if (!("totalRows" in $$source)) {
+            this["totalRows"] = 0;
+        }
+        if (!("pageSize" in $$source)) {
+            this["pageSize"] = 0;
         }
 
         Object.assign(this, $$source);

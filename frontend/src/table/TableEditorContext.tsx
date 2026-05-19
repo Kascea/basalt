@@ -10,6 +10,8 @@ export interface TableEditorSession {
   commit: () => void
   refresh: () => void
   setFilter: (expr: string) => void
+  goToPage: (page: number) => void
+  setPageSize: (size: number) => void
 }
 
 const TableEditorContext = createContext<TableEditorSession | null>(null)

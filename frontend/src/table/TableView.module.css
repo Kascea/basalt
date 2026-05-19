@@ -1,0 +1,24 @@
+.tableView {
+    display: grid;
+    grid-template-rows: 44px 2px 34px 1fr;
+    height: 100%;
+    min-height: 0;
+}
+
+.refreshBar {
+    height: 2px;
+    flex-shrink: 0;
+    opacity: 0;
+}
+
+.refreshBar.active {
+    opacity: 1;
+    background: linear-gradient(90deg, transparent 0%, var(--accent) 40%, var(--accent) 60%, transparent 100%);
+    background-size: 300% 100%;
+    animation: refresh-sweep 1.2s ease-in-out infinite;
+}
+
+@keyframes refresh-sweep {
+    0%   { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+}

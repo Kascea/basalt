@@ -39,6 +39,10 @@ export interface TableState {
   dirtyCells: DirtyCells
   pendingDeletes: Set<number>
   filterExpr: string
+  currentPage: number
+  totalRows: number
+  pageSize: number
+  localPageSize: number
   isLoading: boolean
   isRefreshing: boolean
   isCommitting: boolean

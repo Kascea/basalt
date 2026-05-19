@@ -25,8 +25,8 @@ export const DatabaseClient = {
     return DatabaseService.ListSchemaObjects(connID).catch(rethrow)
   },
 
-  fetchTable(connID: string, schema: string, table: string, filter: string): Promise<QueryResult> {
-    return DatabaseService.FetchTable(connID, schema, table, filter).catch(rethrow)
+  fetchTable(connID: string, schema: string, table: string, filter: string, page = 0, pageSize = 0): Promise<QueryResult> {
+    return DatabaseService.FetchTable(connID, schema, table, filter, page, pageSize).catch(rethrow)
   },
 
   executeQuery(connID: string, sql: string): Promise<QueryResult> {

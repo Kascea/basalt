@@ -94,8 +94,8 @@ export function ExecuteQuery(connectionID: string, statement: string): $Cancella
     });
 }
 
-export function FetchTable(connectionID: string, schema: string, table: string, where: string): $CancellablePromise<$models.QueryResult> {
-    return $Call.ByID(379804161, connectionID, schema, table, where).then(($result: any) => {
+export function FetchTable(connectionID: string, schema: string, table: string, where: string, page: number, pageSize: number): $CancellablePromise<$models.QueryResult> {
+    return $Call.ByID(379804161, connectionID, schema, table, where, page, pageSize).then(($result: any) => {
         return $$createType3($result);
     });
 }

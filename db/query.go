@@ -76,7 +76,7 @@ func validateWhereClause(where string) error {
 	return nil
 }
 
-func (d *DatabaseService) FetchTable(connectionID, schema, table, where string) (QueryResult, error) {
+func (d *DatabaseService) FetchTable(connectionID, schema, table, where string, page, pageSize int) (QueryResult, error) {
 	conn, err := d.connection(connectionID)
 	if err != nil {
 		return QueryResult{}, err
@@ -91,17 +91,36 @@ func (d *DatabaseService) FetchTable(connectionID, schema, table, where string) 
 
 	settings := d.store.GetSettings()
 	rowLimit := settings.DefaultRowLimit
+	if pageSize > 0 {
+		rowLimit = pageSize
+	}
 	timeout := time.Duration(settings.QueryTimeoutSec) * time.Second
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	query := fmt.Sprintf("SELECT %s AS __rowid, * FROM %s.%s", conn.intr.RowIDExpr(), quoteIdent(schema), quoteIdent(table))
+	baseFrom := fmt.Sprintf("FROM %s.%s", quoteIdent(schema), quoteIdent(table))
 	if trimmedWhere != "" {
-		query += " WHERE " + trimmedWhere
+		baseFrom += " WHERE " + trimmedWhere
 	}
+
+	// Count total rows for pagination (skip when unlimited).
+	totalRows := 0
 	if rowLimit > 0 {
-		query += fmt.Sprintf(" LIMIT %d", rowLimit)
+		countQuery := "SELECT COUNT(*) " + baseFrom
+		if err := conn.db.QueryRowContext(ctx, countQuery).Scan(&totalRows); err != nil {
+			return QueryResult{}, err
+		}
+	}
+
+	if page < 0 {
+		page = 0
+	}
+
+	query := fmt.Sprintf("SELECT %s AS __rowid, * %s", conn.intr.RowIDExpr(), baseFrom)
+	if rowLimit > 0 {
+		offset := page * rowLimit
+		query += fmt.Sprintf(" LIMIT %d OFFSET %d", rowLimit, offset)
 	}
 
 	started := time.Now()
@@ -151,8 +170,8 @@ func (d *DatabaseService) FetchTable(connectionID, schema, table, where string) 
 	}
 
 	msg := fmt.Sprintf("%d rows fetched from %s.%s", len(resultRows), schema, table)
-	if rowLimit > 0 && len(resultRows) == rowLimit {
-		msg += fmt.Sprintf(" (limit %d)", rowLimit)
+	if rowLimit > 0 {
+		msg += fmt.Sprintf(" (page %d of %d, limit %d)", page+1, max(1, (totalRows+rowLimit-1)/rowLimit), rowLimit)
 	}
 
 	pks, _ := conn.intr.GetPrimaryKeys(ctx, conn.db, schema, table)
@@ -168,5 +187,7 @@ func (d *DatabaseService) FetchTable(connectionID, schema, table, where string) 
 		RowIDs:      rowIDs,
 		DurationMS:  int(time.Since(started).Milliseconds()),
 		Message:     msg,
+		TotalRows:   totalRows,
+		PageSize:    rowLimit,
 	}, nil
 }

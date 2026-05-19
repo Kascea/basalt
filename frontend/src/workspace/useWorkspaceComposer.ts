@@ -114,15 +114,17 @@ export function useWorkspaceComposer(
   }), [tableTabs.tabs, tableTabs.activeTabId, tableTabs.activeTab, tableTabs.activeTableState, tableTabs.activeWorksheetState]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const tableEditorValue = useMemo(() => ({
-    updateCell: tableTabs.updateCell,
-    updateNewCell: tableTabs.updateNewCell,
-    addRow: tableTabs.addNewRow,
-    removeRow: tableTabs.removeNewRow,
-    markForDelete: tableTabs.markForDelete,
-    discard: tableTabs.discardEdits,
-    commit: tableTabs.commitEdits,
-    refresh: tableTabs.refreshActiveTable,
-    setFilter: tableTabs.setFilterExpr,
+    updateCell: (...args: Parameters<typeof tableTabs.updateCell>) => tableTabsRef.current.updateCell(...args),
+    updateNewCell: (...args: Parameters<typeof tableTabs.updateNewCell>) => tableTabsRef.current.updateNewCell(...args),
+    addRow: () => tableTabsRef.current.addNewRow(),
+    removeRow: (...args: Parameters<typeof tableTabs.removeNewRow>) => tableTabsRef.current.removeNewRow(...args),
+    markForDelete: (...args: Parameters<typeof tableTabs.markForDelete>) => tableTabsRef.current.markForDelete(...args),
+    discard: () => tableTabsRef.current.discardEdits(),
+    commit: () => tableTabsRef.current.commitEdits(),
+    refresh: () => tableTabsRef.current.refreshActiveTable(),
+    setFilter: (...args: Parameters<typeof tableTabs.setFilterExpr>) => tableTabsRef.current.setFilterExpr(...args),
+    goToPage: (...args: Parameters<typeof tableTabs.goToPage>) => tableTabsRef.current.goToPage(...args),
+    setPageSize: (...args: Parameters<typeof tableTabs.setPageSize>) => tableTabsRef.current.setPageSize(...args),
   }), [tableTabs.activeTabId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const worksheetValue = useMemo(() => ({
@@ -156,7 +158,8 @@ export function useWorkspaceComposer(
     tableEditor: tableEditorValue,
     worksheet: worksheetValue,
     status: statusValue,
-  }), [db.connections, activeConnection, db.objectsByConnection, activeConnectionID, tabsValue, tableEditorValue, worksheetValue, statusValue])
+    defaultRowLimit: settings?.defaultRowLimit ?? 1000,
+  }), [db.connections, activeConnection, db.objectsByConnection, activeConnectionID, tabsValue, tableEditorValue, worksheetValue, statusValue, settings?.defaultRowLimit])
 
   return {
     session,

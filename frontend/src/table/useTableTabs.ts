@@ -81,6 +81,8 @@ export function useTableTabs(setStatus: (msg: string, isSuccess?: boolean) => vo
     activeTableState: tableSession.activeTableState,
     refreshActiveTable: tableSession.refreshActiveTable,
     setFilterExpr: tableSession.setFilterExpr,
+    goToPage: tableSession.goToPage,
+    setPageSize: tableSession.setPageSize,
     updateCell: tableSession.updateCell,
     updateNewCell: tableSession.updateNewCell,
     addNewRow: tableSession.addNewRow,

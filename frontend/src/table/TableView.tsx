@@ -6,6 +6,7 @@ import { GridToolbar } from './GridToolbar'
 import { FilterBar } from './FilterBar'
 import { DataGrid } from './DataGrid'
 import { useFilterExpr } from './useFilterExpr'
+import styles from './TableView.module.css'
 
 interface Props {
   target: TableTarget
@@ -63,7 +64,7 @@ export function TableView({
   })()
 
   return (
-    <div className="table-view">
+    <div className={styles.tableView}>
       <GridToolbar
         label={label}
         count={`${rows.length.toLocaleString()} rows`}
@@ -83,7 +84,7 @@ export function TableView({
           </button>
         </>}
       />
-      <div className={`table-refresh-bar${isRefreshing ? ' active' : ''}`} />
+      <div className={`${styles.refreshBar}${isRefreshing ? ` ${styles.active}` : ''}`} />
       <FilterBar
         expr={filterExpr}
         draft={filterDraft}
