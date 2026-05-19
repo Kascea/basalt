@@ -112,6 +112,7 @@ export function TableView({
           onSortChange={handleSortChange}
           onAddFilter={handleAddFilter}
           onAddColumn={onAddColumn}
+          onAddRow={onAddRow}
           emptyMessage={result ? 'No rows returned' : 'Open a table from the sidebar'}
         />
       )}

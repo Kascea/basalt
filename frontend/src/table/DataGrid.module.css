@@ -98,6 +98,23 @@
     background: var(--accent-dim);
 }
 
+/* ── Add row footer ── */
+
+.rowAddTr {
+    cursor: pointer;
+}
+
+.rowAddTd {
+    color: var(--text-muted);
+    text-align: center !important;
+    transition: color 0.1s, background 0.1s;
+}
+
+.rowAddTr:hover .rowAddTd {
+    color: var(--accent);
+    background: var(--accent-dim);
+}
+
 /* ── Column resize handle ── */
 
 .colResizeHandle {

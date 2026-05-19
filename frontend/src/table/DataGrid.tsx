@@ -86,6 +86,7 @@ interface Props {
   onSortChange?: (column: string, direction: SortDirection | null) => void
   onAddFilter?: (column: string) => void
   onAddColumn?: () => void
+  onAddRow?: () => void
 }
 
 export function DataGrid({
@@ -107,6 +108,7 @@ export function DataGrid({
   onSortChange,
   onAddFilter,
   onAddColumn,
+  onAddRow,
 }: Props) {
   const [menuCol, setMenuCol] = useState<string | null>(null)
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
@@ -332,6 +334,15 @@ export function DataGrid({
               <td />
             </tr>
           ))}
+          {onAddRow && (
+            <tr className={styles.rowAddTr} onClick={onAddRow}>
+              <td className={`${styles.rowIndex} ${styles.rowAddTd}`}>
+                <Plus size={12} strokeWidth={2} />
+              </td>
+              {columns.map(col => <td key={col} />)}
+              <td />
+            </tr>
+          )}
         </tbody>
       </table>
       {indexed.length === 0 && newRows.length === 0 && (

@@ -3,6 +3,7 @@ import { Plus, Trash2, RotateCcw, AlertCircle, X } from 'lucide-react'
 import { DatabaseService, type ColumnInfo } from '../../bindings/basalt/db'
 import { GridToolbar } from '../table/GridToolbar'
 import { TypeSelect, useColumnTypes } from '../ui/TypeSelect'
+import { parseError } from '../lib/parseError'
 
 interface Props {
   connectionID: string
@@ -52,7 +53,7 @@ export function SchemaView({ connectionID, schema, table, addColumn, onTableRefr
     setIsLoading(true)
     DatabaseService.GetTableColumns(connectionID, schema, table)
       .then(cols => { setDbCols(cols ?? []); setIsLoading(false) })
-      .catch(err => { setError(String(err)); setIsLoading(false) })
+      .catch(err => { setError(parseError(err)); setIsLoading(false) })
   }
 
   useEffect(load, [connectionID, schema, table])
@@ -123,7 +124,7 @@ export function SchemaView({ connectionID, schema, table, addColumn, onTableRefr
       onTableRefresh?.()
       load()
     } catch (err) {
-      setError(String(err))
+      setError(parseError(err))
     } finally {
       setIsCommitting(false)
     }
