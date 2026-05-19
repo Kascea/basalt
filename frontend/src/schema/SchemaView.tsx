@@ -8,6 +8,7 @@ interface Props {
   connectionID: string
   schema: string
   table: string
+  addColumn?: boolean
   onTableRefresh?: () => void
 }
 
@@ -34,13 +35,15 @@ function newColId() { return `new-${Date.now()}-${Math.random().toString(36).sli
 
 // ── SchemaView ────────────────────────────────────────────────────────────────
 
-export function SchemaView({ connectionID, schema, table, onTableRefresh }: Props) {
+export function SchemaView({ connectionID, schema, table, addColumn, onTableRefresh }: Props) {
   const { groups, loading: typesLoading } = useColumnTypes(connectionID)
 
   const [dbCols, setDbCols] = useState<ColumnInfo[]>([])
   const [edits, setEdits] = useState<Record<string, ColEdit>>({})
   const [deletes, setDeletes] = useState<Set<string>>(new Set())
-  const [newCols, setNewCols] = useState<NewCol[]>([])
+  const [newCols, setNewCols] = useState<NewCol[]>(() =>
+    addColumn ? [{ id: newColId(), name: '', dataType: '', isNullable: true, columnDefault: '' }] : []
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [isCommitting, setIsCommitting] = useState(false)
   const [error, setError] = useState('')

@@ -108,21 +108,11 @@ export function useTableSession({ activeTabId, activeTab, setStatus }: UseTableS
   const addNewRow = () => {
     const s = activeTableState
     if (!s?.result || !activeTab.table) return
-    const { schema, table } = activeTab
     const columns = s.result.columns
     const id = activeTabId
-
-    DatabaseClient.getNextSequenceValues(activeTab.connectionID, schema, table)
-      .then(seqValues => {
-        const row: RowRecord = {}
-        for (const col of columns) row[col] = seqValues[col] ?? ''
-        setTableStates(prev => ({ ...prev, [id]: { ...prev[id], ...applyAddNewRow(prev[id], row) } }))
-      })
-      .catch(() => {
-        const row: RowRecord = {}
-        for (const col of columns) row[col] = ''
-        setTableStates(prev => ({ ...prev, [id]: { ...prev[id], ...applyAddNewRow(prev[id], row) } }))
-      })
+    const row: RowRecord = {}
+    for (const col of columns) row[col] = ''
+    setTableStates(prev => ({ ...prev, [id]: { ...prev[id], ...applyAddNewRow(prev[id], row) } }))
   }
 
   const removeNewRow = (newRowIndex: number) =>

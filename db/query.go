@@ -156,9 +156,15 @@ func (d *DatabaseService) FetchTable(connectionID, schema, table, where string) 
 		msg += fmt.Sprintf(" (limit %d)", rowLimit)
 	}
 
+	pks, _ := intr.GetPrimaryKeys(ctx, conn.db, schema, table)
+	if pks == nil {
+		pks = []string{}
+	}
+
 	return QueryResult{
 		Columns:     columns,
 		ColumnTypes: columnTypes,
+		PrimaryKeys: pks,
 		Rows:        resultRows,
 		RowIDs:      rowIDs,
 		DurationMS:  int(time.Since(started).Milliseconds()),

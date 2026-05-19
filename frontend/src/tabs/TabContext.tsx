@@ -14,7 +14,7 @@ export interface TabSession {
   rename: (id: string, name: string) => void
   openTable: (connectionID: string, schema: string, table: string) => void
   openTableWithPrefill: (connectionID: string, schema: string, table: string, prefill: Record<string, string>) => void
-  openSchema: (connectionID: string, schema: string, table: string) => void
+  openSchema: (connectionID: string, schema: string, table: string, addColumn?: boolean) => void
   openGroup: (connectionID: string, schema: string, kind: 'sequences' | 'indexes' | 'foreignkeys') => void
   openWorksheet: (connectionID?: string) => void
   setTabConnectionID: (tabId: string, connectionID: string) => void

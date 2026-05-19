@@ -28,6 +28,7 @@ interface Props {
   onDiscard: () => void
   onCommit: () => void
   onEditSchema: () => void
+  onAddColumn: () => void
 }
 
 export function TableView({
@@ -35,7 +36,7 @@ export function TableView({
   filterExpr,
   isLoading, isRefreshing, isCommitting,
   onCellChange, onNewCellChange, onAddRow, onRemoveNewRow, onDeleteRow,
-  onRefresh, onFilterChange, onDiscard, onCommit, onEditSchema,
+  onRefresh, onFilterChange, onDiscard, onCommit, onEditSchema, onAddColumn,
 }: Props) {
   const [sortColumn, setSortColumn] = useState<string | null>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection | null>(null)
@@ -43,6 +44,7 @@ export function TableView({
 
   const columns = result?.columns ?? []
   const columnTypes = result?.columnTypes ?? []
+  const primaryKeys = result?.primaryKeys ?? []
 
   const handleSortChange = (col: string, dir: SortDirection | null) => {
     setSortColumn(dir ? col : null)
@@ -95,6 +97,7 @@ export function TableView({
         <DataGrid
           columns={columns}
           columnTypes={columnTypes}
+          primaryKeys={primaryKeys}
           rows={rows}
           newRows={newRows}
           dirtyCells={dirtyCells}
@@ -107,6 +110,7 @@ export function TableView({
           onRemoveNewRow={onRemoveNewRow}
           onSortChange={handleSortChange}
           onAddFilter={handleAddFilter}
+          onAddColumn={onAddColumn}
           emptyMessage={result ? 'No rows returned' : 'Open a table from the sidebar'}
         />
       )}

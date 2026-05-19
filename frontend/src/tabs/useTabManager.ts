@@ -55,10 +55,14 @@ export function useTabManager() {
     emit({ type: 'load-table', id, connID, schema, table, prefill })
   }
 
-  const openSchemaTab = (connID: string, schema: string, table: string) => {
+  const openSchemaTab = (connID: string, schema: string, table: string, addColumn?: boolean) => {
     const id = `${connID}:${schema}.${table}:schema`
-    if (tabs.find(t => t.id === id)) { setActiveTabId(id); return }
-    const tab: Tab = { id, kind: 'schema', connectionID: connID, schema, table }
+    if (tabs.find(t => t.id === id)) {
+      setActiveTabId(id)
+      if (addColumn) setTabs(prev => prev.map(t => t.id === id ? { ...t, addColumn: true } : t))
+      return
+    }
+    const tab: Tab = { id, kind: 'schema', connectionID: connID, schema, table, addColumn }
     setTabs(prev => [...prev, tab])
     setActiveTabId(id)
   }

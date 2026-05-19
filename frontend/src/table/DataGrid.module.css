@@ -1,0 +1,342 @@
+/* ── Container ── */
+
+.dataGrid {
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+}
+
+.dataGrid::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.dataGrid::-webkit-scrollbar-track {
+    background: var(--bg-panel);
+}
+
+.dataGrid::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+/* table width is set inline; this ensures it never collapses smaller than its cols */
+.dataGrid table {
+    table-layout: fixed;
+}
+
+/* DataGrid-specific th behavior (cursor, overflow for resize handle + menu) */
+.dataGrid th {
+    cursor: pointer;
+    overflow: visible;
+}
+
+/* ── Sorted column header ── */
+
+.colSorted {
+    color: var(--accent);
+    background: var(--accent-dim);
+}
+
+/* ── Column header layout ── */
+
+.colHeaderContent {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.colHeaderTop {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow: hidden;
+}
+
+.colName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.colTypeLabel {
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.75;
+}
+
+.colPkIcon {
+    color: #4d9ef5;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* ── Add column header ── */
+
+.colAddTh {
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+    text-align: center;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.1s, background 0.1s;
+}
+
+.colAddTh:hover {
+    color: var(--accent);
+    background: var(--accent-dim);
+}
+
+/* ── Column resize handle ── */
+
+.colResizeHandle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 5px;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 10;
+    border-right: 2px solid transparent;
+    transition: border-color 0.12s;
+}
+
+.colResizeHandle:hover,
+.colResizeHandle:active {
+    border-right-color: var(--accent);
+}
+
+/* ── Sort indicator ── */
+
+.sortIndicator {
+    color: var(--text-muted);
+    font-size: 9px;
+    margin-left: 4px;
+    opacity: 0;
+    transition: opacity 0.1s;
+    flex-shrink: 0;
+}
+
+.dataGrid th:hover .sortIndicator,
+.colSorted .sortIndicator {
+    opacity: 1;
+}
+
+.sortActive {
+    color: var(--accent);
+    font-size: 10px;
+}
+
+/* ── Column header dropdown menu ── */
+
+.colMenu {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    min-width: 160px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    padding: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    white-space: nowrap;
+    text-transform: none;
+    letter-spacing: 0;
+    font-weight: 400;
+}
+
+.colMenuItem {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+}
+
+.colMenuItem:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.colMenuItemActive {
+    color: var(--accent);
+}
+
+.colMenuItemMuted {
+    color: var(--text-muted);
+}
+
+.colMenuItemMuted:hover {
+    color: var(--text-secondary);
+}
+
+.colMenuIcon {
+    width: 12px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.colMenuItemActive .colMenuIcon {
+    color: var(--accent);
+}
+
+.colMenuSep {
+    height: 1px;
+    background: var(--border-light);
+    margin: 2px 0;
+}
+
+/* ── Row number column ── */
+
+.rowIndex {
+    width: 44px;
+    padding: 0 10px;
+    background: var(--bg-panel);
+    color: var(--text-muted);
+    font-size: 11px;
+    font-family: var(--mono);
+    text-align: right;
+}
+
+/* ── Dirty (edited) cells ── */
+
+.dirtyCell {
+    background: rgba(201, 128, 58, 0.12);
+}
+
+.dirtyCell input {
+    color: var(--orange);
+}
+
+/* ── Row hover ── */
+
+.dataGrid tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.dataGrid tr:hover td.rowIndex {
+    background: var(--bg-panel);
+}
+
+/* ── Row delete button ── */
+
+.rowDeleteBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin: 0 auto;
+    border-radius: 3px;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: transparent;
+    transition: background 0.1s, color 0.1s;
+}
+
+.rowDeleteBtn:hover {
+    background: rgba(210, 60, 60, 0.15);
+    color: #e06060;
+}
+
+.rowDeleteBtnActive {
+    color: #e06060;
+    background: rgba(210, 60, 60, 0.12);
+}
+
+.rowDeleteBtnActive:hover {
+    background: rgba(210, 60, 60, 0.25);
+    color: #e06060;
+}
+
+.rowDeleteBtnNew {
+    color: rgba(80, 180, 100, 0.6);
+}
+
+.rowDeleteBtnNew:hover {
+    background: rgba(210, 60, 60, 0.15);
+    color: #e06060;
+}
+
+/* ── Pending-delete row ── */
+
+.deleteRow td {
+    background: rgba(210, 60, 60, 0.07);
+}
+
+.deleteRow:hover td {
+    background: rgba(210, 60, 60, 0.11);
+}
+
+.deleteRow td.rowIndex,
+.deleteRow:hover td.rowIndex {
+    background: var(--bg-panel);
+}
+
+.deleteCell input {
+    color: var(--text-muted);
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+
+/* ── New row ── */
+
+.newRow td {
+    background: rgba(80, 180, 100, 0.07);
+}
+
+.newRow:hover td {
+    background: rgba(80, 180, 100, 0.12);
+}
+
+.newRow td.rowIndex,
+.newRow:hover td.rowIndex {
+    background: var(--bg-panel);
+    color: #50b464;
+    font-size: 14px;
+}
+
+.newCell {
+    background: rgba(80, 180, 100, 0.07);
+}
+
+.newCell input {
+    color: #50b464;
+}
+
+/* ── Type rejection flash ── */
+
+@keyframes cellReject {
+    0%   { border-color: transparent; background: rgba(220, 60, 60, 0.0); }
+    20%  { border-color: rgba(220, 60, 60, 0.7); background: rgba(220, 60, 60, 0.15); }
+    100% { border-color: transparent; background: rgba(220, 60, 60, 0.0); }
+}
+
+.cellRejected input {
+    animation: cellReject 0.4s ease-out forwards;
+}

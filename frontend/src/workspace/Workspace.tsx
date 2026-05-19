@@ -351,6 +351,7 @@ export function Workspace({ onCommit }: Props) {
             onDiscard={discardEdits}
             onCommit={onCommit}
             onEditSchema={() => openSchemaTab(activeTab.connectionID, activeTab.schema, activeTab.table!)}
+            onAddColumn={() => openSchemaTab(activeTab.connectionID, activeTab.schema, activeTab.table!, true)}
           />
         )}
 
@@ -371,6 +372,7 @@ export function Workspace({ onCommit }: Props) {
             connectionID={activeTab.connectionID}
             schema={activeTab.schema}
             table={activeTab.table}
+            addColumn={activeTab.addColumn}
             onTableRefresh={refreshActiveTable}
           />
         )}

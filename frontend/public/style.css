@@ -1250,108 +1250,6 @@ td input:focus {
     user-select: none;
 }
 
-/* ── Sorted column header ── */
-
-th.col-sorted {
-    color: var(--accent);
-    background: var(--accent-dim);
-}
-
-th {
-    cursor: pointer;
-}
-
-.sort-indicator {
-    color: var(--text-muted);
-    font-size: 9px;
-    margin-left: 4px;
-    opacity: 0;
-    transition: opacity 0.1s;
-}
-
-th:hover .sort-indicator,
-th.col-sorted .sort-indicator {
-    opacity: 1;
-}
-
-.sort-indicator.sort-active {
-    color: var(--accent);
-    font-size: 10px;
-}
-
-/* ── Column header dropdown menu ── */
-
-.col-menu {
-    position: absolute;
-    top: calc(100% + 2px);
-    left: 0;
-    min-width: 160px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    z-index: 100;
-    padding: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    white-space: nowrap;
-    text-transform: none;
-    letter-spacing: 0;
-    font-weight: 400;
-}
-
-.col-menu-item {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    width: 100%;
-    height: 28px;
-    padding: 0 8px;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 12px;
-    text-align: left;
-    cursor: pointer;
-    transition: background 0.1s, color 0.1s;
-}
-
-.col-menu-item:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
-}
-
-.col-menu-item.col-menu-item-active {
-    color: var(--accent);
-}
-
-.col-menu-item.col-menu-item-muted {
-    color: var(--text-muted);
-}
-
-.col-menu-item.col-menu-item-muted:hover {
-    color: var(--text-secondary);
-}
-
-.col-menu-icon {
-    width: 12px;
-    text-align: center;
-    font-size: 10px;
-    color: var(--text-muted);
-    flex-shrink: 0;
-}
-
-.col-menu-item.col-menu-item-active .col-menu-icon {
-    color: var(--accent);
-}
-
-.col-menu-sep {
-    height: 1px;
-    background: var(--border-light);
-    margin: 2px 0;
-}
-
 /* ── Tab rename input ── */
 
 .tab-rename-input {
@@ -1662,31 +1560,8 @@ th.col-sorted .sort-indicator {
     display: inline-block;
 }
 
-/* ── Data grid ── */
-
-.data-grid {
-    min-width: 0;
-    min-height: 0;
-    overflow: auto;
-}
-
-.data-grid::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-}
-
-.data-grid::-webkit-scrollbar-track {
-    background: var(--bg-panel);
-}
-
-.data-grid::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 4px;
-}
-
 table {
     width: 100%;
-    min-width: 600px;
     border-collapse: collapse;
     table-layout: fixed;
 }
@@ -1702,7 +1577,8 @@ th {
     position: sticky;
     top: 0;
     z-index: 1;
-    padding: 0 12px;
+    height: auto;
+    padding: 6px 16px 6px 12px;
     background: var(--bg-panel);
     color: var(--text-secondary);
     font-size: 12px;
@@ -1723,130 +1599,6 @@ td input {
     font-family: var(--mono);
     font-size: var(--cell-font-size, 13px);
     user-select: text;
-}
-
-.row-index {
-    width: 44px;
-    padding: 0 10px;
-    background: var(--bg-panel);
-    color: var(--text-muted);
-    font-size: 11px;
-    font-family: var(--mono);
-    text-align: right;
-}
-
-.dirty-cell {
-    background: rgba(201, 128, 58, 0.12);
-}
-
-.dirty-cell input {
-    color: var(--orange);
-}
-
-tr:hover td {
-    background: rgba(255, 255, 255, 0.02);
-}
-
-tr:hover td.row-index {
-    background: var(--bg-panel);
-}
-
-/* ── Row delete button ── */
-
-.row-delete-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
-    margin: 0 auto;
-    border-radius: 3px;
-    font-size: 10px;
-    color: var(--text-muted);
-    background: transparent;
-    transition: background 0.1s, color 0.1s;
-}
-
-.row-delete-btn:hover {
-    background: rgba(210, 60, 60, 0.15);
-    color: #e06060;
-}
-
-.row-delete-btn-active {
-    color: #e06060;
-    background: rgba(210, 60, 60, 0.12);
-}
-
-.row-delete-btn-active:hover {
-    background: rgba(210, 60, 60, 0.25);
-    color: #e06060;
-}
-
-.row-delete-btn-new {
-    color: rgba(80, 180, 100, 0.6);
-}
-
-.row-delete-btn-new:hover {
-    background: rgba(210, 60, 60, 0.15);
-    color: #e06060;
-}
-
-/* ── Pending-delete row ── */
-
-tr.delete-row td {
-    background: rgba(210, 60, 60, 0.07);
-}
-
-tr.delete-row:hover td {
-    background: rgba(210, 60, 60, 0.11);
-}
-
-tr.delete-row td.row-index,
-tr.delete-row:hover td.row-index {
-    background: var(--bg-panel);
-}
-
-.delete-cell input {
-    color: var(--text-muted);
-    text-decoration: line-through;
-    opacity: 0.5;
-}
-
-/* ── New row ── */
-
-tr.new-row td {
-    background: rgba(80, 180, 100, 0.07);
-}
-
-tr.new-row:hover td {
-    background: rgba(80, 180, 100, 0.12);
-}
-
-tr.new-row td.row-index,
-tr.new-row:hover td.row-index {
-    background: var(--bg-panel);
-    color: #50b464;
-    font-size: 14px;
-}
-
-.new-cell {
-    background: rgba(80, 180, 100, 0.07);
-}
-
-.new-cell input {
-    color: #50b464;
-}
-
-/* ── Type rejection flash ── */
-
-@keyframes cell-reject {
-    0%   { border-color: transparent; background: rgba(220, 60, 60, 0.0); }
-    20%  { border-color: rgba(220, 60, 60, 0.7); background: rgba(220, 60, 60, 0.15); }
-    100% { border-color: transparent; background: rgba(220, 60, 60, 0.0); }
-}
-
-.cell-rejected input {
-    animation: cell-reject 0.4s ease-out forwards;
 }
 
 /* ── Structure / Plan views ── */

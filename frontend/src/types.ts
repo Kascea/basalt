@@ -14,6 +14,7 @@ export interface Tab {
   table?: string
   pinned?: boolean
   name?: string
+  addColumn?: boolean
 }
 
 export interface WorksheetTabState {

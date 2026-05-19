@@ -1,7 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { ArrowUp, ArrowDown, ArrowUpDown, X } from 'lucide-react'
+import { ArrowUp, ArrowDown, ArrowUpDown, X, Key, Plus } from 'lucide-react'
 import { type RowRecord, type DirtyCells, type SortDirection, cellKey } from '../types'
 import { colCategory, isKeyAllowed } from './columnCategory'
+import styles from './DataGrid.module.css'
+
+const DEFAULT_COL_WIDTH = 150
+const MIN_COL_WIDTH = 60
+const PLUS_COL_WIDTH = 52
+const ROW_INDEX_WIDTH = 36
 
 // ── TypedCell ─────────────────────────────────────────────────────────────────
 
@@ -36,15 +42,15 @@ function TypedCell({ value, dbType, isDirty, isNew, isPendingDelete, nullText, a
     }
   }
 
-  const cellClass = [
-    isDirty ? 'dirty-cell' : '',
-    isNew ? 'new-cell' : '',
-    isPendingDelete ? 'delete-cell' : '',
-    rejected ? 'cell-rejected' : '',
+  const cls = [
+    isDirty ? styles.dirtyCell : '',
+    isNew ? styles.newCell : '',
+    isPendingDelete ? styles.deleteCell : '',
+    rejected ? styles.cellRejected : '',
   ].filter(Boolean).join(' ') || undefined
 
   return (
-    <td className={cellClass}>
+    <td className={cls}>
       <input
         value={value}
         placeholder={value === '' && nullText ? nullText : undefined}
@@ -64,6 +70,7 @@ function TypedCell({ value, dbType, isDirty, isNew, isPendingDelete, nullText, a
 interface Props {
   columns: string[]
   columnTypes: string[]
+  primaryKeys?: string[]
   rows: RowRecord[]
   newRows: RowRecord[]
   dirtyCells: DirtyCells
@@ -78,11 +85,13 @@ interface Props {
   onRemoveNewRow: (newRowIndex: number) => void
   onSortChange?: (column: string, direction: SortDirection | null) => void
   onAddFilter?: (column: string) => void
+  onAddColumn?: () => void
 }
 
 export function DataGrid({
   columns,
   columnTypes,
+  primaryKeys = [],
   rows,
   newRows,
   dirtyCells,
@@ -97,9 +106,41 @@ export function DataGrid({
   onRemoveNewRow,
   onSortChange,
   onAddFilter,
+  onAddColumn,
 }: Props) {
   const [menuCol, setMenuCol] = useState<string | null>(null)
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
+  const [colWidths, setColWidths] = useState<number[]>(() => columns.map(() => DEFAULT_COL_WIDTH))
+  const resizeRef = useRef<{ colIdx: number; startX: number; startWidth: number } | null>(null)
+
+  useEffect(() => {
+    setColWidths(columns.map((_, i) => colWidths[i] ?? DEFAULT_COL_WIDTH))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columns.length])
+
+  const startResize = (e: React.MouseEvent, colIdx: number) => {
+    e.preventDefault()
+    e.stopPropagation()
+    resizeRef.current = { colIdx, startX: e.clientX, startWidth: colWidths[colIdx] ?? DEFAULT_COL_WIDTH }
+
+    const onMove = (ev: MouseEvent) => {
+      if (!resizeRef.current) return
+      const delta = ev.clientX - resizeRef.current.startX
+      const newWidth = Math.max(MIN_COL_WIDTH, resizeRef.current.startWidth + delta)
+      setColWidths(prev => {
+        const next = [...prev]
+        next[resizeRef.current!.colIdx] = newWidth
+        return next
+      })
+    }
+    const onUp = () => {
+      resizeRef.current = null
+      document.removeEventListener('mousemove', onMove)
+      document.removeEventListener('mouseup', onUp)
+    }
+    document.addEventListener('mousemove', onMove)
+    document.addEventListener('mouseup', onUp)
+  }
 
   const closeMenu = () => setMenuCol(null)
 
@@ -107,7 +148,7 @@ export function DataGrid({
     if (!menuCol) return
     const onDown = (e: MouseEvent) => {
       const target = e.target as Element
-      if (target.closest('th') || target.closest('.col-menu')) return
+      if (target.closest('th') || target.closest('[data-col-menu]')) return
       setMenuCol(null)
     }
     document.addEventListener('mousedown', onDown)
@@ -129,63 +170,93 @@ export function DataGrid({
     })
   }
 
+  const pkSet = new Set(primaryKeys)
+  const totalWidth = ROW_INDEX_WIDTH + colWidths.reduce((sum, w) => sum + (w ?? DEFAULT_COL_WIDTH), 0) + PLUS_COL_WIDTH
+
   return (
-    <div className="data-grid" role="grid">
-      <table>
+    <div className={styles.dataGrid} role="grid">
+      <table style={{ width: totalWidth }}>
+        <colgroup>
+          <col style={{ width: ROW_INDEX_WIDTH }} />
+          {columns.map((col, i) => (
+            <col key={col} style={{ width: colWidths[i] ?? DEFAULT_COL_WIDTH }} />
+          ))}
+          <col style={{ width: PLUS_COL_WIDTH }} />
+        </colgroup>
         <thead>
           <tr>
-            <th className="row-index">#</th>
-            {columns.map((col) => {
+            <th className={styles.rowIndex}>#</th>
+            {columns.map((col, colIdx) => {
               const isSorted = col === sortColumn
               const menuOpen = menuCol === col
+              const isPK = pkSet.has(col)
+              const colType = columnTypes[colIdx] ?? ''
               return (
                 <th
                   key={col}
-                  className={isSorted ? 'col-sorted' : ''}
-                  style={menuOpen ? { zIndex: 100 } : undefined}
+                  className={isSorted ? styles.colSorted : undefined}
+                  style={{ width: colWidths[colIdx] ?? DEFAULT_COL_WIDTH, ...(menuOpen ? { zIndex: 100 } : {}) }}
                   onClick={() => setMenuCol(menuOpen ? null : col)}
                 >
-                  {col}
-                  <span className={`sort-indicator${isSorted ? ' sort-active' : ''}`}>
-                    {isSorted ? (sortDirection === 'asc' ? <ArrowUp size={11} /> : <ArrowDown size={11} />) : <ArrowUpDown size={11} />}
-                  </span>
+                  <div className={styles.colHeaderContent}>
+                    <div className={styles.colHeaderTop}>
+                      {isPK && (
+                        <span className={styles.colPkIcon} title="Primary Key">
+                          <Key size={10} />
+                        </span>
+                      )}
+                      <span className={styles.colName}>{col}</span>
+                      <span className={`${styles.sortIndicator}${isSorted ? ` ${styles.sortActive}` : ''}`}>
+                        {isSorted ? (sortDirection === 'asc' ? <ArrowUp size={11} /> : <ArrowDown size={11} />) : <ArrowUpDown size={11} />}
+                      </span>
+                    </div>
+                    {colType && <div className={styles.colTypeLabel}>{colType.toLowerCase()}</div>}
+                  </div>
                   {menuOpen && (
-                    <div className="col-menu" onClick={e => e.stopPropagation()}>
+                    <div className={styles.colMenu} data-col-menu onClick={e => e.stopPropagation()}>
                       <button
-                        className={`col-menu-item${isSorted && sortDirection === 'asc' ? ' col-menu-item-active' : ''}`}
-                        onClick={() => { onSortChange?.(col, 'asc'); closeMenu() }}
+                        className={`${styles.colMenuItem}${isSorted && sortDirection === 'asc' ? ` ${styles.colMenuItemActive}` : ''}`}
+                        onClick={() => { onSortChange?.(col, isSorted && sortDirection === 'asc' ? null : 'asc'); closeMenu() }}
                       >
-                        <ArrowUp size={12} className="col-menu-icon" /> Sort Ascending
+                        <ArrowUp size={12} className={styles.colMenuIcon} /> Sort Ascending
                       </button>
                       <button
-                        className={`col-menu-item${isSorted && sortDirection === 'desc' ? ' col-menu-item-active' : ''}`}
-                        onClick={() => { onSortChange?.(col, 'desc'); closeMenu() }}
+                        className={`${styles.colMenuItem}${isSorted && sortDirection === 'desc' ? ` ${styles.colMenuItemActive}` : ''}`}
+                        onClick={() => { onSortChange?.(col, isSorted && sortDirection === 'desc' ? null : 'desc'); closeMenu() }}
                       >
-                        <ArrowDown size={12} className="col-menu-icon" /> Sort Descending
+                        <ArrowDown size={12} className={styles.colMenuIcon} /> Sort Descending
                       </button>
                       {isSorted && (
                         <>
-                          <div className="col-menu-sep" />
+                          <div className={styles.colMenuSep} />
                           <button
-                            className="col-menu-item col-menu-item-muted"
+                            className={styles.colMenuItem}
                             onClick={() => { onSortChange?.(col, null); closeMenu() }}
                           >
-                            <X size={12} className="col-menu-icon" /> Clear sort
+                            <X size={12} className={styles.colMenuIcon} /> Clear sort
                           </button>
                         </>
                       )}
-                      <div className="col-menu-sep" />
+                      <div className={styles.colMenuSep} />
                       <button
-                        className="col-menu-item"
+                        className={styles.colMenuItem}
                         onClick={() => { onAddFilter?.(col); closeMenu() }}
                       >
-                        <span className="col-menu-icon">+</span> Add filter
+                        <span className={styles.colMenuIcon}>+</span> Add filter
                       </button>
                     </div>
                   )}
+                  <div
+                    className={styles.colResizeHandle}
+                    onMouseDown={e => startResize(e, colIdx)}
+                    onClick={e => e.stopPropagation()}
+                  />
                 </th>
               )
             })}
+            <th className={styles.colAddTh} onClick={onAddColumn} title="Add column">
+              <Plus size={13} strokeWidth={2} />
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -196,14 +267,14 @@ export function DataGrid({
             return (
               <tr
                 key={originalIndex}
-                className={isPendingDelete ? 'delete-row' : ''}
+                className={isPendingDelete ? styles.deleteRow : undefined}
                 onMouseEnter={() => setHoveredRow(originalIndex)}
                 onMouseLeave={() => setHoveredRow(null)}
               >
-                <td className="row-index">
+                <td className={styles.rowIndex}>
                   {showDeleteBtn ? (
                     <button
-                      className={`row-delete-btn${isPendingDelete ? ' row-delete-btn-active' : ''}`}
+                      className={`${styles.rowDeleteBtn}${isPendingDelete ? ` ${styles.rowDeleteBtnActive}` : ''}`}
                       title={isPendingDelete ? 'Undo delete' : 'Delete row'}
                       onClick={() => onDeleteRow(originalIndex)}
                     >
@@ -229,14 +300,15 @@ export function DataGrid({
                     />
                   )
                 })}
+                <td />
               </tr>
             )
           })}
           {newRows.map((row, newIdx) => (
-            <tr key={`new-${newIdx}`} className="new-row">
-              <td className="row-index">
+            <tr key={`new-${newIdx}`} className={styles.newRow}>
+              <td className={styles.rowIndex}>
                 <button
-                  className="row-delete-btn row-delete-btn-new"
+                  className={`${styles.rowDeleteBtn} ${styles.rowDeleteBtnNew}`}
                   title="Remove new row"
                   onClick={() => onRemoveNewRow(newIdx)}
                 >
@@ -257,6 +329,7 @@ export function DataGrid({
                   />
                 )
               })}
+              <td />
             </tr>
           ))}
         </tbody>

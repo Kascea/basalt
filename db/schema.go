@@ -43,6 +43,9 @@ func (s StaticIntrospector) ListColumnTypes(_ context.Context, _ *sql.DB) ([]Typ
 func (StaticIntrospector) GetTableColumns(_ context.Context, _ *sql.DB, _, _ string) ([]ColumnInfo, error) {
 	return []ColumnInfo{}, nil
 }
+func (StaticIntrospector) GetPrimaryKeys(_ context.Context, _ *sql.DB, _, _ string) ([]string, error) {
+	return []string{}, nil
+}
 func (StaticIntrospector) TableExpr(schema, table string) string {
 	return quoteIdent(schema) + "." + quoteIdent(table)
 }
@@ -145,6 +148,23 @@ func (SQLiteIntrospector) GetTableColumns(ctx context.Context, db *sql.DB, _, ta
 		cols = append(cols, col)
 	}
 	return cols, rows.Err()
+}
+
+func (SQLiteIntrospector) GetPrimaryKeys(ctx context.Context, db *sql.DB, _, table string) ([]string, error) {
+	rows, err := db.QueryContext(ctx, "SELECT name FROM pragma_table_info("+quoteIdent(table)+") WHERE pk > 0 ORDER BY pk")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var pks []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		pks = append(pks, name)
+	}
+	return pks, rows.Err()
 }
 
 func (SQLiteIntrospector) TableExpr(_, table string) string { return quoteIdent(table) }
@@ -266,6 +286,34 @@ func (PostgresIntrospector) GetTableColumns(ctx context.Context, db *sql.DB, sch
 		cols = append(cols, col)
 	}
 	return cols, rows.Err()
+}
+
+func (PostgresIntrospector) GetPrimaryKeys(ctx context.Context, db *sql.DB, schema, table string) ([]string, error) {
+	rows, err := db.QueryContext(ctx, `
+		SELECT kcu.column_name
+		FROM information_schema.table_constraints tc
+		JOIN information_schema.key_column_usage kcu
+		  ON tc.constraint_name = kcu.constraint_name
+		  AND tc.table_schema = kcu.table_schema
+		  AND tc.table_name = kcu.table_name
+		WHERE tc.constraint_type = 'PRIMARY KEY'
+		  AND tc.table_schema = $1
+		  AND tc.table_name = $2
+		ORDER BY kcu.ordinal_position
+	`, schema, table)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var pks []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		pks = append(pks, name)
+	}
+	return pks, rows.Err()
 }
 
 func (PostgresIntrospector) TableExpr(schema, table string) string {

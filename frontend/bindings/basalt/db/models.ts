@@ -547,6 +547,7 @@ export class IndexInfo {
 export class QueryResult {
     "columns": string[];
     "columnTypes": string[];
+    "primaryKeys": string[];
     "rows": { [_ in string]?: string }[];
     "rowIds": string[];
     "durationMs": number;
@@ -561,6 +562,9 @@ export class QueryResult {
         }
         if (!("columnTypes" in $$source)) {
             this["columnTypes"] = [];
+        }
+        if (!("primaryKeys" in $$source)) {
+            this["primaryKeys"] = [];
         }
         if (!("rows" in $$source)) {
             this["rows"] = [];
@@ -590,10 +594,11 @@ export class QueryResult {
     static createFrom($$source: any = {}): QueryResult {
         const $$createField0_0 = $$createType8;
         const $$createField1_0 = $$createType8;
-        const $$createField2_0 = $$createType10;
-        const $$createField3_0 = $$createType8;
-        const $$createField6_0 = $$createType12;
-        const $$createField7_0 = $$createType14;
+        const $$createField2_0 = $$createType8;
+        const $$createField3_0 = $$createType10;
+        const $$createField4_0 = $$createType8;
+        const $$createField7_0 = $$createType12;
+        const $$createField8_0 = $$createType14;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("columns" in $$parsedSource) {
             $$parsedSource["columns"] = $$createField0_0($$parsedSource["columns"]);
@@ -601,17 +606,20 @@ export class QueryResult {
         if ("columnTypes" in $$parsedSource) {
             $$parsedSource["columnTypes"] = $$createField1_0($$parsedSource["columnTypes"]);
         }
+        if ("primaryKeys" in $$parsedSource) {
+            $$parsedSource["primaryKeys"] = $$createField2_0($$parsedSource["primaryKeys"]);
+        }
         if ("rows" in $$parsedSource) {
-            $$parsedSource["rows"] = $$createField2_0($$parsedSource["rows"]);
+            $$parsedSource["rows"] = $$createField3_0($$parsedSource["rows"]);
         }
         if ("rowIds" in $$parsedSource) {
-            $$parsedSource["rowIds"] = $$createField3_0($$parsedSource["rowIds"]);
+            $$parsedSource["rowIds"] = $$createField4_0($$parsedSource["rowIds"]);
         }
         if ("plan" in $$parsedSource) {
-            $$parsedSource["plan"] = $$createField6_0($$parsedSource["plan"]);
+            $$parsedSource["plan"] = $$createField7_0($$parsedSource["plan"]);
         }
         if ("objectStats" in $$parsedSource) {
-            $$parsedSource["objectStats"] = $$createField7_0($$parsedSource["objectStats"]);
+            $$parsedSource["objectStats"] = $$createField8_0($$parsedSource["objectStats"]);
         }
         return new QueryResult($$parsedSource as Partial<QueryResult>);
     }

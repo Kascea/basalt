@@ -56,6 +56,7 @@ type SchemaObjectSummary struct {
 type QueryResult struct {
 	Columns     []string              `json:"columns"`
 	ColumnTypes []string              `json:"columnTypes"`
+	PrimaryKeys []string              `json:"primaryKeys"`
 	Rows        []map[string]string   `json:"rows"`
 	RowIDs      []string              `json:"rowIds"`
 	DurationMS  int                   `json:"durationMs"`
@@ -132,6 +133,9 @@ type Introspector interface {
 	// WhereRowID returns a parameterised WHERE predicate matching a row by its RowID.
 	// param is the placeholder index (e.g. 2 → "$2::tid" for Postgres).
 	WhereRowID(param int) string
+
+	// GetPrimaryKeys returns the primary-key column names for the given table in order.
+	GetPrimaryKeys(ctx context.Context, db *sql.DB, schema, table string) ([]string, error)
 }
 
 // ── Object operation types ────────────────────────────────────────────────────
