@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties } from 'react'
+import { useState, useEffect, useRef, type CSSProperties } from 'react'
 import navStyles from './settings/settings.module.css'
 import { Window, Events } from '@wailsio/runtime'
 import { Paintbrush, Terminal, Settings, Link, Database, DatabaseIcon, Plus, ArrowLeft } from 'lucide-react'
@@ -13,104 +13,47 @@ import { useTableTabs } from './table/useTableTabs'
 import { useSettings } from './settings/useSettings'
 import { WorkspaceProvider } from './workspace/WorkspaceContext'
 import { ConnectionProvider } from './connection/ConnectionContext'
-import type { AppSettings, SavedConnection } from '../bindings/basalt/localdb/models'
-import type { LogEntry, Tab } from './types'
+import { useStatusLog } from './useStatusLog'
+import { useTabPersistence } from './table/useTabPersistence'
+import { useWorkspaceComposer } from './workspace/useWorkspaceComposer'
+import type { SavedConnection } from '../bindings/basalt/localdb/models'
 import { useResizeDrag } from './workspace/useResizeDrag'
 
 type AppView = 'main' | 'settings'
 
 const SETTINGS_NAV: Array<{ id: SettingsSection; label: string; icon: React.ReactNode }> = [
-  { id: 'appearance', label: 'Appearance',        icon: <Paintbrush size={17} /> },
-  { id: 'query',      label: 'Query',             icon: <Terminal size={17} /> },
-  { id: 'general',    label: 'General',           icon: <Settings size={17} /> },
-  { id: 'connections', label: 'Connections',      icon: <Database size={17} /> },
+  { id: 'appearance', label: 'Appearance',         icon: <Paintbrush size={17} /> },
+  { id: 'query',      label: 'Query',              icon: <Terminal size={17} /> },
+  { id: 'general',    label: 'General',            icon: <Settings size={17} /> },
+  { id: 'connections', label: 'Connections',       icon: <Database size={17} /> },
   { id: 'accounts',   label: 'Connected Accounts', icon: <Link size={17} /> },
 ]
 
-const TAB_STORAGE_KEY = 'basalt:tabs'
-
-interface PersistedTabs {
-  tabs: Tab[]
-  activeTabId: string
-  worksheetSQL: Record<string, string>
-}
-
-function loadPersistedTabs(): PersistedTabs | null {
-  try {
-    const raw = localStorage.getItem(TAB_STORAGE_KEY)
-    if (!raw) return null
-    return JSON.parse(raw) as PersistedTabs
-  } catch {
-    return null
-  }
-}
-
 function App() {
   const [sidebarWidth, startSidebarDrag] = useResizeDrag(260, 160, 520)
-
-  const [statusLog, setStatusLog] = useState<LogEntry[]>(() => [{
-    id: 0,
-    ts: new Date().toLocaleTimeString('en-US', { hour12: false }),
-    text: 'Ready — no active connection',
-    isError: false,
-  }])
-
-  const logIdRef = useRef(1)
-  const addStatus = useCallback((msg: string, isSuccess = false) => {
-    const id = logIdRef.current++
-    setStatusLog(prev => [...prev, {
-      id,
-      ts: new Date().toLocaleTimeString('en-US', { hour12: false }),
-      text: msg,
-      isError: msg.startsWith('Error:'),
-      isSuccess,
-    }])
-  }, [])
+  const [statusLog, addStatus] = useStatusLog()
+  const db = useDatabase(addStatus)
+  const { settings, saveSettings } = useSettings()
+  const tableTabs = useTableTabs(addStatus)
 
   const [currentView, setCurrentView] = useState<AppView>('main')
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('appearance')
   const [editingConnection, setEditingConnection] = useState<SavedConnection | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<{ count: number } | null>(null)
 
-  const db = useDatabase(addStatus)
-  const { settings, saveSettings } = useSettings()
-  const tableTabs = useTableTabs(addStatus)
+  const openSettings = (section: SettingsSection = 'appearance') => {
+    setSettingsSection(section)
+    setCurrentView('settings')
+  }
 
-  // Always-current ref so memoized callbacks never capture stale tableTabs functions
-  const tableTabsRef = useRef(tableTabs)
-  tableTabsRef.current = tableTabs
+  useTabPersistence(tableTabs)
 
-  const activeConnectionID = tableTabs.activeTab.connectionID
-  const activeConnection = db.connections.find(c => c.id === activeConnectionID)
-
-
-  // ── Tab persistence ───────────────────────────────────────────────────────
-
-  const restoredRef = useRef(false)
-  useEffect(() => {
-    if (restoredRef.current) return
-    restoredRef.current = true
-    const persisted = loadPersistedTabs()
-    if (!persisted || persisted.tabs.length === 0) return
-    tableTabs.restoreTabs(persisted.tabs, persisted.activeTabId, persisted.worksheetSQL)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => {
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
-    saveTimerRef.current = setTimeout(() => {
-      const worksheetSQL: Record<string, string> = {}
-      for (const [id, state] of Object.entries(tableTabs.worksheetStates)) {
-        if (state.sql) worksheetSQL[id] = state.sql
-      }
-      localStorage.setItem(TAB_STORAGE_KEY, JSON.stringify({
-        tabs: tableTabs.tabs,
-        activeTabId: tableTabs.activeTabId,
-        worksheetSQL,
-      }))
-    }, 500)
-    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
-  }, [tableTabs.tabs, tableTabs.activeTabId, tableTabs.worksheetStates])
+  const { session, connectionSession, handleTableCommit, handleOpenConnection, handleSettingsChange } =
+    useWorkspaceComposer(db, tableTabs, settings, saveSettings, statusLog, addStatus, {
+      openSettings,
+      setEditingConnection,
+      setConfirmDelete,
+    })
 
   // ── Lazy tab loading ──────────────────────────────────────────────────────
 
@@ -130,56 +73,9 @@ function App() {
     }
   }, [tableTabs.activeTabId, db.connections]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── FK tab handler ────────────────────────────────────────────────────────
-
-  const activeFkError = tableTabs.activeTableState?.commitError ?? null
-
-  const handleOpenFkTab = () => {
-    if (!activeFkError) return
-    tableTabs.openTableTabWithPrefill(
-      tableTabs.activeTab.connectionID,
-      tableTabs.activeTab.schema,
-      activeFkError.referencedTable,
-      { [activeFkError.column]: activeFkError.value },
-    )
-  }
-
-  const handleTableCommit = () => {
-    const state = tableTabs.activeTableState
-    if (settings?.confirmDeleteRows && state && state.pendingDeletes.size > 0) {
-      setConfirmDelete({ count: state.pendingDeletes.size })
-      return
-    }
-    tableTabs.commitEdits()
-  }
-
-  const handleEditSaved = (conn: SavedConnection) => setEditingConnection(conn)
-  const handleCloseModal = () => setEditingConnection(null)
-
-  const handleOpenConnection = (id: string) => {
-    const isConnected = db.connections.some(c => c.id === id)
-    const openWorksheet = () => {
-      tableTabs.openWorksheetTab(id)
-      setCurrentView('main')
-    }
-    if (isConnected) {
-      openWorksheet()
-    } else {
-      db.reconnect(id, openWorksheet)
-    }
-  }
-
-  const openSettings = (section: SettingsSection = 'appearance') => {
-    setSettingsSection(section)
-    setCurrentView('settings')
-  }
-
-  const handleSettingsChange = (patch: Partial<AppSettings>) => {
-    if (settings) saveSettings({ ...settings, ...patch })
-  }
-
   // ── Menu events ───────────────────────────────────────────────────────────
 
+  const activeConnectionID = tableTabs.activeTab.connectionID
   const menuRef = useRef({
     openNewConnection: () => openSettings('connections'),
     openSettings: () => openSettings(),
@@ -208,93 +104,6 @@ function App() {
     ]
     return () => offs.forEach((off) => off())
   }, [])
-
-  // ── Context values ────────────────────────────────────────────────────────
-
-  const activeWS = tableTabs.activeWorksheetState
-
-  const connectionSession = useMemo(() => ({
-    savedConnections: db.savedConnections,
-    connections: db.connections,
-    activeTabConnectionID: activeConnectionID,
-    objectsByConnection: db.objectsByConnection,
-    isConnecting: db.isConnecting,
-    onNewConnection: () => openSettings('connections'),
-    onConnectionClick: () => {},
-    onReconnect: db.reconnect,
-    onDisconnect: db.disconnect,
-    onDeleteSaved: db.deleteSaved,
-    onEditSaved: handleEditSaved,
-    onReorderSaved: db.reorderSaved,
-    onRefresh: () => db.refreshObjects(activeConnectionID),
-    onTableOpen: (connectionID: string, schema: string, table: string) => { tableTabsRef.current.openTableTab(connectionID, schema, table); setCurrentView('main') },
-    onTableOpenNewTab: (connectionID: string, schema: string, table: string) => { tableTabsRef.current.openTableTab(connectionID, schema, table); setCurrentView('main') },
-    onTableOpenSchema: (connectionID: string, schema: string, table: string) => { tableTabsRef.current.openSchemaTab(connectionID, schema, table); setCurrentView('main') },
-    onGroupOpen: (connectionID: string, schema: string, kind: 'sequences' | 'indexes') => { tableTabsRef.current.openGroupTab(connectionID, schema, kind); setCurrentView('main') },
-  }), [db.savedConnections, db.connections, db.objectsByConnection, db.isConnecting, activeConnectionID]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const tabsValue = useMemo(() => ({
-    list: tableTabs.tabs,
-    activeId: tableTabs.activeTabId,
-    active: tableTabs.activeTab,
-    activeTableState: tableTabs.activeTableState,
-    activeWorksheetState: tableTabs.activeWorksheetState,
-    setActive: tableTabs.setActiveTab,
-    close: tableTabs.closeTab,
-    closeAll: tableTabs.closeAllTabs,
-    togglePin: tableTabs.togglePinTab,
-    rename: tableTabs.renameTab,
-    openTable: tableTabs.openTableTab,
-    openTableWithPrefill: tableTabs.openTableTabWithPrefill,
-    openSchema: tableTabs.openSchemaTab,
-    openGroup: tableTabs.openGroupTab,
-    openWorksheet: tableTabs.openWorksheetTab,
-    setTabConnectionID: tableTabs.setTabConnectionID,
-    reorder: tableTabs.reorderTabs,
-  }), [tableTabs.tabs, tableTabs.activeTabId, tableTabs.activeTab, tableTabs.activeTableState, tableTabs.activeWorksheetState]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const tableEditorValue = useMemo(() => ({
-    updateCell: tableTabs.updateCell,
-    updateNewCell: tableTabs.updateNewCell,
-    addRow: tableTabs.addNewRow,
-    removeRow: tableTabs.removeNewRow,
-    markForDelete: tableTabs.markForDelete,
-    discard: tableTabs.discardEdits,
-    commit: tableTabs.commitEdits,
-    refresh: tableTabs.refreshActiveTable,
-    setFilter: tableTabs.setFilterExpr,
-  }), [tableTabs.activeTabId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const worksheetValue = useMemo(() => ({
-    isRunning: activeWS?.isRunning ?? false,
-    result: activeWS?.result ?? null,
-    rows: activeWS?.rows ?? [],
-    dirtyCells: activeWS?.dirtyCells ?? {},
-    sql: activeWS?.sql ?? '',
-    setSql: tableTabs.setSql,
-    run: tableTabs.runQuery,
-    updateCell: tableTabs.updateQueryCell,
-    discard: tableTabs.discardQueryEdits,
-  }), [activeWS]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const statusValue = useMemo(() => ({
-    log: statusLog,
-    set: addStatus,
-    activeFkError,
-    openFkTab: handleOpenFkTab,
-  }), [statusLog, activeFkError]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const session = useMemo(() => ({
-    connection: {
-      connections: db.connections,
-      active: activeConnection,
-      objects: db.objectsByConnection[activeConnectionID] ?? [],
-    },
-    tabs: tabsValue,
-    tableEditor: tableEditorValue,
-    worksheet: worksheetValue,
-    status: statusValue,
-  }), [db.connections, activeConnection, db.objectsByConnection, activeConnectionID, tabsValue, tableEditorValue, worksheetValue, statusValue])
 
   return (
     <main
@@ -377,22 +186,22 @@ function App() {
           onDeleteSaved={(id) => db.deleteSaved(id)}
           onReconnect={db.reconnect}
           onDisconnect={db.disconnect}
-          onEditSaved={handleEditSaved}
+          onEditSaved={setEditingConnection}
           onConnect={(name, driver, cs, psKey, sbKey) => db.connect(name, driver, cs, undefined, psKey, sbKey)}
-          onOpenConnection={handleOpenConnection}
+          onOpenConnection={(id) => { handleOpenConnection(id); setCurrentView('main') }}
           activeSection={settingsSection}
         />
       )}
 
       {editingConnection && (
-        <Modal title="Edit Connection" onClose={handleCloseModal}>
+        <Modal title="Edit Connection" onClose={() => setEditingConnection(null)}>
           <ConnectForm
             isConnecting={db.isConnecting === editingConnection.id}
             initialValues={editingConnection}
             onConnect={(name, driver, connectionString, planetscaleKey) =>
-              db.connect(name, driver, connectionString, handleCloseModal, planetscaleKey)
+              db.connect(name, driver, connectionString, () => setEditingConnection(null), planetscaleKey)
             }
-            onSaveOnly={(conn) => { db.updateSaved(conn); handleCloseModal() }}
+            onSaveOnly={(conn) => { db.updateSaved(conn); setEditingConnection(null) }}
           />
         </Modal>
       )}

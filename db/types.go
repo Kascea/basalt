@@ -112,7 +112,7 @@ type FKViolation struct {
 // ── Introspector interface ────────────────────────────────────────────────────
 
 // Introspector is the per-driver adapter for database metadata and row addressing.
-// Each driver provides one concrete adapter; callers go through introspectorFor().
+// Each driver provides one concrete adapter; the adapter is bound to an openConnection at connect time.
 type Introspector interface {
 	ListObjects(ctx context.Context, db *sql.DB) ([]SchemaObject, error)
 	ObjectStats(ctx context.Context, db *sql.DB) ([]SchemaObjectSummary, error)

@@ -57,7 +57,7 @@ func (d *DatabaseService) Connect(request ConnectRequest) (Connection, error) {
 	if existing := d.connections[id]; existing != nil {
 		existing.db.Close()
 	}
-	d.connections[id] = &openConnection{db: db, profile: profile, driver: driver}
+	d.connections[id] = &openConnection{db: db, profile: profile, driver: driver, intr: introspectorFor(driver)}
 	d.mu.Unlock()
 
 	return profile, nil

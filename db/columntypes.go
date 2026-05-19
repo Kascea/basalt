@@ -110,7 +110,7 @@ func (d *DatabaseService) ListColumnTypes(connectionID string) ([]TypeGroup, err
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	return introspectorFor(conn.driver).ListColumnTypes(ctx, conn.db)
+	return conn.intr.ListColumnTypes(ctx, conn.db)
 }
 
 func listPostgresTypes(ctx context.Context, db *sql.DB) ([]TypeGroup, error) {

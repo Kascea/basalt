@@ -14,7 +14,7 @@ func (d *DatabaseService) GetTableColumns(connectionID, schema, table string) ([
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	return introspectorFor(conn.driver).GetTableColumns(ctx, conn.db, schema, table)
+	return conn.intr.GetTableColumns(ctx, conn.db, schema, table)
 }
 
 func (d *DatabaseService) ListSchemaObjects(connectionID string) ([]SchemaObject, error) {
@@ -24,7 +24,7 @@ func (d *DatabaseService) ListSchemaObjects(connectionID string) ([]SchemaObject
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	return introspectorFor(conn.driver).ListObjects(ctx, conn.db)
+	return conn.intr.ListObjects(ctx, conn.db)
 }
 
 // ── StaticIntrospector ────────────────────────────────────────────────────────

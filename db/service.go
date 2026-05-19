@@ -25,6 +25,7 @@ type openConnection struct {
 	db      *sql.DB
 	profile Connection
 	driver  Driver
+	intr    Introspector
 }
 
 func NewDatabaseService(store *localdb.Store) *DatabaseService {

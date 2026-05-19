@@ -18,8 +18,6 @@ func (d *DatabaseService) CreateTable(connectionID string, req CreateTableReques
 	if err != nil {
 		return err
 	}
-	intr := introspectorFor(conn.driver)
-
 	colDefs := make([]string, 0, len(req.Columns))
 	for _, col := range req.Columns {
 		if strings.TrimSpace(col.Name) == "" || strings.TrimSpace(col.DataType) == "" {
@@ -40,7 +38,7 @@ func (d *DatabaseService) CreateTable(connectionID string, req CreateTableReques
 
 	query := fmt.Sprintf(
 		"CREATE TABLE %s (\n  %s\n)",
-		intr.TableExpr(req.Schema, req.Name),
+		conn.intr.TableExpr(req.Schema, req.Name),
 		strings.Join(colDefs, ",\n  "),
 	)
 	return d.execDDL(connectionID, 10*time.Second, query)
@@ -51,6 +49,6 @@ func (d *DatabaseService) DropTable(connectionID, schema, name string) error {
 	if err != nil {
 		return err
 	}
-	query := fmt.Sprintf("DROP TABLE %s", introspectorFor(conn.driver).TableExpr(schema, name))
+	query := fmt.Sprintf("DROP TABLE %s", conn.intr.TableExpr(schema, name))
 	return d.execDDL(connectionID, 10*time.Second, query)
 }

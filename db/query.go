@@ -96,8 +96,7 @@ func (d *DatabaseService) FetchTable(connectionID, schema, table, where string) 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	intr := introspectorFor(conn.driver)
-	query := fmt.Sprintf("SELECT %s AS __rowid, * FROM %s.%s", intr.RowIDExpr(), quoteIdent(schema), quoteIdent(table))
+	query := fmt.Sprintf("SELECT %s AS __rowid, * FROM %s.%s", conn.intr.RowIDExpr(), quoteIdent(schema), quoteIdent(table))
 	if trimmedWhere != "" {
 		query += " WHERE " + trimmedWhere
 	}
@@ -156,7 +155,7 @@ func (d *DatabaseService) FetchTable(connectionID, schema, table, where string) 
 		msg += fmt.Sprintf(" (limit %d)", rowLimit)
 	}
 
-	pks, _ := intr.GetPrimaryKeys(ctx, conn.db, schema, table)
+	pks, _ := conn.intr.GetPrimaryKeys(ctx, conn.db, schema, table)
 	if pks == nil {
 		pks = []string{}
 	}
