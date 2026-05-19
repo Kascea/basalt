@@ -6,6 +6,7 @@
 
 import { createContext, useContext } from 'react'
 import type { Connection, SchemaObject } from '../../bindings/basalt/db'
+import type { LogEntry } from '../types'
 import type { TabSession } from '../tabs/TabContext'
 import type { TableEditorSession } from '../table/TableEditorContext'
 import type { WorksheetSession } from '../sql/WorksheetContext'
@@ -26,6 +27,7 @@ export interface WorkspaceSession {
   tableEditor: TableEditorSession
   worksheet: WorksheetSession
   status: StatusSession
+  tabStatus: { log: LogEntry[]; set: (msg: string) => void }
   defaultRowLimit: number
 }
 

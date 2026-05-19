@@ -148,6 +148,11 @@ export function useWorkspaceComposer(
     openFkTab: handleOpenFkTab,
   }), [statusLog, activeFkError]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  const tabStatusValue = useMemo(() => ({
+    log: tableTabs.activeTabStatusLog,
+    set: (msg: string) => tableTabs.addTabStatus(tableTabs.activeTabId, msg),
+  }), [tableTabs.activeTabStatusLog, tableTabs.activeTabId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const session = useMemo(() => ({
     connection: {
       connections: db.connections,
@@ -158,8 +163,9 @@ export function useWorkspaceComposer(
     tableEditor: tableEditorValue,
     worksheet: worksheetValue,
     status: statusValue,
+    tabStatus: tabStatusValue,
     defaultRowLimit: settings?.defaultRowLimit ?? 1000,
-  }), [db.connections, activeConnection, db.objectsByConnection, activeConnectionID, tabsValue, tableEditorValue, worksheetValue, statusValue, settings?.defaultRowLimit])
+  }), [db.connections, activeConnection, db.objectsByConnection, activeConnectionID, tabsValue, tableEditorValue, worksheetValue, statusValue, tabStatusValue, settings?.defaultRowLimit])
 
   return {
     session,

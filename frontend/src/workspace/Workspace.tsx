@@ -8,7 +8,7 @@ import { IndexView } from '../schema/IndexView'
 import { ForeignKeyView } from '../table/ForeignKeyView'
 import { SchemaView } from '../schema/SchemaView'
 import { StatusBar } from './StatusBar'
-import { PaginationBar } from '../table/PaginationBar'
+import { TableStatusBar } from './TableStatusBar'
 import { TabContextMenu } from '../tabs/TabContextMenu'
 import { useWorkspaceSession } from './WorkspaceContext'
 import { DatabaseClient } from '../db/client'
@@ -75,7 +75,7 @@ interface Props { onCommit: () => void }
 
 export function Workspace({ onCommit }: Props) {
   const session = useWorkspaceSession()
-  const { connection, tabs: tabsNs, tableEditor, worksheet, status } = session
+  const { connection, tabs: tabsNs, tableEditor, worksheet, status, tabStatus } = session
   const { connections, active: activeConnection, objects } = connection
   const {
     list: tabs, activeId: activeTabId, active: activeTab, activeTableState,
@@ -357,15 +357,15 @@ export function Workspace({ onCommit }: Props) {
         )}
 
         {activeTab.kind === 'sequences' && (
-          <SequenceView connectionID={activeTab.connectionID} schema={activeTab.schema} onStatus={setStatus} />
+          <SequenceView connectionID={activeTab.connectionID} schema={activeTab.schema} onStatus={tabStatus.set} />
         )}
 
         {activeTab.kind === 'indexes' && (
-          <IndexView connectionID={activeTab.connectionID} schema={activeTab.schema} onStatus={setStatus} />
+          <IndexView connectionID={activeTab.connectionID} schema={activeTab.schema} onStatus={tabStatus.set} />
         )}
 
         {activeTab.kind === 'foreignkeys' && (
-          <ForeignKeyView connectionID={activeTab.connectionID} schema={activeTab.schema} onStatus={setStatus} />
+          <ForeignKeyView connectionID={activeTab.connectionID} schema={activeTab.schema} onStatus={tabStatus.set} />
         )}
 
         {activeTab.kind === 'schema' && activeTab.table && (
@@ -379,23 +379,24 @@ export function Workspace({ onCommit }: Props) {
         )}
       </div>
 
-      {activeTab.kind !== 'worksheet' && (
-        <StatusBar
+      {activeTab.kind === 'table' && (
+        <TableStatusBar
           entries={statusLog}
           durationMs={activeDurationMs}
           fkError={activeFkError}
           onOpenFkTab={openFkTab}
-        />
-      )}
-      {activeTab.kind === 'table' && activeTableState?.result && (
-        <PaginationBar
-          currentPage={activeTableState.currentPage}
-          totalRows={activeTableState.totalRows}
-          pageSize={activeTableState.pageSize}
+          currentPage={activeTableState?.currentPage ?? 0}
+          totalRows={activeTableState?.totalRows ?? 0}
+          pageSize={activeTableState?.pageSize ?? defaultRowLimit}
           defaultPageSize={defaultRowLimit}
-          isRefreshing={activeTableState.isRefreshing}
+          isRefreshing={activeTableState?.isRefreshing ?? false}
           onGoToPage={goToPage}
           onSetPageSize={setPageSize}
+        />
+      )}
+      {(activeTab.kind === 'schema' || activeTab.kind === 'sequences' || activeTab.kind === 'indexes' || activeTab.kind === 'foreignkeys') && (
+        <StatusBar
+          entries={tabStatus.log}
         />
       )}
 

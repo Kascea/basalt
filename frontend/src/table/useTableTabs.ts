@@ -1,11 +1,27 @@
-import { useEffect } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useTabManager } from '../tabs/useTabManager'
 import { useTableSession } from './useTableSession'
 import { useWorksheetSession } from '../sql/useWorksheetSession'
-import type { Tab } from '../types'
+import type { Tab, LogEntry } from '../types'
 
 export function useTableTabs(setStatus: (msg: string, isSuccess?: boolean) => void) {
   const tabManager = useTabManager()
+  const [tabStatusLogs, setTabStatusLogs] = useState<Record<string, LogEntry[]>>({})
+  const tabLogIdRef = useRef(0)
+
+  const addTabStatus = useCallback((tabId: string, msg: string) => {
+    const id = tabLogIdRef.current++
+    setTabStatusLogs(prev => ({
+      ...prev,
+      [tabId]: [...(prev[tabId] ?? []), {
+        id,
+        ts: new Date().toLocaleTimeString('en-US', { hour12: false }),
+        text: msg,
+        isError: msg.startsWith('Error:'),
+        isSuccess: false,
+      }],
+    }))
+  }, [])
   const { lastTabEvent, clearTabEvent } = tabManager
 
   const tableSession = useTableSession({
@@ -98,5 +114,9 @@ export function useTableTabs(setStatus: (msg: string, isSuccess?: boolean) => vo
     updateQueryCell: worksheetSession.updateQueryCell,
     discardQueryEdits: worksheetSession.discardQueryEdits,
     clearWorksheetLog: worksheetSession.clearWorksheetLog,
+
+    // Per-tab status (for schema / sequence / index / foreignkeys tabs)
+    activeTabStatusLog: tabStatusLogs[tabManager.activeTabId] ?? [],
+    addTabStatus,
   }
 }

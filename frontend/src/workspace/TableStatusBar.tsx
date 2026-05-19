@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import styles from './PaginationBar.module.css'
+import type { LogEntry, FKError } from '../types'
+import { parseError } from '../lib/parseError'
+import styles from './StatusBar.module.css'
 
 const PAGE_SIZE_OPTIONS = [
   { value: 100,  label: '100 rows' },
@@ -10,6 +12,10 @@ const PAGE_SIZE_OPTIONS = [
 ]
 
 interface Props {
+  entries: LogEntry[]
+  durationMs?: number
+  fkError?: FKError | null
+  onOpenFkTab?: () => void
   currentPage: number
   totalRows: number
   pageSize: number
@@ -19,7 +25,17 @@ interface Props {
   onSetPageSize: (size: number) => void
 }
 
-export function PaginationBar({
+function extractErrorText(raw: string): string {
+  let msg = parseError(raw)
+  const dbIdx = msg.indexOf('ERROR:')
+  if (dbIdx !== -1) msg = msg.slice(dbIdx)
+  msg = msg.replace(/^ERROR:\s*/i, '')
+  msg = msg.replace(/\s*\(SQLSTATE\s+([^)]+)\)/, ' [$1]')
+  return msg.trim()
+}
+
+export function TableStatusBar({
+  entries, durationMs, fkError, onOpenFkTab,
   currentPage, totalRows, pageSize, defaultPageSize, isRefreshing, onGoToPage, onSetPageSize,
 }: Props) {
   const totalPages = pageSize > 0 && totalRows > 0
@@ -27,10 +43,7 @@ export function PaginationBar({
     : 1
 
   const [inputValue, setInputValue] = useState(String(currentPage + 1))
-
-  useEffect(() => {
-    setInputValue(String(currentPage + 1))
-  }, [currentPage])
+  useEffect(() => { setInputValue(String(currentPage + 1)) }, [currentPage])
 
   const commitPage = () => {
     const parsed = parseInt(inputValue, 10)
@@ -43,9 +56,39 @@ export function PaginationBar({
 
   const selectedSize = pageSize > 0 ? pageSize : defaultPageSize
 
+  const last = entries[entries.length - 1]
+  const isError = last?.isError ?? false
+  const isSuccess = last?.isSuccess ?? false
+  const text = last ? (isError ? extractErrorText(last.text) : last.text) : ''
+
+  const barClass = [
+    styles.bar,
+    isError ? styles.barError : isSuccess ? styles.barSuccess : '',
+  ].filter(Boolean).join(' ')
+
   return (
-    <div className={styles.bar}>
-      <div className={styles.right}>
+    <div className={barClass}>
+      {last && <span className={styles.ts}>{last.ts}</span>}
+      {last && (
+        isError && fkError ? (
+          <span className={styles.text}>
+            Foreign key violation: <strong>{fkError.column}</strong> = <strong>{fkError.value}</strong> not found in{' '}
+            <button className={styles.fkLink} onClick={onOpenFkTab}>
+              {fkError.referencedTable} ↗
+            </button>
+            {' '}— click to open and create the missing row.
+          </span>
+        ) : (
+          <span className={styles.text}>{text}</span>
+        )
+      )}
+      {durationMs !== undefined && (
+        <span className={styles.duration}>{durationMs}ms</span>
+      )}
+
+      <div style={{ flex: 1 }} />
+
+      <div className={styles.paginationRight}>
         <button
           className={styles.navBtn}
           onClick={() => onGoToPage(currentPage - 1)}
