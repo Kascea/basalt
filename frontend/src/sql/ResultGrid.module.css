@@ -1,0 +1,70 @@
+.resultGrid {
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+}
+
+.resultGrid::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.resultGrid::-webkit-scrollbar-track {
+    background: var(--bg-panel);
+}
+
+.resultGrid::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+.resultGrid table {
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.resultGrid th {
+    position: relative;
+    text-align: left;
+    overflow: hidden;
+    cursor: default;
+    user-select: none;
+}
+
+.colName {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.colResizeHandle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 4px;
+    height: 100%;
+    cursor: col-resize;
+}
+
+.colResizeHandle:hover {
+    background: var(--accent);
+}
+
+.resultGrid td {
+    overflow: hidden;
+}
+
+.resultGrid td span {
+    display: block;
+    width: 100%;
+    height: calc(var(--cell-height, 34px) - 1px);
+    padding: 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--mono);
+    font-size: var(--cell-font-size, 13px);
+    color: var(--text-primary);
+    line-height: calc(var(--cell-height, 34px) - 1px);
+}

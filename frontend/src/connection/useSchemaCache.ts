@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { DatabaseClient } from '../db/client'
 import type { SchemaObject } from '../../bindings/basalt/db'
+import { parseError } from '../lib/parseError'
 
 // Caches Schema Objects per Connection.
 // Kept separate from connection lifecycle so cache invalidation logic
@@ -20,7 +21,7 @@ export function useSchemaCache(setStatus: (msg: string) => void): SchemaCache {
     DatabaseClient.listSchemaObjects(connID)
       .then(objs => setObjectsByConnection(prev => ({ ...prev, [connID]: objs })))
       .catch(err => {
-        setStatus(String(err))
+        setStatus(parseError(err))
         setObjectsByConnection(prev => ({ ...prev, [connID]: [] }))
       })
   }
@@ -29,7 +30,7 @@ export function useSchemaCache(setStatus: (msg: string) => void): SchemaCache {
     if (!connID) return
     DatabaseClient.listSchemaObjects(connID)
       .then(objs => setObjectsByConnection(prev => ({ ...prev, [connID]: objs })))
-      .catch(err => setStatus(String(err)))
+      .catch(err => setStatus(parseError(err)))
   }
 
   const removeObjects = (connID: string) => {

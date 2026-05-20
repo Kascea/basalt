@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { DatabaseService, type QueryResult } from '../../bindings/basalt/db'
 import { type RowRecord, type DirtyCells, cellKey } from '../types'
+import { parseError } from '../lib/parseError'
 
 export interface WorksheetState {
   sql: string
@@ -34,7 +35,7 @@ export function useWorksheet(connectionID: string, setStatus: (msg: string) => v
         setDirtyCells({})
         setStatus(res.message)
       })
-      .catch((err) => setStatus(String(err)))
+      .catch((err) => setStatus(parseError(err)))
       .finally(() => setIsRunning(false))
   }
 

@@ -12,6 +12,7 @@ import { TableStatusBar } from './TableStatusBar'
 import { TabContextMenu } from '../tabs/TabContextMenu'
 import { useWorkspaceSession } from './WorkspaceContext'
 import { DatabaseClient } from '../db/client'
+import { parseError } from '../lib/parseError'
 import type { Tab } from '../types'
 
 function tabLabel(tab: Tab): string {
@@ -90,7 +91,8 @@ export function Workspace({ onCommit }: Props) {
   } = tableEditor
   const { defaultRowLimit } = session
   const {
-    isRunning, result: queryResult, rows: queryRows, dirtyCells: queryDirty,
+    isRunning, isPlanLoading, planLines,
+    result: queryResult, rows: queryRows, dirtyCells: queryDirty,
     sql, setSql, run: runQuery, updateCell: updateQueryCell, discard: discardQueryEdits,
     log: worksheetLog, clearLog: clearWorksheetLog,
   } = worksheet
@@ -152,7 +154,7 @@ export function Workspace({ onCommit }: Props) {
       renameTab(activeTabId, filename)
       setStatus(`Saved to ${path}`)
     } catch (err) {
-      setStatus(`Failed to save file: ${String(err)}`)
+      setStatus(`Failed to save file: ${parseError(err)}`)
     }
   }
 
@@ -180,7 +182,7 @@ export function Workspace({ onCommit }: Props) {
             renameTab(tabId, filename)
             setActiveTab(tabId)
           } catch (err) {
-            setStatus(`Failed to read file: ${String(err)}`)
+            setStatus(`Failed to read file: ${parseError(err)}`)
           }
         },
       })
@@ -323,6 +325,8 @@ export function Workspace({ onCommit }: Props) {
             connectionId={activeConnection?.id}
             driver={activeConnection?.driver}
             isRunning={isRunning}
+            isPlanLoading={isPlanLoading}
+            planLines={planLines}
             onSqlChange={setSql}
             onCellChange={updateQueryCell}
             onDiscard={discardQueryEdits}

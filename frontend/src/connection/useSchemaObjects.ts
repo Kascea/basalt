@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { parseError } from '../lib/parseError'
 
 interface UseSchemaObjectsOptions<TItem, TForm> {
   connectionID: string
@@ -44,7 +45,7 @@ export function useSchemaObjects<TItem, TForm>(
     setIsLoading(true)
     onLoad()
       .then(setItems)
-      .catch((err) => onStatus(String(err)))
+      .catch((err) => onStatus(parseError(err)))
       .finally(() => setIsLoading(false))
   }
 
@@ -68,7 +69,7 @@ export function useSchemaObjects<TItem, TForm>(
     if (!confirm(dropConfirmMessage(item))) return
     onDrop(item)
       .then(() => { onStatus(dropStatusMessage(item)); load() })
-      .catch((err) => onStatus(String(err)))
+      .catch((err) => onStatus(parseError(err)))
   }
 
   const handleCreate = (e: React.FormEvent) => {
@@ -76,7 +77,7 @@ export function useSchemaObjects<TItem, TForm>(
     setIsSubmitting(true)
     onCreate(form)
       .then(() => { onStatus(createStatusMessage(form)); setShowCreate(false); load() })
-      .catch((err) => onStatus(String(err)))
+      .catch((err) => onStatus(parseError(err)))
       .finally(() => setIsSubmitting(false))
   }
 

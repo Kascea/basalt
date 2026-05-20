@@ -1097,6 +1097,7 @@ td input:focus {
 
 .editor-area .cm-content {
     padding: 0 12px;
+    user-select: text;
 }
 
 .editor-area .cm-gutters {
@@ -1113,6 +1114,10 @@ td input:focus {
 .editor-area .cm-tooltip-autocomplete ul li[aria-selected] {
     background: var(--bg-active);
     color: var(--text-primary);
+}
+
+.editor-area .cm-selectionBackground {
+    background: rgba(65, 131, 196, 0.4) !important;
 }
 
 /* ── Grid toolbar (table view) ── */

@@ -62,6 +62,7 @@ type QueryResult struct {
 	DurationMS  int                   `json:"durationMs"`
 	Message     string                `json:"message"`
 	Plan        []ExecutionPlanStep   `json:"plan"`
+	PlanLines   []string              `json:"planLines"`
 	ObjectStats []SchemaObjectSummary `json:"objectStats"`
 	TotalRows   int                   `json:"totalRows"`
 	PageSize    int                   `json:"pageSize"`

@@ -1,9 +1,10 @@
 import { useState, useRef } from 'react'
 import { type Tab, type WorksheetTabState, type RowRecord, type LogEntry, cellKey } from '../types'
 import { DatabaseClient } from '../db/client'
+import { parseError } from '../lib/parseError'
 
 function emptyWorksheetState(): WorksheetTabState {
-  return { sql: '', result: null, rows: [], dirtyCells: {}, isRunning: false, log: [] }
+  return { sql: '', result: null, rows: [], dirtyCells: {}, isRunning: false, isPlanLoading: false, planLines: [], log: [] }
 }
 
 const INITIAL_WORKSHEET_ID = 'worksheet'
@@ -65,7 +66,8 @@ export function useWorksheetSession({ activeTabId, activeTab }: UseWorksheetSess
     }
     const id = activeTabId
     const sql = worksheetStates[id]?.sql ?? ''
-    patchWorksheetState(id, { isRunning: true })
+    patchWorksheetState(id, { isRunning: true, isPlanLoading: true, planLines: [] })
+
     DatabaseClient.executeQuery(activeTab.connectionID, sql)
       .then(res => {
         const rows = res.rows.length
@@ -91,8 +93,23 @@ export function useWorksheetSession({ activeTabId, activeTab }: UseWorksheetSess
           [id]: {
             ...(prev[id] ?? emptyWorksheetState()),
             isRunning: false,
-            log: [...(prev[id]?.log ?? []), makeLogEntry(String(err), true)],
+            isPlanLoading: false,
+            log: [...(prev[id]?.log ?? []), makeLogEntry(parseError(err), true)],
           },
+        }))
+      })
+
+    DatabaseClient.explainQuery(activeTab.connectionID, sql)
+      .then(lines => {
+        setWorksheetStates(prev => ({
+          ...prev,
+          [id]: { ...(prev[id] ?? emptyWorksheetState()), planLines: lines, isPlanLoading: false },
+        }))
+      })
+      .catch(() => {
+        setWorksheetStates(prev => ({
+          ...prev,
+          [id]: { ...(prev[id] ?? emptyWorksheetState()), isPlanLoading: false },
         }))
       })
   }

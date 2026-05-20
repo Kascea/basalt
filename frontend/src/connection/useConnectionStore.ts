@@ -3,6 +3,7 @@ import { DatabaseClient } from '../db/client'
 import * as LocaldbService from '../../bindings/basalt/localdb/service'
 import type { Connection } from '../../bindings/basalt/db'
 import type { SavedConnection } from '../../bindings/basalt/localdb/models'
+import { parseError } from '../lib/parseError'
 
 // Manages saved Connection persistence and live Connection lifecycle.
 // Schema object loading is handled separately by useSchemaObjects.
@@ -53,7 +54,7 @@ export function useConnectionStore(
     setStatus(`Connecting to ${name}…`)
     return DatabaseClient.connect({ name, driver, connectionString, planetscaleKey: planetscaleKey ?? '', supabaseKey: supabaseKey ?? '' })
       .then(conn => afterConnect(conn, onSuccess))
-      .catch(err => { setStatus(String(err)); throw err })
+      .catch(err => { setStatus(parseError(err)); throw err })
       .finally(() => setIsConnecting(null))
   }
 
@@ -63,7 +64,7 @@ export function useConnectionStore(
     setStatus(`Reconnecting to ${saved?.name || id}…`)
     DatabaseClient.connectSaved(id)
       .then(conn => afterConnect(conn, onSuccess))
-      .catch(err => setStatus(String(err)))
+      .catch(err => setStatus(parseError(err)))
       .finally(() => setIsConnecting(null))
   }
 
@@ -76,7 +77,7 @@ export function useConnectionStore(
         onDisconnected(id)
         setStatus(`Disconnected from ${label}`)
       })
-      .catch(err => setStatus(String(err)))
+      .catch(err => setStatus(parseError(err)))
   }
 
   const deleteSaved = (id: string) => {
@@ -86,13 +87,13 @@ export function useConnectionStore(
         setConnections(prev => prev.filter(c => c.id !== id))
         onDisconnected(id)
       })
-      .catch(err => setStatus(String(err)))
+      .catch(err => setStatus(parseError(err)))
   }
 
   const updateSaved = (conn: SavedConnection) => {
     LocaldbService.UpdateSavedConnection(conn)
       .then(() => setSavedConnections(prev => prev.map(s => s.id === conn.id ? conn : s)))
-      .catch(err => setStatus(String(err)))
+      .catch(err => setStatus(parseError(err)))
   }
 
   const reorderSaved = (ids: string[]) => {
@@ -100,7 +101,7 @@ export function useConnectionStore(
       const map = new Map(prev.map(s => [s.id, s]))
       return ids.map(id => map.get(id)).filter(Boolean) as SavedConnection[]
     })
-    LocaldbService.ReorderConnections(ids).catch(err => setStatus(String(err)))
+    LocaldbService.ReorderConnections(ids).catch(err => setStatus(parseError(err)))
   }
 
   return {

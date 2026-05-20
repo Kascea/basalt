@@ -1,24 +1,37 @@
 .tableView {
     display: grid;
-    grid-template-rows: 44px 2px 34px 1fr;
+    grid-template-rows: 44px 34px 1fr;
     height: 100%;
     min-height: 0;
 }
 
-.refreshBar {
-    height: 2px;
-    flex-shrink: 0;
-    opacity: 0;
+.dataArea {
+    position: relative;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
-.refreshBar.active {
-    opacity: 1;
-    background: linear-gradient(90deg, transparent 0%, var(--accent) 40%, var(--accent) 60%, transparent 100%);
-    background-size: 300% 100%;
-    animation: refresh-sweep 1.2s ease-in-out infinite;
+.refreshOverlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--bg-panel) 60%, transparent);
+    pointer-events: none;
 }
 
-@keyframes refresh-sweep {
-    0%   { background-position: 100% 0; }
-    100% { background-position: -100% 0; }
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.refreshSpinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
 }

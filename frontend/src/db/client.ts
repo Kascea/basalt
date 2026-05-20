@@ -33,6 +33,10 @@ export const DatabaseClient = {
     return DatabaseService.ExecuteQuery(connID, sql).catch(rethrow)
   },
 
+  explainQuery(connID: string, sql: string): Promise<string[]> {
+    return DatabaseService.ExplainQuery(connID, sql).catch(rethrow)
+  },
+
   commitTableEdits(connID: string, payload: CommitPayload): Promise<FKViolation | null> {
     return DatabaseService.CommitTableEdits(connID, payload).catch(rethrow)
   },

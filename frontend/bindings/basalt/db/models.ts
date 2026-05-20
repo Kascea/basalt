@@ -553,6 +553,7 @@ export class QueryResult {
     "durationMs": number;
     "message": string;
     "plan": ExecutionPlanStep[];
+    "planLines": string[];
     "objectStats": SchemaObjectSummary[];
     "totalRows": number;
     "pageSize": number;
@@ -583,6 +584,9 @@ export class QueryResult {
         if (!("plan" in $$source)) {
             this["plan"] = [];
         }
+        if (!("planLines" in $$source)) {
+            this["planLines"] = [];
+        }
         if (!("objectStats" in $$source)) {
             this["objectStats"] = [];
         }
@@ -606,7 +610,8 @@ export class QueryResult {
         const $$createField3_0 = $$createType10;
         const $$createField4_0 = $$createType8;
         const $$createField7_0 = $$createType12;
-        const $$createField8_0 = $$createType14;
+        const $$createField8_0 = $$createType8;
+        const $$createField9_0 = $$createType14;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("columns" in $$parsedSource) {
             $$parsedSource["columns"] = $$createField0_0($$parsedSource["columns"]);
@@ -626,8 +631,11 @@ export class QueryResult {
         if ("plan" in $$parsedSource) {
             $$parsedSource["plan"] = $$createField7_0($$parsedSource["plan"]);
         }
+        if ("planLines" in $$parsedSource) {
+            $$parsedSource["planLines"] = $$createField8_0($$parsedSource["planLines"]);
+        }
         if ("objectStats" in $$parsedSource) {
-            $$parsedSource["objectStats"] = $$createField8_0($$parsedSource["objectStats"]);
+            $$parsedSource["objectStats"] = $$createField9_0($$parsedSource["objectStats"]);
         }
         return new QueryResult($$parsedSource as Partial<QueryResult>);
     }

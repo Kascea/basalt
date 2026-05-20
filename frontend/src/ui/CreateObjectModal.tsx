@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { X } from 'lucide-react'
 import { DatabaseService, type ColumnDef, type CreateSequenceRequest, type CreateIndexRequest } from '../../bindings/basalt/db'
 import { Modal } from './Modal'
+import { parseError } from '../lib/parseError'
 
 interface Props {
   connectionID: string
@@ -47,7 +48,7 @@ function TableForm({ connectionID, schema, onClose, onCreated }: Omit<Props, 'ki
     setIsSubmitting(true)
     DatabaseService.CreateTable(connectionID, { schema, name, columns: validCols })
       .then(() => onCreated(`Created table ${schema}.${name}`))
-      .catch((err) => { onCreated(String(err)); setIsSubmitting(false) })
+      .catch((err) => { onCreated(parseError(err)); setIsSubmitting(false) })
   }
 
   return (
@@ -152,7 +153,7 @@ function SequenceForm({ connectionID, schema, onClose, onCreated }: Omit<Props, 
     setIsSubmitting(true)
     DatabaseService.CreateSequence(connectionID, form)
       .then(() => onCreated(`Created sequence ${schema}.${form.name}`))
-      .catch((err) => { onCreated(String(err)); setIsSubmitting(false) })
+      .catch((err) => { onCreated(parseError(err)); setIsSubmitting(false) })
   }
 
   return (
@@ -213,7 +214,7 @@ function IndexForm({ connectionID, schema, onClose, onCreated }: Omit<Props, 'ki
     setIsSubmitting(true)
     DatabaseService.CreateIndex(connectionID, form)
       .then(() => onCreated(`Created index ${form.name}`))
-      .catch((err) => { onCreated(String(err)); setIsSubmitting(false) })
+      .catch((err) => { onCreated(parseError(err)); setIsSubmitting(false) })
   }
 
   return (

@@ -5,6 +5,7 @@ import {
   applyMarkForDelete, applyDiscard, buildCommitPayload, commitEdits,
 } from './editBuffer'
 import { DatabaseClient } from '../db/client'
+import { parseError } from '../lib/parseError'
 
 function emptyTableState(): TableState {
   return {
@@ -59,7 +60,7 @@ export function useTableSession({ activeTabId, activeTab, setStatus }: UseTableS
       })
       .catch(err => {
         patchState(id, { isLoading: false })
-        setStatus(String(err))
+        setStatus(parseError(err))
       })
   }
 
@@ -81,7 +82,7 @@ export function useTableSession({ activeTabId, activeTab, setStatus }: UseTableS
       })
       .catch(err => {
         patchState(id, { isRefreshing: false })
-        setStatus(String(err))
+        setStatus(parseError(err))
       })
   }
 
@@ -98,7 +99,7 @@ export function useTableSession({ activeTabId, activeTab, setStatus }: UseTableS
       })
       .catch(err => {
         patchState(id, { isRefreshing: false })
-        setStatus(String(err))
+        setStatus(parseError(err))
       })
   }
 
@@ -116,7 +117,7 @@ export function useTableSession({ activeTabId, activeTab, setStatus }: UseTableS
       })
       .catch(err => {
         patchState(id, { isRefreshing: false })
-        setStatus(String(err))
+        setStatus(parseError(err))
       })
   }
 
@@ -133,7 +134,7 @@ export function useTableSession({ activeTabId, activeTab, setStatus }: UseTableS
       })
       .catch(err => {
         patchState(id, { isRefreshing: false })
-        setStatus(String(err))
+        setStatus(parseError(err))
       })
   }
 
@@ -208,7 +209,7 @@ export function useTableSession({ activeTabId, activeTab, setStatus }: UseTableS
           result: freshRows!.result, rows: freshRows!.rows,
         })
       })
-      .catch(err => setStatus(String(err)))
+      .catch(err => setStatus(parseError(err)))
       .finally(() => patchState(id, { isCommitting: false }))
   }
 

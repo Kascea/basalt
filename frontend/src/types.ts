@@ -23,6 +23,8 @@ export interface WorksheetTabState {
   rows: RowRecord[]
   dirtyCells: DirtyCells
   isRunning: boolean
+  isPlanLoading: boolean
+  planLines: string[]
   log: LogEntry[]
 }
 

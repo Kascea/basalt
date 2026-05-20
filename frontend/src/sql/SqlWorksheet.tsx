@@ -2,11 +2,12 @@ import { useState } from 'react'
 import { useResizeDrag } from '../workspace/useResizeDrag'
 import { type QueryResult, type SchemaObject } from '../../bindings/basalt/db'
 import { type RowRecord, type DirtyCells, type LogEntry } from '../types'
-import { DataGrid } from '../table/DataGrid'
+import { ResultGrid } from './ResultGrid'
+import { PlanView } from './PlanView'
 import { SqlEditor } from './SqlEditor'
 import { WorksheetLog } from './WorksheetLog'
 
-type ResultTab = 'data' | 'structure' | 'plan'
+type ResultTab = 'data' | 'plan'
 
 interface Props {
   sql: string
@@ -18,6 +19,8 @@ interface Props {
   connectionId?: string
   driver?: string
   isRunning: boolean
+  isPlanLoading: boolean
+  planLines: string[]
   onSqlChange: (sql: string) => void
   onCellChange: (rowIndex: number, column: string, value: string) => void
   onDiscard: () => void
@@ -25,7 +28,8 @@ interface Props {
 }
 
 export function SqlWorksheet({
-  sql, result, rows, dirtyCells, log, objects, connectionId, driver, isRunning,
+  sql, result, rows, dirtyCells, log, objects, connectionId, driver,
+  isRunning, isPlanLoading, planLines,
   onSqlChange, onCellChange, onDiscard, onClearLog,
 }: Props) {
   const [activeTab, setActiveTab] = useState<ResultTab>('data')
@@ -47,9 +51,6 @@ export function SqlWorksheet({
             <button className={activeTab === 'data' ? 'active' : ''} onClick={() => setActiveTab('data')}>
               Data
             </button>
-            <button className={activeTab === 'structure' ? 'active' : ''} onClick={() => setActiveTab('structure')}>
-              Structure
-            </button>
             <button className={activeTab === 'plan' ? 'active' : ''} onClick={() => setActiveTab('plan')}>
               Plan
             </button>
@@ -65,49 +66,21 @@ export function SqlWorksheet({
         </div>
 
         {activeTab === 'data' && (
-          <DataGrid
+          <ResultGrid
             columns={result?.columns ?? []}
-            columnTypes={result?.columnTypes ?? []}
             rows={rows}
-            newRows={[]}
-            dirtyCells={dirtyCells}
-            pendingDeletes={new Set()}
-            onCellChange={onCellChange}
-            onNewCellChange={() => {}}
-            onDeleteRow={() => {}}
-            onRemoveNewRow={() => {}}
             emptyMessage={isRunning ? 'Running…' : 'Run a query to see results'}
           />
         )}
 
-        {activeTab === 'structure' && (
-          <div className="structure-view">
-            {objects.map((obj) => (
-              <div className="structure-row" key={`${obj.schema}.${obj.name}`}>
-                <strong>{obj.schema}.{obj.name}</strong>
-                <span>{obj.type}</span>
-                <span>{obj.modified}</span>
-              </div>
-            ))}
-            {objects.length === 0 && (
-              <p className="empty-state centered">Connect to a database to browse objects</p>
-            )}
-          </div>
-        )}
-
         {activeTab === 'plan' && (
-          <div className="plan-view">
-            {result?.plan.map((step) => (
-              <div className="plan-row" key={step.id}>
-                <span>{step.id}</span>
-                <strong>{step.operation}</strong>
-                <span>{step.object || 'result'}</span>
-                <span>cost {step.cost}</span>
-                <span>{step.rows} rows</span>
-              </div>
-            ))}
-            {!result && <p className="empty-state centered">Run a query to see the explain plan</p>}
-          </div>
+          planLines.length > 0 ? (
+            <PlanView lines={planLines} />
+          ) : (
+            <p className="empty-state centered">
+              {isPlanLoading ? 'Loading plan…' : 'Run a query to see the plan'}
+            </p>
+          )
         )}
       </div>
 

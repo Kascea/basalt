@@ -84,7 +84,6 @@ export function TableView({
           </button>
         </>}
       />
-      <div className={`${styles.refreshBar}${isRefreshing ? ` ${styles.active}` : ''}`} />
       <FilterBar
         expr={filterExpr}
         draft={filterDraft}
@@ -92,30 +91,37 @@ export function TableView({
         onChange={setFilterDraft}
         onCommit={onFilterChange}
       />
-      {isLoading ? (
-        <p className="empty-state centered">Loading {label}…</p>
-      ) : (
-        <DataGrid
-          columns={columns}
-          columnTypes={columnTypes}
-          primaryKeys={primaryKeys}
-          rows={rows}
-          newRows={newRows}
-          dirtyCells={dirtyCells}
-          pendingDeletes={pendingDeletes}
-          sortColumn={sortColumn}
-          sortDirection={sortDirection}
-          onCellChange={onCellChange}
-          onNewCellChange={onNewCellChange}
-          onDeleteRow={onDeleteRow}
-          onRemoveNewRow={onRemoveNewRow}
-          onSortChange={handleSortChange}
-          onAddFilter={handleAddFilter}
-          onAddColumn={onAddColumn}
-          onAddRow={onAddRow}
-          emptyMessage={result ? 'No rows returned' : 'Open a table from the sidebar'}
-        />
-      )}
+      <div className={styles.dataArea}>
+        {isLoading ? (
+          <p className="empty-state centered">Loading {label}…</p>
+        ) : (
+          <DataGrid
+            columns={columns}
+            columnTypes={columnTypes}
+            primaryKeys={primaryKeys}
+            rows={rows}
+            newRows={newRows}
+            dirtyCells={dirtyCells}
+            pendingDeletes={pendingDeletes}
+            sortColumn={sortColumn}
+            sortDirection={sortDirection}
+            onCellChange={onCellChange}
+            onNewCellChange={onNewCellChange}
+            onDeleteRow={onDeleteRow}
+            onRemoveNewRow={onRemoveNewRow}
+            onSortChange={handleSortChange}
+            onAddFilter={handleAddFilter}
+            onAddColumn={onAddColumn}
+            onAddRow={onAddRow}
+            emptyMessage={result ? 'No rows returned' : 'Open a table from the sidebar'}
+          />
+        )}
+        {isRefreshing && (
+          <div className={styles.refreshOverlay}>
+            <div className={styles.refreshSpinner} />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

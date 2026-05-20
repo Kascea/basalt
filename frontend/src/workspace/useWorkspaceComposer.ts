@@ -129,6 +129,8 @@ export function useWorkspaceComposer(
 
   const worksheetValue = useMemo(() => ({
     isRunning: activeWS?.isRunning ?? false,
+    isPlanLoading: activeWS?.isPlanLoading ?? false,
+    planLines: activeWS?.planLines ?? [],
     result: activeWS?.result ?? null,
     rows: activeWS?.rows ?? [],
     dirtyCells: activeWS?.dirtyCells ?? {},

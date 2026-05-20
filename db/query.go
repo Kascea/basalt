@@ -67,6 +67,65 @@ func (d *DatabaseService) ExecuteQuery(connectionID string, statement string) (Q
 	}, nil
 }
 
+func (d *DatabaseService) ExplainQuery(connectionID string, statement string) ([]string, error) {
+	trimmed := strings.TrimSpace(statement)
+	if trimmed == "" {
+		return nil, errors.New("write a SQL statement before running")
+	}
+	conn, err := d.connection(connectionID)
+	if err != nil {
+		return nil, err
+	}
+	settings := d.store.GetSettings()
+	timeout := time.Duration(settings.QueryTimeoutSec) * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return explainLines(ctx, conn, trimmed)
+}
+
+func explainLines(ctx context.Context, conn *openConnection, statement string) ([]string, error) {
+	var explainSQL string
+	if conn.driver == DriverSQLite {
+		explainSQL = "EXPLAIN QUERY PLAN " + statement
+	} else {
+		explainSQL = "EXPLAIN " + statement
+	}
+
+	rows, err := conn.db.QueryContext(ctx, explainSQL)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	columns, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+
+	var lines []string
+	for rows.Next() {
+		values := make([]any, len(columns))
+		ptrs := make([]any, len(columns))
+		for i := range values {
+			ptrs[i] = &values[i]
+		}
+		if err := rows.Scan(ptrs...); err != nil {
+			return nil, err
+		}
+		// SQLite EXPLAIN QUERY PLAN: id, parent, notused, detail
+		if conn.driver == DriverSQLite && len(values) >= 4 {
+			lines = append(lines, formatDBValue(values[3]))
+		} else {
+			parts := make([]string, len(values))
+			for i, v := range values {
+				parts[i] = formatDBValue(v)
+			}
+			lines = append(lines, strings.Join(parts, " "))
+		}
+	}
+	return lines, rows.Err()
+}
+
 func validateWhereClause(where string) error {
 	for _, ch := range where {
 		if ch == ';' || ch == '\x00' {

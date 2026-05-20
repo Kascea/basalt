@@ -1,0 +1,141 @@
+.planView {
+    min-height: 0;
+    overflow: auto;
+    padding: 8px 0;
+    font-size: 13px;
+}
+
+/* ── Plan node row ── */
+
+.node {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 36px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-right: 20px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.nodeMain {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+}
+
+.operation {
+    color: var(--text-primary);
+    font-family: var(--mono);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.detail {
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+}
+
+/* ── Op badge ── */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    height: 18px;
+    padding: 0 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.badge-scan-seq {
+    background: rgba(201, 128, 58, 0.15);
+    color: var(--orange);
+}
+
+.badge-scan-index {
+    background: rgba(42, 143, 110, 0.15);
+    color: var(--teal);
+}
+
+.badge-join {
+    background: rgba(65, 131, 196, 0.15);
+    color: var(--accent);
+}
+
+.badge-sort {
+    background: rgba(136, 142, 150, 0.12);
+    color: var(--text-secondary);
+}
+
+.badge-other {
+    background: rgba(136, 142, 150, 0.12);
+    color: var(--text-secondary);
+}
+
+/* ── Cost metrics ── */
+
+.metrics {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.metric {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* ── Condition row ── */
+
+.condition {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-height: 24px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    padding-right: 20px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.condLabel {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.condValue {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    word-break: break-all;
+}
+
+/* ── Raw fallback ── */
+
+.rawLine {
+    padding: 4px 20px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+}

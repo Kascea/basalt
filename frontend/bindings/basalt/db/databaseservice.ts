@@ -94,6 +94,12 @@ export function ExecuteQuery(connectionID: string, statement: string): $Cancella
     });
 }
 
+export function ExplainQuery(connectionID: string, statement: string): $CancellablePromise<string[]> {
+    return $Call.ByID(3838571932, connectionID, statement).then(($result: any) => {
+        return $$createType4($result);
+    });
+}
+
 export function FetchTable(connectionID: string, schema: string, table: string, where: string, page: number, pageSize: number): $CancellablePromise<$models.QueryResult> {
     return $Call.ByID(379804161, connectionID, schema, table, where, page, pageSize).then(($result: any) => {
         return $$createType3($result);
@@ -107,13 +113,13 @@ export function FetchTable(connectionID: string, schema: string, table: string, 
  */
 export function GetNextSequenceValues(connectionID: string, schema: string, table: string): $CancellablePromise<{ [_ in string]?: string }> {
     return $Call.ByID(4032207833, connectionID, schema, table).then(($result: any) => {
-        return $$createType4($result);
+        return $$createType5($result);
     });
 }
 
 export function GetTableColumns(connectionID: string, schema: string, table: string): $CancellablePromise<$models.ColumnInfo[]> {
     return $Call.ByID(1845361084, connectionID, schema, table).then(($result: any) => {
-        return $$createType6($result);
+        return $$createType7($result);
     });
 }
 
@@ -128,7 +134,7 @@ export function InsertRows(connectionID: string, inserts: $models.RowInsert[]): 
  */
 export function ListColumnTypes(connectionID: string): $CancellablePromise<$models.TypeGroup[]> {
     return $Call.ByID(1796961020, connectionID).then(($result: any) => {
-        return $$createType8($result);
+        return $$createType9($result);
     });
 }
 
@@ -137,31 +143,31 @@ export function ListColumnTypes(connectionID: string): $CancellablePromise<$mode
  */
 export function ListConnections(): $CancellablePromise<$models.Connection[]> {
     return $Call.ByID(1316334534).then(($result: any) => {
-        return $$createType9($result);
+        return $$createType10($result);
     });
 }
 
 export function ListForeignKeys(connectionID: string, schema: string): $CancellablePromise<$models.ForeignKeyInfo[]> {
     return $Call.ByID(2155748755, connectionID, schema).then(($result: any) => {
-        return $$createType11($result);
+        return $$createType12($result);
     });
 }
 
 export function ListIndexes(connectionID: string, schema: string): $CancellablePromise<$models.IndexInfo[]> {
     return $Call.ByID(976451507, connectionID, schema).then(($result: any) => {
-        return $$createType13($result);
+        return $$createType14($result);
     });
 }
 
 export function ListSchemaObjects(connectionID: string): $CancellablePromise<$models.SchemaObject[]> {
     return $Call.ByID(2805913978, connectionID).then(($result: any) => {
-        return $$createType15($result);
+        return $$createType16($result);
     });
 }
 
 export function ListSequences(connectionID: string, schema: string): $CancellablePromise<$models.SequenceInfo[]> {
     return $Call.ByID(2451052281, connectionID, schema).then(($result: any) => {
-        return $$createType17($result);
+        return $$createType18($result);
     });
 }
 
@@ -182,17 +188,18 @@ const $$createType0 = $models.FKViolation.createFrom;
 const $$createType1 = $Create.Nullable($$createType0);
 const $$createType2 = $models.Connection.createFrom;
 const $$createType3 = $models.QueryResult.createFrom;
-const $$createType4 = $Create.Map($Create.Any, $Create.Any);
-const $$createType5 = $models.ColumnInfo.createFrom;
-const $$createType6 = $Create.Array($$createType5);
-const $$createType7 = $models.TypeGroup.createFrom;
-const $$createType8 = $Create.Array($$createType7);
-const $$createType9 = $Create.Array($$createType2);
-const $$createType10 = $models.ForeignKeyInfo.createFrom;
-const $$createType11 = $Create.Array($$createType10);
-const $$createType12 = $models.IndexInfo.createFrom;
-const $$createType13 = $Create.Array($$createType12);
-const $$createType14 = $models.SchemaObject.createFrom;
-const $$createType15 = $Create.Array($$createType14);
-const $$createType16 = $models.SequenceInfo.createFrom;
-const $$createType17 = $Create.Array($$createType16);
+const $$createType4 = $Create.Array($Create.Any);
+const $$createType5 = $Create.Map($Create.Any, $Create.Any);
+const $$createType6 = $models.ColumnInfo.createFrom;
+const $$createType7 = $Create.Array($$createType6);
+const $$createType8 = $models.TypeGroup.createFrom;
+const $$createType9 = $Create.Array($$createType8);
+const $$createType10 = $Create.Array($$createType2);
+const $$createType11 = $models.ForeignKeyInfo.createFrom;
+const $$createType12 = $Create.Array($$createType11);
+const $$createType13 = $models.IndexInfo.createFrom;
+const $$createType14 = $Create.Array($$createType13);
+const $$createType15 = $models.SchemaObject.createFrom;
+const $$createType16 = $Create.Array($$createType15);
+const $$createType17 = $models.SequenceInfo.createFrom;
+const $$createType18 = $Create.Array($$createType17);

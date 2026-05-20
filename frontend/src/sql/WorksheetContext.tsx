@@ -4,6 +4,8 @@ import type { RowRecord, DirtyCells, LogEntry } from '../types'
 
 export interface WorksheetSession {
   isRunning: boolean
+  isPlanLoading: boolean
+  planLines: string[]
   result: QueryResult | null
   rows: RowRecord[]
   dirtyCells: DirtyCells

@@ -108,7 +108,7 @@ function PlanetScaleAccount({ savedConnections, onDeleteSaved, onConnect }: Prop
     setConnectError(null)
     PlanetScaleService.StartAuth()
       .then(() => loadAccountState())
-      .catch(err => setConnectError(String(err)))
+      .catch(err => setConnectError(parseError(err)))
       .finally(() => setConnecting(false))
   }
 
@@ -129,7 +129,7 @@ function PlanetScaleAccount({ savedConnections, onDeleteSaved, onConnect }: Prop
       const cs = await PlanetScaleService.GetConnectionString(db.Org, db.Name, db.Branch, db.Kind)
       await onConnect(db.Name, 'postgres', cs, key)
     } catch (err) {
-      setDbConnectError(String(err).replace(/^Error:\s*/, ''))
+      setDbConnectError(parseError(err))
     } finally {
       setConnectingDb(null)
     }
@@ -311,7 +311,7 @@ function SupabaseAccount({ savedConnections, onDeleteSaved, onConnect }: Props) 
     setConnectError(null)
     SupabaseService.StartAuth()
       .then(() => loadAccountState())
-      .catch(err => setConnectError(String(err)))
+      .catch(err => setConnectError(parseError(err)))
       .finally(() => setConnecting(false))
   }
 
