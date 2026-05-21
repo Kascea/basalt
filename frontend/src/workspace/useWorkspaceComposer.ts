@@ -87,6 +87,7 @@ export function useWorkspaceComposer(
     onEditSaved: view.setEditingConnection,
     onReorderSaved: db.reorderSaved,
     onRefresh: () => db.refreshObjects(activeConnectionID),
+    onRefreshConnection: (connID: string) => db.refreshObjects(connID),
     onTableOpen: (connectionID: string, schema: string, table: string) => { tableTabsRef.current.openTableTab(connectionID, schema, table) },
     onTableOpenNewTab: (connectionID: string, schema: string, table: string) => { tableTabsRef.current.openTableTab(connectionID, schema, table) },
     onTableOpenSchema: (connectionID: string, schema: string, table: string) => { tableTabsRef.current.openSchemaTab(connectionID, schema, table) },

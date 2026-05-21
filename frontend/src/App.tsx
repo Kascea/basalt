@@ -172,7 +172,7 @@ function App() {
       {/* ── Main content area — swaps by view ── */}
       {currentView === 'main' && (
         <WorkspaceProvider value={session}>
-          <Workspace onCommit={handleTableCommit} />
+          <Workspace onCommit={handleTableCommit} onRefreshObjects={connID => db.refreshObjects(connID)} />
         </WorkspaceProvider>
       )}
 

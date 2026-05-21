@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { storage } from '../storage'
+import { storage } from '../lib/storage'
 import type { useTableTabs } from './useTableTabs'
 
 type TableTabs = ReturnType<typeof useTableTabs>

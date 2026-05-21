@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -15,6 +16,16 @@ func (d *DatabaseService) GetTableColumns(connectionID, schema, table string) ([
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	return conn.intr.GetTableColumns(ctx, conn.db, schema, table)
+}
+
+func (d *DatabaseService) GetTableDDL(connectionID, schema, table string) (string, error) {
+	conn, err := d.connection(connectionID)
+	if err != nil {
+		return "", err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return conn.intr.GetTableDDL(ctx, conn.db, schema, table)
 }
 
 func (d *DatabaseService) ListSchemaObjects(connectionID string) ([]SchemaObject, error) {
@@ -45,6 +56,9 @@ func (StaticIntrospector) GetTableColumns(_ context.Context, _ *sql.DB, _, _ str
 }
 func (StaticIntrospector) GetPrimaryKeys(_ context.Context, _ *sql.DB, _, _ string) ([]string, error) {
 	return []string{}, nil
+}
+func (StaticIntrospector) GetTableDDL(_ context.Context, _ *sql.DB, schema, table string) (string, error) {
+	return "-- DDL not available for this driver", nil
 }
 func (StaticIntrospector) TableExpr(schema, table string) string {
 	return quoteIdent(schema) + "." + quoteIdent(table)
@@ -165,6 +179,68 @@ func (SQLiteIntrospector) GetPrimaryKeys(ctx context.Context, db *sql.DB, _, tab
 		pks = append(pks, name)
 	}
 	return pks, rows.Err()
+}
+
+func (SQLiteIntrospector) GetTableDDL(ctx context.Context, db *sql.DB, _, table string) (string, error) {
+	var ddl string
+	err := db.QueryRowContext(ctx,
+		`SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?`, table,
+	).Scan(&ddl)
+	if err != nil {
+		return "", err
+	}
+	return formatSQLiteDDL(ddl) + ";", nil
+}
+
+// formatSQLiteDDL pretty-prints a compact CREATE TABLE statement from sqlite_master.
+// It splits column/constraint definitions at top-level commas and indents each one.
+func formatSQLiteDDL(ddl string) string {
+	open := strings.Index(ddl, "(")
+	if open < 0 {
+		return ddl
+	}
+	close := strings.LastIndex(ddl, ")")
+	if close < 0 || close <= open {
+		return ddl
+	}
+
+	header := strings.TrimRight(ddl[:open], " \t")
+	inner := ddl[open+1 : close]
+
+	// Split at top-level commas (not inside nested parens).
+	var parts []string
+	depth := 0
+	start := 0
+	for i, ch := range inner {
+		switch ch {
+		case '(':
+			depth++
+		case ')':
+			depth--
+		case ',':
+			if depth == 0 {
+				parts = append(parts, strings.TrimSpace(inner[start:i]))
+				start = i + 1
+			}
+		}
+	}
+	if tail := strings.TrimSpace(inner[start:]); tail != "" {
+		parts = append(parts, tail)
+	}
+
+	var b strings.Builder
+	b.WriteString(header)
+	b.WriteString(" (\n")
+	for i, p := range parts {
+		b.WriteString("    ")
+		b.WriteString(p)
+		if i < len(parts)-1 {
+			b.WriteString(",")
+		}
+		b.WriteString("\n")
+	}
+	b.WriteString(")")
+	return b.String()
 }
 
 func (SQLiteIntrospector) TableExpr(_, table string) string { return quoteIdent(table) }
@@ -314,6 +390,39 @@ func (PostgresIntrospector) GetPrimaryKeys(ctx context.Context, db *sql.DB, sche
 		pks = append(pks, name)
 	}
 	return pks, rows.Err()
+}
+
+func (PostgresIntrospector) GetTableDDL(ctx context.Context, db *sql.DB, schema, table string) (string, error) {
+	var ddl string
+	err := db.QueryRowContext(ctx, `
+		SELECT
+			'CREATE TABLE ' || quote_ident(n.nspname) || '.' || quote_ident(c.relname) || E' (\n' ||
+			string_agg(
+				'    ' || quote_ident(a.attname) || ' ' ||
+				pg_catalog.format_type(a.atttypid, a.atttypmod) ||
+				CASE WHEN a.attnotnull THEN ' NOT NULL' ELSE '' END ||
+				CASE WHEN ad.adbin IS NOT NULL
+					THEN ' DEFAULT ' || pg_catalog.pg_get_expr(ad.adbin, ad.adrelid)
+					ELSE '' END,
+				E',\n' ORDER BY a.attnum
+			) ||
+			COALESCE(E',\n' || (
+				SELECT string_agg('    ' || pg_catalog.pg_get_constraintdef(con.oid, true), E',\n')
+				FROM pg_catalog.pg_constraint con
+				WHERE con.conrelid = c.oid AND con.contype IN ('p', 'u', 'c', 'f')
+			), '') ||
+			E'\n);'
+		FROM pg_catalog.pg_class c
+		JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+		JOIN pg_catalog.pg_attribute a ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+		LEFT JOIN pg_catalog.pg_attrdef ad ON ad.adrelid = c.oid AND ad.adnum = a.attnum
+		WHERE n.nspname = $1 AND c.relname = $2
+		GROUP BY n.nspname, c.relname, c.oid
+	`, schema, table).Scan(&ddl)
+	if err != nil {
+		return "", err
+	}
+	return ddl, nil
 }
 
 func (PostgresIntrospector) TableExpr(schema, table string) string {

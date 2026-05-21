@@ -139,6 +139,9 @@ type Introspector interface {
 
 	// GetPrimaryKeys returns the primary-key column names for the given table in order.
 	GetPrimaryKeys(ctx context.Context, db *sql.DB, schema, table string) ([]string, error)
+
+	// GetTableDDL returns a CREATE TABLE statement for the given table.
+	GetTableDDL(ctx context.Context, db *sql.DB, schema, table string) (string, error)
 }
 
 // ── Object operation types ────────────────────────────────────────────────────

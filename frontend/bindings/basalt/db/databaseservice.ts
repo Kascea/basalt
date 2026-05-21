@@ -123,6 +123,10 @@ export function GetTableColumns(connectionID: string, schema: string, table: str
     });
 }
 
+export function GetTableDDL(connectionID: string, schema: string, table: string): $CancellablePromise<string> {
+    return $Call.ByID(3753861915, connectionID, schema, table);
+}
+
 export function InsertRows(connectionID: string, inserts: $models.RowInsert[]): $CancellablePromise<void> {
     return $Call.ByID(2135737537, connectionID, inserts);
 }

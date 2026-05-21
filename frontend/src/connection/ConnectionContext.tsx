@@ -19,6 +19,7 @@ export interface ConnectionSession {
   onEditSaved: (conn: SavedConnection) => void
   onReorderSaved: (ids: string[]) => void
   onRefresh: () => void
+  onRefreshConnection: (connectionID: string) => void
   onTableOpen: (connectionID: string, schema: string, table: string) => void
   onTableOpenNewTab: (connectionID: string, schema: string, table: string) => void
   onTableOpenSchema: (connectionID: string, schema: string, table: string) => void

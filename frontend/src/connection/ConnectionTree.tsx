@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { type SchemaObject } from '../../bindings/basalt/db'
+import { type SchemaObject, DatabaseService } from '../../bindings/basalt/db'
 import { useConnectionSession } from './ConnectionContext'
 import { DeleteConfirmModal } from '../ui/DeleteConfirmModal'
+import { ConfirmModal } from '../ui/ConfirmModal'
+import { parseError } from '../lib/parseError'
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 
@@ -267,7 +269,7 @@ export function ConnectionTree() {
     isConnecting,
     onConnectionClick, onReconnect, onDisconnect, onDeleteSaved, onEditSaved,
     onReorderSaved,
-    onRefresh, onTableOpen, onTableOpenNewTab,
+    onRefresh, onRefreshConnection, onTableOpen, onTableOpenNewTab,
     onTableOpenSchema, onGroupOpen,
   } = useConnectionSession()
 
@@ -279,6 +281,9 @@ export function ConnectionTree() {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [confirmDropTable, setConfirmDropTable] = useState<{ connectionID: string; schema: string; name: string } | null>(null)
+  const [dropTableLoading, setDropTableLoading] = useState(false)
+  const [dropTableError, setDropTableError] = useState('')
   const [dragOverId, setDragOverId] = useState<string | null>(null)
   const dragIdRef = useRef<string | null>(null)
 
@@ -527,6 +532,10 @@ export function ConnectionTree() {
           <button onClick={() => { onTableOpenSchema(contextMenu.connectionID, contextMenu.schema, contextMenu.name); setContextMenu(null) }}>
             <IconOpenSchema /> Open Schema
           </button>
+          <div className="context-menu-separator" />
+          <button className="context-menu-danger" onClick={() => { setConfirmDropTable({ connectionID: contextMenu.connectionID, schema: contextMenu.schema, name: contextMenu.name }); setContextMenu(null) }}>
+            <IconTrash /> Drop Table
+          </button>
         </div>
       )}
 
@@ -575,6 +584,30 @@ export function ConnectionTree() {
           />
         ) : null
       })()}
+
+      {confirmDropTable && (
+        <ConfirmModal
+          message={`Drop table "${confirmDropTable.schema}.${confirmDropTable.name}"? This cannot be undone.`}
+          confirmLabel="Drop Table"
+          isLoading={dropTableLoading}
+          error={dropTableError}
+          onConfirm={() => {
+            setDropTableLoading(true)
+            setDropTableError('')
+            DatabaseService.DropTable(confirmDropTable.connectionID, confirmDropTable.schema, confirmDropTable.name)
+              .then(() => {
+                onRefreshConnection(confirmDropTable.connectionID)
+                setConfirmDropTable(null)
+                setDropTableLoading(false)
+              })
+              .catch(err => {
+                setDropTableError(parseError(err))
+                setDropTableLoading(false)
+              })
+          }}
+          onCancel={() => { setConfirmDropTable(null); setDropTableError(''); setDropTableLoading(false) }}
+        />
+      )}
     </>
   )
 }

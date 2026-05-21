@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, RotateCcw, AlertCircle, X } from 'lucide-react'
+import { Plus, Trash2, RotateCcw, AlertCircle, X, Code } from 'lucide-react'
 import { DatabaseService, type ColumnInfo } from '../../bindings/basalt/db'
 import { GridToolbar } from '../table/GridToolbar'
 import { TypeSelect, useColumnTypes } from '../ui/TypeSelect'
 import { parseError } from '../lib/parseError'
+import { ConfirmModal } from '../ui/ConfirmModal'
+import { DdlModal } from './DdlModal'
+import styles from './schemaView.module.css'
 
 interface Props {
   connectionID: string
@@ -11,6 +14,7 @@ interface Props {
   table: string
   addColumn?: boolean
   onTableRefresh?: () => void
+  onDropTable?: () => void
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -36,7 +40,7 @@ function newColId() { return `new-${Date.now()}-${Math.random().toString(36).sli
 
 // ── SchemaView ────────────────────────────────────────────────────────────────
 
-export function SchemaView({ connectionID, schema, table, addColumn, onTableRefresh }: Props) {
+export function SchemaView({ connectionID, schema, table, addColumn, onTableRefresh, onDropTable }: Props) {
   const { groups, loading: typesLoading } = useColumnTypes(connectionID)
 
   const [dbCols, setDbCols] = useState<ColumnInfo[]>([])
@@ -48,6 +52,10 @@ export function SchemaView({ connectionID, schema, table, addColumn, onTableRefr
   const [isLoading, setIsLoading] = useState(true)
   const [isCommitting, setIsCommitting] = useState(false)
   const [error, setError] = useState('')
+  const [showDropConfirm, setShowDropConfirm] = useState(false)
+  const [isDropping, setIsDropping] = useState(false)
+  const [dropError, setDropError] = useState('')
+  const [showDdl, setShowDdl] = useState(false)
 
   const load = () => {
     setIsLoading(true)
@@ -58,7 +66,6 @@ export function SchemaView({ connectionID, schema, table, addColumn, onTableRefr
 
   useEffect(load, [connectionID, schema, table])
 
-  // Set initial type for new cols once type groups load
   useEffect(() => {
     if (!typesLoading && groups.length > 0) {
       const defaultType = groups[0]?.types[0]?.name ?? 'text'
@@ -139,7 +146,7 @@ export function SchemaView({ connectionID, schema, table, addColumn, onTableRefr
   })()
 
   return (
-    <div className="schema-view">
+    <div className={styles.schemaView}>
       <GridToolbar
         label={`${schema}.${table}`}
         count={`${dbCols.length} column${dbCols.length !== 1 ? 's' : ''}`}
@@ -148,32 +155,68 @@ export function SchemaView({ connectionID, schema, table, addColumn, onTableRefr
         onDiscard={discard}
         onCommit={commit}
         actions={
-          <button className="compact-btn toolbar-btn" onClick={addNewCol}>
-            <Plus size={12} strokeWidth={2.5} /> Add Column
-          </button>
+          <>
+            <button className="compact-btn toolbar-btn" onClick={addNewCol}>
+              <Plus size={12} strokeWidth={2.5} /> Add Column
+            </button>
+            <button className="compact-btn toolbar-btn" onClick={() => setShowDdl(true)}>
+              <Code size={12} strokeWidth={2.5} /> View DDL
+            </button>
+            <button className="compact-btn toolbar-btn toolbar-btn--danger" onClick={() => setShowDropConfirm(true)}>
+              <Trash2 size={12} strokeWidth={2.5} /> Drop Table
+            </button>
+          </>
         }
       />
 
+      {showDropConfirm && (
+        <ConfirmModal
+          message={`Drop table "${schema}.${table}"? This cannot be undone.`}
+          confirmLabel="Drop Table"
+          isLoading={isDropping}
+          error={dropError}
+          onConfirm={() => {
+            setIsDropping(true)
+            setDropError('')
+            DatabaseService.DropTable(connectionID, schema, table)
+              .then(() => onDropTable?.())
+              .catch(err => { setDropError(parseError(err)); setIsDropping(false) })
+          }}
+          onCancel={() => { setShowDropConfirm(false); setDropError('') }}
+        />
+      )}
+
+      {showDdl && (
+        <DdlModal
+          connectionID={connectionID}
+          schema={schema}
+          table={table}
+          onClose={() => setShowDdl(false)}
+        />
+      )}
+
       {error && (
-        <div className="schema-error-banner">
-          <AlertCircle size={14} className="schema-error-icon" />
-          <pre className="schema-error-text">{error}</pre>
-          <button type="button" className="schema-error-dismiss" onClick={() => setError('')} title="Dismiss"><X size={14} /></button>
+        <div className={styles.errorBanner}>
+          <AlertCircle size={14} className={styles.errorIcon} />
+          <pre className={styles.errorText}>{error}</pre>
+          <button type="button" className={styles.errorDismiss} onClick={() => setError('')} title="Dismiss">
+            <X size={14} />
+          </button>
         </div>
       )}
 
       {isLoading ? (
         <p className="empty-state centered">Loading columns…</p>
       ) : (
-        <div className="schema-col-table-wrap">
-          <table className="schema-col-table">
+        <div className={styles.colTableWrap}>
+          <table className={styles.colTable}>
             <thead>
               <tr>
                 <th>Name</th>
                 <th>Type</th>
-                <th className="col-center">Nullable</th>
+                <th className={styles.colCenter}>Nullable</th>
                 <th>Default</th>
-                <th className="col-actions" />
+                <th className={styles.colActions} />
               </tr>
             </thead>
             <tbody>
@@ -191,15 +234,15 @@ export function SchemaView({ connectionID, schema, table, addColumn, onTableRefr
                 const defaultEdited = edit.columnDefault !== undefined
 
                 let rowClass = ''
-                if (isDeleted) rowClass = 'schema-row-deleted'
-                else if (isEdited) rowClass = 'schema-row-edited'
+                if (isDeleted) rowClass = styles.rowDeleted
+                else if (isEdited) rowClass = styles.rowEdited
 
                 return (
                   <tr key={col.name} className={rowClass}>
-                    <td className="col-name">{col.name}</td>
-                    <td className={`col-type${typeEdited ? ' cell-edited' : ''}`}>
+                    <td className={styles.colName}>{col.name}</td>
+                    <td className={`${styles.colType}${typeEdited ? ` ${styles.cellEdited}` : ''}`}>
                       {isDeleted ? (
-                        <span className="deleted-value">{col.dataType}</span>
+                        <span className={styles.deletedValue}>{col.dataType}</span>
                       ) : (
                         <TypeSelect
                           value={currentType}
@@ -210,18 +253,18 @@ export function SchemaView({ connectionID, schema, table, addColumn, onTableRefr
                         />
                       )}
                     </td>
-                    <td className={`col-center${nullableEdited ? ' cell-edited' : ''}`}>
+                    <td className={`${styles.colCenter}${nullableEdited ? ` ${styles.cellEdited}` : ''}`}>
                       <input
                         type="checkbox"
-                        className="schema-checkbox"
+                        className={styles.checkbox}
                         checked={currentNullable}
                         disabled={isDeleted}
                         onChange={e => patchEdit(col.name, { isNullable: e.target.checked })}
                       />
                     </td>
-                    <td className={`col-default${defaultEdited ? ' cell-edited' : ''}`}>
+                    <td className={`${styles.colDefault}${defaultEdited ? ` ${styles.cellEdited}` : ''}`}>
                       <input
-                        className={`schema-default-input${defaultEdited ? ' input-dirty' : ''}`}
+                        className={`${styles.defaultInput}${defaultEdited ? ` ${styles.inputDirty}` : ''}`}
                         value={currentDefault}
                         disabled={isDeleted}
                         placeholder="none"
@@ -239,10 +282,10 @@ export function SchemaView({ connectionID, schema, table, addColumn, onTableRefr
                         }}
                       />
                     </td>
-                    <td className="col-actions">
+                    <td className={styles.colActions}>
                       <button
                         type="button"
-                        className={`compact-btn icon-btn${isDeleted ? ' restore-btn' : ' delete-btn'}`}
+                        className={`compact-btn ${styles.iconBtn}${isDeleted ? ` ${styles.restoreBtn}` : ` ${styles.deleteBtn}`}`}
                         title={isDeleted ? 'Restore column' : 'Drop column'}
                         onClick={() => toggleDelete(col.name)}
                       >
@@ -254,17 +297,17 @@ export function SchemaView({ connectionID, schema, table, addColumn, onTableRefr
               })}
 
               {newCols.map(col => (
-                <tr key={col.id} className="row-new">
-                  <td className="col-name">
+                <tr key={col.id} className={styles.rowNew}>
+                  <td className={styles.colName}>
                     <input
-                      className="schema-name-input"
+                      className={styles.nameInput}
                       value={col.name}
                       placeholder="column_name"
                       onChange={e => patchNewCol(col.id, { name: e.target.value })}
                       autoFocus
                     />
                   </td>
-                  <td className="col-type">
+                  <td className={styles.colType}>
                     <TypeSelect
                       value={col.dataType}
                       onChange={v => patchNewCol(col.id, { dataType: v })}
@@ -272,26 +315,26 @@ export function SchemaView({ connectionID, schema, table, addColumn, onTableRefr
                       loading={typesLoading}
                     />
                   </td>
-                  <td className="col-center">
+                  <td className={styles.colCenter}>
                     <input
                       type="checkbox"
-                      className="schema-checkbox"
+                      className={styles.checkbox}
                       checked={col.isNullable}
                       onChange={e => patchNewCol(col.id, { isNullable: e.target.checked })}
                     />
                   </td>
-                  <td className="col-default">
+                  <td className={styles.colDefault}>
                     <input
-                      className="schema-default-input"
+                      className={styles.defaultInput}
                       value={col.columnDefault}
                       placeholder="none"
                       onChange={e => patchNewCol(col.id, { columnDefault: e.target.value })}
                     />
                   </td>
-                  <td className="col-actions">
+                  <td className={styles.colActions}>
                     <button
                       type="button"
-                      className="compact-btn icon-btn delete-btn"
+                      className={`compact-btn ${styles.iconBtn} ${styles.deleteBtn}`}
                       title="Remove"
                       onClick={() => removeNewCol(col.id)}
                     >

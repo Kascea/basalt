@@ -72,9 +72,9 @@ function EmptyHexGrid() {
 
 interface ContextMenuState { tabId: string; x: number; y: number }
 
-interface Props { onCommit: () => void }
+interface Props { onCommit: () => void; onRefreshObjects?: (connectionID: string) => void }
 
-export function Workspace({ onCommit }: Props) {
+export function Workspace({ onCommit, onRefreshObjects }: Props) {
   const session = useWorkspaceSession()
   const { connection, tabs: tabsNs, tableEditor, worksheet, status, tabStatus } = session
   const { connections, active: activeConnection, objects } = connection
@@ -379,6 +379,11 @@ export function Workspace({ onCommit }: Props) {
             table={activeTab.table}
             addColumn={activeTab.addColumn}
             onTableRefresh={refreshActiveTable}
+            onDropTable={() => {
+              const connID = activeTab.connectionID
+              closeTab(activeTabId)
+              onRefreshObjects?.(connID)
+            }}
           />
         )}
       </div>

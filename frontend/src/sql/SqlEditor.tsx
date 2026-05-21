@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useRef } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { sql, SQLite, PostgreSQL, MySQL, MSSQL, StandardSQL, keywordCompletionSource, schemaCompletionSource } from '@codemirror/lang-sql'
 import { EditorView } from '@codemirror/view'
+import { EditorState } from '@codemirror/state'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { tags as t } from '@lezer/highlight'
 import { autocompletion } from '@codemirror/autocomplete'
@@ -85,10 +86,11 @@ interface Props {
   connectionId?: string
   driver?: string
   objects: SchemaObject[]
-  onChange: (value: string) => void
+  readOnly?: boolean
+  onChange?: (value: string) => void
 }
 
-export function SqlEditor({ value, connectionId, driver, objects, onChange }: Props) {
+export function SqlEditor({ value, connectionId, driver, objects, readOnly, onChange }: Props) {
   const [columnOverrides, setColumnOverrides] = useState<Record<string, Completion[]>>({})
   const fetchKeyRef = useRef('')
 
@@ -145,20 +147,25 @@ export function SqlEditor({ value, connectionId, driver, objects, onChange }: Pr
 
   const extensions = useMemo(() => {
     const dialect = getDialect(driver)
-    return [
+    const exts = [
       sql({ dialect }),
-      autocompletion({
+      basaltEditorTheme,
+      syntaxHighlighting(basaltHighlightStyle),
+      EditorView.lineWrapping,
+    ]
+    if (readOnly) {
+      exts.push(EditorState.readOnly.of(true))
+    } else {
+      exts.push(autocompletion({
         override: [
           keywordCompletionSource(dialect),
           schemaCompletionSource({ schema: schemaMap, dialect }),
           allColumnsSource(schemaMap),
         ],
-      }),
-      basaltEditorTheme,
-      syntaxHighlighting(basaltHighlightStyle),
-      EditorView.lineWrapping,
-    ]
-  }, [driver, schemaMap])
+      }))
+    }
+    return exts
+  }, [driver, schemaMap, readOnly])
 
   return (
     <CodeMirror
@@ -166,12 +173,13 @@ export function SqlEditor({ value, connectionId, driver, objects, onChange }: Pr
       theme="none"
       extensions={extensions}
       onChange={onChange}
+      readOnly={readOnly}
       height="100%"
       style={{ height: '100%' }}
       basicSetup={{
         lineNumbers: true,
         foldGutter: false,
-        highlightActiveLine: true,
+        highlightActiveLine: !readOnly,
         highlightSelectionMatches: true,
         autocompletion: false,
         syntaxHighlighting: false,

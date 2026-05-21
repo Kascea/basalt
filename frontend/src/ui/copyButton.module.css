@@ -1,0 +1,5 @@
+.copySuccess {
+    color: var(--teal-hover) !important;
+    background: rgba(42, 143, 110, 0.12) !important;
+    border-color: rgba(42, 143, 110, 0.35) !important;
+}

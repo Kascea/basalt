@@ -1,0 +1,41 @@
+.modal {
+    width: 720px;
+    max-width: 92vw;
+    height: 70vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-family: var(--font-mono, monospace);
+}
+
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.body {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.error {
+    font-size: 13px;
+    color: var(--danger, #e05252);
+    margin: 16px;
+}
