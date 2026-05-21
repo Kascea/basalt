@@ -1,10 +1,8 @@
 package localdb
 
 import (
-	"encoding/json"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 
 	"gorm.io/driver/sqlite"
@@ -56,21 +54,6 @@ type connectedAccount struct {
 
 func (connectedAccount) TableName() string { return "connected_accounts" }
 
-type openTab struct {
-	ID           string `gorm:"primarykey"`
-	Kind         string
-	ConnectionID string
-	SchemaName   string
-	TabTable     string `gorm:"column:table_name"`
-	Name         string
-	Pinned       bool
-	SortOrder    int
-	SQLContent   string
-	IsActive     bool
-}
-
-func (openTab) TableName() string { return "open_tabs" }
-
 // --- Open ---
 
 // Open opens (or creates) the SQLite database at
@@ -106,79 +89,11 @@ func Open() (*Store, error) {
 	}
 	sqlDB.SetMaxOpenConns(1)
 
-	if err := gormDB.AutoMigrate(&settingsRow{}, &connectionRow{}, &connectedAccount{}, &openTab{}); err != nil {
+	if err := gormDB.AutoMigrate(&settingsRow{}, &connectionRow{}, &connectedAccount{}); err != nil {
 		return nil, err
 	}
 
-	s := &Store{db: gormDB}
-	s.migrateFromJSON(basaltDir)
-	return s, nil
-}
-
-// --- JSON migration (one-time, runs on first launch after upgrade) ---
-
-func (s *Store) migrateFromJSON(basaltDir string) {
-	var wg sync.WaitGroup
-	wg.Add(3)
-	go func() { defer wg.Done(); s.migrateSettings(filepath.Join(basaltDir, "settings.json")) }()
-	go func() { defer wg.Done(); s.migrateConnections(filepath.Join(basaltDir, "connections.json")) }()
-	go func() { defer wg.Done(); s.migratePlanetScaleToken(filepath.Join(basaltDir, "planetscale_token")) }()
-	wg.Wait()
-}
-
-func (s *Store) migrateSettings(path string) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return
-	}
-	var parsed AppSettings
-	if json.Unmarshal(data, &parsed) != nil {
-		return
-	}
-	var count int64
-	s.db.Model(&settingsRow{}).Count(&count)
-	if count == 0 {
-		_ = s.SaveSettings(parsed)
-	}
-	_ = os.Remove(path)
-}
-
-func (s *Store) migrateConnections(path string) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return
-	}
-	var parsed []SavedConnection
-	if json.Unmarshal(data, &parsed) != nil {
-		return
-	}
-	var count int64
-	s.db.Model(&connectionRow{}).Count(&count)
-	if count == 0 {
-		for _, c := range parsed {
-			_ = s.UpsertConnection(c)
-		}
-	}
-	_ = os.Remove(path)
-}
-
-func (s *Store) migratePlanetScaleToken(path string) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return
-	}
-	token := strings.TrimSpace(string(data))
-	if token == "" {
-		_ = os.Remove(path)
-		return
-	}
-	// Guard by row existence so a previously cleared token doesn't get re-imported.
-	var count int64
-	s.db.Model(&connectedAccount{}).Where("provider = ?", PlanetScaleProvider).Count(&count)
-	if count == 0 {
-		_ = s.SetToken(PlanetScaleProvider, token)
-	}
-	_ = os.Remove(path)
+	return &Store{db: gormDB}, nil
 }
 
 // --- Settings ---
@@ -396,54 +311,3 @@ func (s *Store) SetConnectedAccount(provider string, acc ConnectedAccount) error
 	}).Error
 }
 
-// --- Open tabs ---
-
-func (s *Store) SaveTabs(tabs []SavedTab) error {
-	return s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Delete(&openTab{}, "1=1").Error; err != nil {
-			return err
-		}
-		if len(tabs) == 0 {
-			return nil
-		}
-		rows := make([]openTab, len(tabs))
-		for i, t := range tabs {
-			rows[i] = openTab{
-				ID:           t.ID,
-				Kind:         t.Kind,
-				ConnectionID: t.ConnectionID,
-				SchemaName:   t.SchemaName,
-				TabTable:     t.TableName,
-				Name:         t.Name,
-				Pinned:       t.Pinned,
-				SortOrder:    i,
-				SQLContent:   t.SQLContent,
-				IsActive:     t.IsActive,
-			}
-		}
-		return tx.Create(&rows).Error
-	})
-}
-
-func (s *Store) LoadTabs() ([]SavedTab, error) {
-	var rows []openTab
-	if err := s.db.Order("sort_order").Find(&rows).Error; err != nil {
-		return nil, err
-	}
-	tabs := make([]SavedTab, len(rows))
-	for i, r := range rows {
-		tabs[i] = SavedTab{
-			ID:           r.ID,
-			Kind:         r.Kind,
-			ConnectionID: r.ConnectionID,
-			SchemaName:   r.SchemaName,
-			TableName:    r.TabTable,
-			Name:         r.Name,
-			Pinned:       r.Pinned,
-			SortOrder:    r.SortOrder,
-			SQLContent:   r.SQLContent,
-			IsActive:     r.IsActive,
-		}
-	}
-	return tabs, nil
-}

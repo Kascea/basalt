@@ -37,12 +37,6 @@ export function ListSavedConnections(): $CancellablePromise<$models.SavedConnect
     });
 }
 
-export function LoadTabs(): $CancellablePromise<$models.SavedTab[]> {
-    return $Call.ByID(2204960759).then(($result: any) => {
-        return $$createType4($result);
-    });
-}
-
 /**
  * ReorderConnections persists a new display order for connections.
  */
@@ -52,10 +46,6 @@ export function ReorderConnections(ids: string[]): $CancellablePromise<void> {
 
 export function SaveSettings(settings: $models.AppSettings): $CancellablePromise<void> {
     return $Call.ByID(3401768143, settings);
-}
-
-export function SaveTabs(tabs: $models.SavedTab[]): $CancellablePromise<void> {
-    return $Call.ByID(2757083582, tabs);
 }
 
 /**
@@ -69,5 +59,3 @@ export function UpdateSavedConnection(conn: $models.SavedConnection): $Cancellab
 const $$createType0 = $models.AppSettings.createFrom;
 const $$createType1 = $models.SavedConnection.createFrom;
 const $$createType2 = $Create.Array($$createType1);
-const $$createType3 = $models.SavedTab.createFrom;
-const $$createType4 = $Create.Array($$createType3);

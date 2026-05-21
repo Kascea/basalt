@@ -1,14 +1,6 @@
 import { useEffect, useRef } from 'react'
-import type { Tab } from '../types'
+import { storage } from '../storage'
 import type { useTableTabs } from './useTableTabs'
-
-const STORAGE_KEY = 'basalt:tabs'
-
-interface PersistedTabs {
-  tabs: Tab[]
-  activeTabId: string
-  worksheetSQL: Record<string, string>
-}
 
 type TableTabs = ReturnType<typeof useTableTabs>
 
@@ -17,15 +9,9 @@ export function useTabPersistence(tableTabs: TableTabs) {
   useEffect(() => {
     if (restoredRef.current) return
     restoredRef.current = true
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      if (!raw) return
-      const persisted = JSON.parse(raw) as PersistedTabs
-      if (persisted.tabs.length === 0) return
-      tableTabs.restoreTabs(persisted.tabs, persisted.activeTabId, persisted.worksheetSQL)
-    } catch {
-      // ignore malformed storage
-    }
+    const persisted = storage.tabs.get()
+    if (!persisted || persisted.tabs.length === 0) return
+    tableTabs.restoreTabs(persisted.tabs, persisted.activeTabId, persisted.worksheetSQL)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -36,11 +22,11 @@ export function useTabPersistence(tableTabs: TableTabs) {
       for (const [id, state] of Object.entries(tableTabs.worksheetStates)) {
         if (state.sql) worksheetSQL[id] = state.sql
       }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      storage.tabs.set({
         tabs: tableTabs.tabs,
         activeTabId: tableTabs.activeTabId,
         worksheetSQL,
-      }))
+      })
     }, 500)
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
   }, [tableTabs.tabs, tableTabs.activeTabId, tableTabs.worksheetStates])

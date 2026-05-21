@@ -10,7 +10,7 @@ import (
 
 type AppSettings struct {
 	RowDensity        string `json:"rowDensity"`        // "compact" | "normal" | "comfortable"
-	DefaultRowLimit   int    `json:"defaultRowLimit"`    // 0 = unlimited
+	DefaultRowLimit   int    `json:"defaultRowLimit"`   // 0 = unlimited
 	QueryTimeoutSec   int    `json:"queryTimeoutSec"`
 	ConfirmDropTable  bool   `json:"confirmDropTable"`
 	ConfirmDeleteRows bool   `json:"confirmDeleteRows"`
@@ -31,20 +31,6 @@ type SavedConnection struct {
 	ConnectionString string `json:"connectionString"`
 	PlanetScaleKey   string `json:"planetscaleKey,omitempty"`
 	SupabaseKey      string `json:"supabaseKey,omitempty"`
-}
-
-// SavedTab represents a persisted tab entry in the open_tabs table.
-type SavedTab struct {
-	ID           string `json:"id"`
-	Kind         string `json:"kind"`         // worksheet | table | schema | sequences | indexes | foreignkeys
-	ConnectionID string `json:"connectionID"`
-	SchemaName   string `json:"schemaName"`
-	TableName    string `json:"tableName"`
-	Name         string `json:"name"`
-	Pinned       bool   `json:"pinned"`
-	SortOrder    int    `json:"sortOrder"`
-	SQLContent   string `json:"sqlContent"`
-	IsActive     bool   `json:"isActive"`
 }
 
 // PlanetScaleProvider is the provider key used to look up the PlanetScale OAuth token.
