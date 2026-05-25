@@ -93,7 +93,9 @@ export function TableView({
       />
       <div className={styles.dataArea}>
         {isLoading ? (
-          <p className="empty-state centered">Loading {label}…</p>
+          <div className={styles.loadingState}>
+            <div className={styles.loadingSpinner} />
+          </div>
         ) : (
           <DataGrid
             columns={columns}
